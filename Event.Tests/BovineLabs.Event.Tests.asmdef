@@ -1,15 +1,16 @@
 {
     "name": "BovineLabs.Event.Tests",
     "references": [
-        "BovineLabs.EntityEventSystem",
-        "Unity.Entities.Tests",
-        "Unity.Entities",
-        "Unity.Transforms",
-        "Unity.Mathematics.Extensions",
-        "Unity.Collections",
-        "Unity.Burst",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "GUID:8e2f79f713f5a47dcb69903037d4bc0e",
+        "GUID:734d92eba21c94caba915361bd5ac177",
+        "GUID:a5baed0c9693541a5bd947d336ec7659",
+        "GUID:e04e6c86a9f3947eb95fded39f9e60cc",
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:2665a8d13d1b3f18800f46e256720795",
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:a4cdb39619f8b0b4c8fae7ade367525b",
+        "GUID:7030b52b6b7c1434bb5b18b08de078bd"
     ],
     "includePlatforms": [
         "Editor"
