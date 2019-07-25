@@ -1,0 +1,26 @@
+{
+    "name": "BovineLabs.Event.Tests",
+    "references": [
+        "BovineLabs.EntityEventSystem",
+        "Unity.Entities.Tests",
+        "Unity.Entities",
+        "Unity.Transforms",
+        "Unity.Mathematics.Extensions",
+        "Unity.Collections",
+        "Unity.Burst",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": []
+}
