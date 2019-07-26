@@ -159,6 +159,15 @@ namespace BovineLabs.Event
                 return this.SetComponentData(entityManager);
             }
 
+            private void DestroyEntities(EntityManager entityManager)
+            {
+                Profiler.BeginSample("DestroyEntity");
+
+                entityManager.DestroyEntity(this.query);
+
+                Profiler.EndSample();
+            }
+
             private bool CreateEntities(EntityManager entityManager)
             {
                 var count = this.GetCount();
@@ -178,17 +187,6 @@ namespace BovineLabs.Event
 
                 Profiler.EndSample();
                 return true;
-            }
-
-            private int GetCount()
-            {
-                var sum = 0;
-                foreach (var i in this.queues)
-                {
-                    sum += i.Count;
-                }
-
-                return sum;
             }
 
             private JobHandle SetComponentData(EntityManager entityManager)
@@ -234,13 +232,15 @@ namespace BovineLabs.Event
                 return handle;
             }
 
-            private void DestroyEntities(EntityManager entityManager)
+            private int GetCount()
             {
-                Profiler.BeginSample("DestroyEntity");
+                var sum = 0;
+                foreach (var i in this.queues)
+                {
+                    sum += i.Count;
+                }
 
-                entityManager.DestroyEntity(this.query);
-
-                Profiler.EndSample();
+                return sum;
             }
 
             [BurstCompile]
