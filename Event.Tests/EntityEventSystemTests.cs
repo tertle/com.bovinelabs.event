@@ -21,7 +21,7 @@ namespace BovineLabs.Event.Tests
             ees.Update();
 
             var query = this.m_Manager.CreateEntityQuery(typeof(TestEmptyEvent));
-            Assert.AreEqual(1, query.CalculateLength());
+            Assert.AreEqual(1, query.CalculateEntityCount());
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace BovineLabs.Event.Tests
             ees.Update();
 
             var query = this.m_Manager.CreateEntityQuery(typeof(TestEvent));
-            Assert.AreEqual(1, query.CalculateLength());
+            Assert.AreEqual(1, query.CalculateEntityCount());
             Assert.AreEqual(value, query.GetSingleton<TestEvent>().Value);
         }
 
