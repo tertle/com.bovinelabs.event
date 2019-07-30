@@ -1,3 +1,7 @@
+// <copyright file="EntityEventSystemPerformance.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Tests
 {
     using BovineLabs.Common.Tests;
@@ -11,6 +15,10 @@ namespace BovineLabs.Event.Tests
     /// </summary>
     public class EntityEventSystemPerformance : ECSTestsFixture
     {
+        /// <summary>
+        /// Tests the performance of creating empty events.
+        /// </summary>
+        /// <param name="count">Number of events to create.</param>
         [TestCase(100000)]
         [Performance]
         public void CreateEmptyEvents(int count)
@@ -30,6 +38,10 @@ namespace BovineLabs.Event.Tests
                 .Run();
         }
 
+        /// <summary>
+        /// Tests the performance of creating events.
+        /// </summary>
+        /// <param name="count">Number of events to create.</param>
         [TestCase(1)]
         [TestCase(10)]
         [TestCase(100)]
@@ -54,6 +66,10 @@ namespace BovineLabs.Event.Tests
                 .Run();
         }
 
+        /// <summary>
+        /// Tests the performance of creating events from different queues.
+        /// </summary>
+        /// <param name="count">Number of events to create.</param>
         [TestCase(100)]
         [TestCase(100000)]
         [Performance]
@@ -78,6 +94,10 @@ namespace BovineLabs.Event.Tests
                 .Run();
         }
 
+        /// <summary>
+        /// Tests the performance of creating different events.
+        /// </summary>
+        /// <param name="count">Number of events to create.</param>
         [TestCase(100)]
         [TestCase(100000)]
         [Performance]
@@ -123,6 +143,10 @@ namespace BovineLabs.Event.Tests
                 .Run();
         }
 
+        /// <summary>
+        /// Tests the performance of destroying events.
+        /// </summary>
+        /// <param name="count">Number of events to destroy.</param>
         [TestCase(100000)]
         [Performance]
         public void DestroyEvents(int count)
@@ -150,26 +174,31 @@ namespace BovineLabs.Event.Tests
 
         private struct TestEvent : IComponentData
         {
+            [UsedImplicitly]
             public int Value;
         }
 
         private struct TestEvent1 : IComponentData
         {
+            [UsedImplicitly]
             public int Value;
         }
 
         private struct TestEvent2 : IComponentData
         {
+            [UsedImplicitly]
             public int Value;
         }
 
         private struct TestEvent3 : IComponentData
         {
+            [UsedImplicitly]
             public int Value;
         }
 
         private struct TestEvent4 : IComponentData
         {
+            [UsedImplicitly]
             public int Value;
         }
     }
