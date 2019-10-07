@@ -8,8 +8,14 @@ namespace BovineLabs.Event.Tests
     using NUnit.Framework;
     using Unity.Entities;
 
+    /// <summary>
+    /// Tests for the <see cref="EntityEventSystem"/>.
+    /// </summary>
     public class EntityEventSystemTests : ECSTestsFixture
     {
+        /// <summary>
+        /// Tests creating an event with no fields.
+        /// </summary>
         [Test]
         public void CreateNoSize()
         {
@@ -24,6 +30,9 @@ namespace BovineLabs.Event.Tests
             Assert.AreEqual(1, query.CalculateEntityCount());
         }
 
+        /// <summary>
+        /// Create testing an event with a field.
+        /// </summary>
         [Test]
         public void CreateOneSize()
         {

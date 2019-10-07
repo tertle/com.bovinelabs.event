@@ -18,7 +18,7 @@ namespace BovineLabs.Event
     /// <see cref="EntityEventSystem"/> that runs in the <see cref="PresentationSystemGroup"/>.
     /// </summary>
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public sealed class PresentationEntityEventSystem : EntityEventSystem
+    public sealed class EndPresentationEntityEventSystem : EntityEventSystem
     {
     }
 }

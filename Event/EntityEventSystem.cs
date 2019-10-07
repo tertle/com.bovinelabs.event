@@ -16,10 +16,10 @@ namespace BovineLabs.Event
     using UnityEngine.Profiling;
 
     /// <summary>
-    /// The BatchBarrierSystem.
+    /// The EntityEventSystem .
     /// </summary>
     [UsedImplicitly]
-    public abstract class EntityEventSystem : ComponentSystem
+    public abstract partial class EntityEventSystem : ComponentSystem
     {
         private readonly Dictionary<Type, IEventBatch> types = new Dictionary<Type, IEventBatch>();
 
@@ -31,11 +31,17 @@ namespace BovineLabs.Event
         private interface IEventBatch : IDisposable
         {
             /// <summary>
-            /// Updates the batch, destroy, create, set.
+            /// Destroys and create the entities.
+            /// </summary>
+            /// <param name="entityManager">The <see cref="EntityManager"/>.</param>
+            void UpdateArchetype(EntityManager entityManager);
+
+            /// <summary>
+            /// Sets component data if required.
             /// </summary>
             /// <param name="entityManager">The <see cref="EntityManager"/>.</param>
             /// <returns>A <see cref="JobHandle"/>.</returns>
-            JobHandle Update(EntityManager entityManager);
+            JobHandle SetComponentData(EntityManager entityManager);
 
             /// <summary>
             /// Resets the batch for the next frame.
@@ -92,7 +98,12 @@ namespace BovineLabs.Event
 
             foreach (var t in this.types)
             {
-                handles[index++] = t.Value.Update(this.EntityManager);
+                t.Value.UpdateArchetype(this.EntityManager);
+            }
+
+            foreach (var t in this.types)
+            {
+                handles[index++] = t.Value.SetComponentData(this.EntityManager);
             }
 
             JobHandle.CompleteAll(handles);
@@ -110,12 +121,11 @@ namespace BovineLabs.Event
             private readonly List<NativeQueue<T>> queues = new List<NativeQueue<T>>();
             private readonly EntityQuery query;
 
-            private readonly EntityArchetype archetype;
+            private EntityArchetype archetype;
 
             public EventBatch(EntityManager entityManager)
             {
                 this.query = entityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
-                this.archetype = entityManager.CreateArchetype(typeof(T));
             }
 
             public NativeQueue<T> GetNew()
@@ -142,54 +152,21 @@ namespace BovineLabs.Event
                 this.Reset();
             }
 
-            /// <summary>
-            /// Handles the destroying of entities.
-            /// </summary>
-            /// <param name="entityManager">The entity manager.</param>
-            /// <returns>A default handle.</returns>
-            public JobHandle Update(EntityManager entityManager)
+            /// <inheritdoc />
+            public void UpdateArchetype(EntityManager entityManager)
             {
+                if (!this.archetype.Valid)
+                {
+                    this.archetype = entityManager.CreateArchetype(typeof(T));
+                }
+
                 this.DestroyEntities(entityManager);
 
-                if (!this.CreateEntities(entityManager))
-                {
-                    return default;
-                }
-
-                return this.SetComponentData(entityManager);
+                this.CreateEntities(entityManager);
             }
 
-            private void DestroyEntities(EntityManager entityManager)
-            {
-                Profiler.BeginSample("DestroyEntity");
-
-                entityManager.DestroyEntity(this.query);
-
-                Profiler.EndSample();
-            }
-
-            private bool CreateEntities(EntityManager entityManager)
-            {
-                var count = this.GetCount();
-
-                if (count == 0)
-                {
-                    return false;
-                }
-
-                Profiler.BeginSample("CreateEntity");
-
-                // Felt like Temp should be the allocator but gets disposed for some reason.
-                using (var entities = new NativeArray<Entity>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
-                {
-                    entityManager.CreateEntity(this.archetype, entities);
-                }
-
-                Profiler.EndSample();
-                return true;
-            }
-
-            private JobHandle SetComponentData(EntityManager entityManager)
+            /// <inheritdoc />
+            public JobHandle SetComponentData(EntityManager entityManager)
             {
                 var isZeroSized = TypeManager.GetTypeInfo<T>().IsZeroSized;
 
@@ -230,6 +207,36 @@ namespace BovineLabs.Event
                 handle = new DeallocateJob<ArchetypeChunk>(chunks).Schedule(handle);
 
                 return handle;
+            }
+
+            private void DestroyEntities(EntityManager entityManager)
+            {
+                Profiler.BeginSample("DestroyEntity");
+
+                entityManager.DestroyEntity(this.query);
+
+                Profiler.EndSample();
+            }
+
+            private void CreateEntities(EntityManager entityManager)
+            {
+                var count = this.GetCount();
+
+                if (count == 0)
+                {
+                    return;
+                }
+
+                Profiler.BeginSample("CreateEntity");
+
+                // Felt like Temp should be the allocator but gets disposed for some reason.
+                using (var entities =
+                    new NativeArray<Entity>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory))
+                {
+                    entityManager.CreateEntity(this.archetype, entities);
+                }
+
+                Profiler.EndSample();
             }
 
             private int GetCount()
@@ -301,6 +308,7 @@ namespace BovineLabs.Event
                         return;
                     }
 
+                    // TODO probably should remove this
                     throw new ArgumentOutOfRangeException(nameof(this.StartIndex));
                 }
             }
