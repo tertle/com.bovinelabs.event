@@ -19,7 +19,7 @@ namespace BovineLabs.Event
     /// The EntityEventSystem .
     /// </summary>
     [UsedImplicitly]
-    public abstract partial class EntityEventSystem : ComponentSystem
+    public abstract class EntityEventSystem : ComponentSystem
     {
         private readonly Dictionary<Type, IEventBatch> types = new Dictionary<Type, IEventBatch>();
 
@@ -130,7 +130,6 @@ namespace BovineLabs.Event
 
             public NativeQueue<T> GetNew()
             {
-                // Having allocation leak warnings when using TempJob
                 var queue = new NativeQueue<T>(Allocator.TempJob);
                 this.queues.Add(queue);
                 return queue;
