@@ -4,6 +4,7 @@
 
 namespace BovineLabs.Event
 {
+    using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
 
@@ -22,17 +23,10 @@ namespace BovineLabs.Event
         /// </summary>
         internal EventSystemImpl EventSystem => this.EventSystem;
 
-        public JobHandle CombineInputHandle<T>(JobHandle handle)
+        public NativeQueue<T> GetEventWriter<T>()
             where T : struct
         {
-            var e = this.eventSystem.GetOrCreateEventContainer<T>();
-            return JobHandle.CombineDependencies(handle, e.Handle);
-        }
-
-        public EventWriter<T> GetEventWriter<T>(ComponentSystemBase system)
-            where T : struct
-        {
-            return this.eventSystem.GetEventWriter<T>(system);
+            return this.eventSystem.CreateEventWriter<T>();
         }
 
         public void AddJobHandleForProducer<T>(JobHandle handle)
@@ -57,9 +51,9 @@ namespace BovineLabs.Event
             this.eventSystem = null;
         }
 
-        /// <inheritdoc/>
         protected override void OnUpdate()
         {
+            // NO-OP
         }
     }
 }
