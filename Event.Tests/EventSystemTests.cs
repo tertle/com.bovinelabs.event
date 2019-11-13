@@ -126,7 +126,8 @@ namespace BovineLabs.Event.Tests
             es.AddJobHandleForConsumer(handle2);
 
             // Just iterates both readers and checks them, as they should be identical.
-            foreach (var readers in new List<IReadOnlyList<(NativeStream.Reader, int)>> { reader1, reader2 }.SelectMany(readers => readers))
+            foreach (var readers in new List<IReadOnlyList<(NativeStream.Reader, int)>> { reader1, reader2 }.SelectMany(
+                readers => readers))
             {
                 var (reader, count) = readers;
 
@@ -155,82 +156,92 @@ namespace BovineLabs.Event.Tests
         }
 #endif
 
-        /*[TestCase(2000, 1200)]
-        public void ProduceConsumeSim(int count1, int count2)
+        [Test]
+        public void ProduceConsumeSim()
         {
-            var es = new TestEventSystem();
+            const int foreachCount = 100;
 
-            var job1Handle = new ProducerJob
+            const int producers = 2;
+            const int consumers = 3;
+
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+            for (var i = 0; i < producers; i++)
+            {
+                var job1Handle = new ProducerJob
+                    {
+                        Events = es.CreateEventWriter<TestEvent>(foreachCount),
+                    }
+                    .Schedule(foreachCount, 8);
+
+                es.AddJobHandleForProducer<TestEvent>(job1Handle);
+            }
+
+            JobHandle finalHandle = default;
+
+            for (var i = 0; i < consumers; i++)
+            {
+                var handle = es.GetEventReaders<TestEvent>(default, out var readers);
+
+                foreach (var (reader, count) in readers)
                 {
-                    Events = es.CreateEventWriter<TestEvent>().AsParallelWriter(),
+                    handle = new ConsumerJob
+                        {
+                            Reader = reader,
+                        }
+                        .Schedule(count, 8, handle);
                 }
-                .Schedule(count1, 5);
 
-            es.AddJobHandleForProducer<TestEvent>(job1Handle);
+                es.AddJobHandleForConsumer(handle);
 
-            var job2Handle = new ProducerJob
-                {
-                    Events = es.CreateEventWriter<TestEvent>().AsParallelWriter(),
-                }
-                .Schedule(count2, 5);
+                finalHandle = JobHandle.CombineDependencies(finalHandle, handle);
+            }
 
-            es.AddJobHandleForProducer<TestEvent>(job2Handle);
-
-            JobHandle handle = default;
-            handle = es.GetEventReader<TestEvent>(handle, out var reader);
-
-            handle = new ConsumerJob
-                {
-                    Reader = reader,
-                    Expected = new NativeArray<int>(2, Allocator.TempJob) { [0] = count1, [1] = count2 },
-                }
-                .Schedule(reader.ForEachCount, 1, handle);
-
-            Profiler.BeginSample("TestEventSystemSample");
-            handle.Complete();
-            Profiler.EndSample();
-        }*/
-
-        private class TestEventSystem : EventSystem
-        {
+            finalHandle.Complete();
         }
 
-        public struct ProducerJob : IJobParallelFor
+        private struct ProducerJob : IJobParallelFor
         {
-            public NativeQueue<TestEvent>.ParallelWriter Events;
+            public NativeStream.Writer Events;
 
+            /// <inheritdoc/>
             public void Execute(int index)
             {
-                this.Events.Enqueue(new TestEvent { Value = index });
+                this.Events.BeginForEachIndex(index);
+                for (var i = 0; i != 1000; i++)
+                {
+                    this.Events.Write(new TestEvent { Value = index + i });
+                }
+
+                this.Events.EndForEachIndex();
             }
         }
 
-        public struct ConsumerJob : IJobParallelFor
+        private struct ConsumerJob : IJobParallelFor
         {
             public NativeStream.Reader Reader;
 
-            [DeallocateOnJobCompletion]
-            [ReadOnly]
-            public NativeArray<int> Expected;
-
+            /// <inheritdoc/>
             public void Execute(int index)
             {
-                var count = Reader.BeginForEachIndex(index);
-
-                Assert.IsTrue(count == Expected[0] || count == Expected[1]);
+                var count = this.Reader.BeginForEachIndex(index);
 
                 for (var i = 0; i != count; i++)
                 {
-                    this.Reader.Read<TestEvent>();
+                    Assert.AreEqual(index + i, this.Reader.Read<TestEvent>().Value);
                 }
 
                 this.Reader.EndForEachIndex();
             }
         }
 
-        public struct TestEvent
+        private struct TestEvent
         {
             public int Value;
+        }
+
+        private class TestEventSystem : EventSystem
+        {
         }
     }
 }
