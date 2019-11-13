@@ -28,7 +28,7 @@ namespace BovineLabs.Event
         {
             JobHandle Handle { get; }
 
-            IReadOnlyList<ValueTuple<NativeStream.Reader, int>> Readers { get; }
+            IReadOnlyList<ValueTuple<NativeStream.Reader, int>> GetReaders();
 
             void AddJobHandleForProducer(JobHandle handle);
 
@@ -82,7 +82,7 @@ namespace BovineLabs.Event
 
             var container = this.GetOrCreateEventContainer<T>();
 
-            readers = container.Readers;
+            readers = container.GetReaders();
             return container.Handle;
         }
 
@@ -165,8 +165,6 @@ namespace BovineLabs.Event
 
             public JobHandle Handle { get; private set; }
 
-            public IReadOnlyList<ValueTuple<NativeStream.Reader, int>> Readers => this.readers;
-
             public NativeStream.Writer CreateEventStream(int forEachCount)
             {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -195,6 +193,14 @@ namespace BovineLabs.Event
 #endif
 
                 this.Handle = JobHandle.CombineDependencies(this.Handle, handle);
+            }
+
+            public IReadOnlyList<ValueTuple<NativeStream.Reader, int>> GetReaders()
+            {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                this.readMode = true;
+#endif
+                return this.readers;
             }
 
             public void ClearStreams(List<NativeStream> copy)

@@ -143,19 +143,19 @@ namespace BovineLabs.Event.Tests
             }
         }
 
-        /*[Test]
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        [Test]
         public void CanNotWriteInReadMode()
         {
-            var es = new TestEventSystem();
-            es.GetEventReader<TestEvent>(default, out _);
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            es.GetEventReaders<TestEvent>(default, out _);
 
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>());
+            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
-
-            es.Dispose();
         }
+#endif
 
-        [TestCase(2000, 1200)]
+        /*[TestCase(2000, 1200)]
         public void ProduceConsumeSim(int count1, int count2)
         {
             var es = new TestEventSystem();
