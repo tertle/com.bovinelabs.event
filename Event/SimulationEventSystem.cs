@@ -4,6 +4,8 @@
 
 namespace BovineLabs.Event
 {
+    using System;
+    using System.Collections.Generic;
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
@@ -23,10 +25,10 @@ namespace BovineLabs.Event
         /// </summary>
         internal EventSystemImpl EventSystem { get; private set; }
 
-        public NativeQueue<T> CreateEventWriter<T>()
+        public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
             where T : struct
         {
-            return this.EventSystem.CreateEventWriter<T>();
+            return this.EventSystem.CreateEventWriter<T>(forEachCount);
         }
 
         public void AddJobHandleForProducer<T>(JobHandle handle)
@@ -35,10 +37,15 @@ namespace BovineLabs.Event
             this.EventSystem.AddJobHandleForProducer<T>(handle);
         }
 
-        public JobHandle GetEventWriter<T>(JobHandle handle, out NativeStream.Reader stream)
+        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<ValueTuple<NativeStream.Reader, int>> readers)
             where T : struct
         {
-            return this.EventSystem.GetEventReader<T>(handle, out stream);
+            return JobHandle.CombineDependencies(this.EventSystem.GetEventReaders<T>(out readers), handle);
+        }
+
+        public void AddJobHandleForConsumer(JobHandle handle)
+        {
+            this.EventSystem.AddJobHandleForConsumer(handle);
         }
 
         /// <inheritdoc />

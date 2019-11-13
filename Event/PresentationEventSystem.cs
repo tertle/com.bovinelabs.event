@@ -1,7 +1,6 @@
 namespace BovineLabs.Event
 {
     using Unity.Entities;
-    using UnityEditor;
 
     /// <summary>
     /// The PresentationEventSystem.

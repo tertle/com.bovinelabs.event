@@ -1,11 +1,9 @@
 namespace BovineLabs.Event.Tests
 {
     using System;
-    using System.Security.Cryptography.X509Certificates;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Jobs;
-    using UnityEngine.Profiling;
 
     /// <summary>
     /// The EventSystemImplTests.
@@ -17,14 +15,14 @@ namespace BovineLabs.Event.Tests
         {
             var es = new EventSystemImpl();
 
-            es.CreateEventWriter<TestEvent>();
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>());
+            es.CreateEventWriter<TestEvent>(1);
+            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
 
             es.AddJobHandleForProducer<TestEvent>(default);
 
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
 
-            Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>());
+            Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
 
             es.Dispose();
         }
@@ -32,18 +30,25 @@ namespace BovineLabs.Event.Tests
         [Test]
         public void ProduceConsume()
         {
+            int foreachCount = 1;
+
             var es = new EventSystemImpl();
-            var writer = es.CreateEventWriter<TestEvent>();
+            var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
-            writer.Enqueue(new TestEvent { Value = 3 });
-            writer.Enqueue(new TestEvent { Value = 4 });
+            writer.BeginForEachIndex(0);
+            writer.Write(new TestEvent { Value = 3 });
+            writer.Write(new TestEvent { Value = 4 });
+            writer.EndForEachIndex();
 
-            var handle = es.GetEventReader<TestEvent>(default, out var reader);
+            var handle = es.GetEventReaders<TestEvent>(out var readers);
 
-            Assert.AreEqual(1, reader.ForEachCount);
+            Assert.AreEqual(1, readers.Count);
 
             handle.Complete();
 
+            var (reader, count) = readers[0];
+
+            Assert.AreEqual(2, count);
             Assert.AreEqual(2, reader.BeginForEachIndex(0));
             Assert.AreEqual(3, reader.Read<TestEvent>().Value);
             Assert.AreEqual(4, reader.Read<TestEvent>().Value);
@@ -52,7 +57,7 @@ namespace BovineLabs.Event.Tests
             es.Dispose();
         }
 
-        [Test]
+        /*[Test]
         public void MultipleProducers()
         {
             var es = new EventSystemImpl();
@@ -161,7 +166,7 @@ namespace BovineLabs.Event.Tests
             Profiler.BeginSample("EventSystemSample");
             handle.Complete();
             Profiler.EndSample();
-        }
+        }*/
 
         public struct ProducerJob : IJobParallelFor
         {
