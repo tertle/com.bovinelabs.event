@@ -1,19 +1,22 @@
 namespace BovineLabs.Event.Tests
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using BovineLabs.Common.Tests;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Jobs;
 
     /// <summary>
-    /// The EventSystemImplTests.
+    /// The EventSystemTests.
     /// </summary>
-    public class EventSystemImplTests
+    public class EventSystemTests : ECSTestsFixture
     {
         [Test]
         public void CreateEventWriterAddJobHandleForProducerMustBePaired()
         {
-            var es = new EventSystemImpl();
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
             es.CreateEventWriter<TestEvent>(1);
             Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
@@ -23,8 +26,6 @@ namespace BovineLabs.Event.Tests
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
 
             Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
-
-            es.Dispose();
         }
 
         [Test]
@@ -32,7 +33,7 @@ namespace BovineLabs.Event.Tests
         {
             int foreachCount = 1;
 
-            var es = new EventSystemImpl();
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
             var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
             writer.BeginForEachIndex(0);
@@ -40,90 +41,112 @@ namespace BovineLabs.Event.Tests
             writer.Write(new TestEvent { Value = 4 });
             writer.EndForEachIndex();
 
-            var handle = es.GetEventReaders<TestEvent>(out var readers);
+            var handle = es.GetEventReaders<TestEvent>(default, out var readers);
 
-            Assert.AreEqual(1, readers.Count);
+            Assert.AreEqual(foreachCount, readers.Count);
 
             handle.Complete();
 
             var (reader, count) = readers[0];
 
-            Assert.AreEqual(2, count);
+            Assert.AreEqual(foreachCount, count);
             Assert.AreEqual(2, reader.BeginForEachIndex(0));
             Assert.AreEqual(3, reader.Read<TestEvent>().Value);
             Assert.AreEqual(4, reader.Read<TestEvent>().Value);
             reader.EndForEachIndex();
-
-            es.Dispose();
         }
 
-        /*[Test]
+        [Test]
         public void MultipleProducers()
         {
-            var es = new EventSystemImpl();
+            int[] counts = { 2, 1, 3 };
 
-            var writer1 = es.CreateEventWriter<TestEvent>();
-            es.AddJobHandleForProducer<TestEvent>(default);
-            writer1.Enqueue(new TestEvent { Value = 3 });
-            writer1.Enqueue(new TestEvent { Value = 4 });
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-            var writer2 = es.CreateEventWriter<TestEvent>();
-            es.AddJobHandleForProducer<TestEvent>(default);
-            writer2.Enqueue(new TestEvent { Value = 5 });
+            foreach (var count in counts)
+            {
+                var writer1 = es.CreateEventWriter<TestEvent>(count);
 
-            var handle = es.GetEventReader<TestEvent>(default, out var reader);
+                for (var i = 0; i < count; i++)
+                {
+                    writer1.BeginForEachIndex(i);
+                    writer1.Write(new TestEvent { Value = i + 1 });
+                    writer1.Write(new TestEvent { Value = i + 2 });
+                    writer1.EndForEachIndex();
+                }
 
-            Assert.AreEqual(2, reader.ForEachCount);
+                es.AddJobHandleForProducer<TestEvent>(default);
+            }
+
+            var handle = es.GetEventReaders<TestEvent>(default, out var readers);
+
+            Assert.AreEqual(counts.Length, readers.Count);
 
             handle.Complete();
 
-            Assert.AreEqual(2, reader.BeginForEachIndex(0));
-            Assert.AreEqual(3, reader.Read<TestEvent>().Value);
-            Assert.AreEqual(4, reader.Read<TestEvent>().Value);
-            reader.EndForEachIndex();
+            for (var j = 0; j < readers.Count; j++)
+            {
+                var (reader, count) = readers[j];
 
-            Assert.AreEqual(1, reader.BeginForEachIndex(1));
-            Assert.AreEqual(5, reader.Read<TestEvent>().Value);
-            reader.EndForEachIndex();
+                Assert.AreEqual(counts[j], count);
+                Assert.AreEqual(counts[j], reader.ForEachCount);
 
-            es.Dispose();
+                for (var i = 0; i < count; i++)
+                {
+                    Assert.AreEqual(2, reader.BeginForEachIndex(i));
+                    Assert.AreEqual(i + 1, reader.Read<TestEvent>().Value);
+                    Assert.AreEqual(i + 2, reader.Read<TestEvent>().Value);
+                    reader.EndForEachIndex();
+                }
+            }
         }
 
         [Test]
         public void MultipleConsumers()
         {
-            var es = new EventSystemImpl();
+            int foreachCount = 3;
 
-            var writer = es.CreateEventWriter<TestEvent>();
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+            var writer1 = es.CreateEventWriter<TestEvent>(foreachCount);
+
+            for (var i = 0; i < foreachCount; i++)
+            {
+                writer1.BeginForEachIndex(i);
+                writer1.Write(new TestEvent { Value = i + 1 });
+                writer1.Write(new TestEvent { Value = i + 2 });
+                writer1.EndForEachIndex();
+            }
+
             es.AddJobHandleForProducer<TestEvent>(default);
-            writer.Enqueue(new TestEvent { Value = 3 });
-            writer.Enqueue(new TestEvent { Value = 4 });
 
-            var handle = es.GetEventReader<TestEvent>(default, out var reader1);
-            handle = es.GetEventReader<TestEvent>(handle, out var reader2);
+            var handle1 = es.GetEventReaders<TestEvent>(default, out var reader1);
+            es.AddJobHandleForConsumer(handle1);
+            var handle2 = es.GetEventReaders<TestEvent>(default, out var reader2);
+            es.AddJobHandleForConsumer(handle2);
 
-            Assert.AreEqual(1, reader1.ForEachCount);
-            Assert.AreEqual(1, reader2.ForEachCount);
+            // Just iterates both readers and checks them, as they should be identical.
+            foreach (var readers in new List<IReadOnlyList<(NativeStream.Reader, int)>> { reader1, reader2 }.SelectMany(readers => readers))
+            {
+                var (reader, count) = readers;
 
-            handle.Complete();
+                Assert.AreEqual(foreachCount, count);
+                Assert.AreEqual(foreachCount, reader.ForEachCount);
 
-            Assert.AreEqual(2, reader1.BeginForEachIndex(0));
-            Assert.AreEqual(3, reader1.Read<TestEvent>().Value);
-            Assert.AreEqual(4, reader1.Read<TestEvent>().Value);
-            reader1.EndForEachIndex();
-
-            Assert.AreEqual(2, reader2.BeginForEachIndex(0));
-            Assert.AreEqual(3, reader2.Read<TestEvent>().Value);
-            Assert.AreEqual(4, reader2.Read<TestEvent>().Value);
-            reader1.EndForEachIndex();
-
-            es.Dispose();
+                for (var i = 0; i < count; i++)
+                {
+                    Assert.AreEqual(2, reader.BeginForEachIndex(i));
+                    Assert.AreEqual(i + 1, reader.Read<TestEvent>().Value);
+                    Assert.AreEqual(i + 2, reader.Read<TestEvent>().Value);
+                    reader.EndForEachIndex();
+                }
+            }
         }
 
-        [Test]
+        /*[Test]
         public void CanNotWriteInReadMode()
         {
-            var es = new EventSystemImpl();
+            var es = new TestEventSystem();
             es.GetEventReader<TestEvent>(default, out _);
 
             Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>());
@@ -135,7 +158,7 @@ namespace BovineLabs.Event.Tests
         [TestCase(2000, 1200)]
         public void ProduceConsumeSim(int count1, int count2)
         {
-            var es = new EventSystemImpl();
+            var es = new TestEventSystem();
 
             var job1Handle = new ProducerJob
                 {
@@ -163,10 +186,14 @@ namespace BovineLabs.Event.Tests
                 }
                 .Schedule(reader.ForEachCount, 1, handle);
 
-            Profiler.BeginSample("EventSystemSample");
+            Profiler.BeginSample("TestEventSystemSample");
             handle.Complete();
             Profiler.EndSample();
         }*/
+
+        private class TestEventSystem : EventSystem
+        {
+        }
 
         public struct ProducerJob : IJobParallelFor
         {

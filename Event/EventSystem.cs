@@ -1,14 +1,19 @@
-/*namespace BovineLabs.Event
+// <copyright file="EventSystem.cs" company="BovineLabs">
+// Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+namespace BovineLabs.Event
 {
     using System;
     using System.Collections.Generic;
     using Unity.Collections;
+    using Unity.Entities;
     using Unity.Jobs;
 
     /// <summary>
-    /// The EventSystemImpl.
+    /// The EventSystem.
     /// </summary>
-    internal class EventSystemImpl : IDisposable
+    public abstract class EventSystem : JobComponentSystem
     {
         private readonly Dictionary<Type, IEventContainer> types = new Dictionary<Type, IEventContainer>();
 
@@ -30,7 +35,7 @@
             void ClearStreams(List<NativeStream> copy);
         }
 
-        internal NativeStream.Writer CreateEventWriter<T>(int forEachCount)
+        public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
             where T : struct
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -46,7 +51,7 @@
             return ((EventContainer<T>)e).CreateEventStream(forEachCount);
         }
 
-        internal void AddJobHandleForProducer<T>(JobHandle handle)
+        public void AddJobHandleForProducer<T>(JobHandle handle)
             where T : struct
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -62,7 +67,7 @@
             this.GetOrCreateEventContainer<T>().AddJobHandleForProducer(handle);
         }
 
-        internal JobHandle GetEventReaders<T>(out IReadOnlyList<ValueTuple<NativeStream.Reader, int>> readers)
+        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<ValueTuple<NativeStream.Reader, int>> readers)
             where T : struct
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -81,7 +86,7 @@
             return container.Handle;
         }
 
-        internal void AddJobHandleForConsumer(JobHandle handle)
+        public void AddJobHandleForConsumer(JobHandle handle)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (!this.consumerSafety)
@@ -96,7 +101,16 @@
             this.consumerHandle = JobHandle.CombineDependencies(this.consumerHandle, handle);
         }
 
-        internal JobHandle OnUpdate(JobHandle handle)
+        /// <inheritdoc />
+        protected override void OnDestroy()
+        {
+            foreach (var t in this.types)
+            {
+                t.Value.Dispose();
+            }
+        }
+
+        protected override JobHandle OnUpdate(JobHandle handle)
         {
             var handles = new NativeArray<JobHandle>(this.types.Count, Allocator.TempJob);
 
@@ -137,14 +151,6 @@
             }
 
             return eventContainer;
-        }
-
-        public void Dispose()
-        {
-            foreach (var t in this.types)
-            {
-                t.Value.Dispose();
-            }
         }
 
         private class EventContainer<T> : IEventContainer
@@ -211,4 +217,4 @@
             }
         }
     }
-}*/
+}
