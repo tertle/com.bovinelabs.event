@@ -2,6 +2,7 @@ namespace BovineLabs.Event
 {
     using System;
     using System.Collections.Generic;
+    using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
@@ -221,29 +222,29 @@ namespace BovineLabs.Event
                 }
             }
         }
+    }
 
-        // [BurstCompile] // doesn't work
-        private struct ConvertQueueToStreamJob<T> : IJob
-            where T : struct
+    [BurstCompile] // doesn't work
+    public struct ConvertQueueToStreamJob<T> : IJob
+        where T : struct
+    {
+        public NativeQueue<T> Queue;
+
+        [NativeDisableContainerSafetyRestriction]
+        public NativeStream.Writer StreamWriter;
+
+        public int ForEachIndex;
+
+        public void Execute()
         {
-            public NativeQueue<T> Queue;
+            this.StreamWriter.BeginForEachIndex(this.ForEachIndex);
 
-            [NativeDisableContainerSafetyRestriction]
-            public NativeStream.Writer StreamWriter;
-
-            public int ForEachIndex;
-
-            public void Execute()
+            while (this.Queue.TryDequeue(out var item))
             {
-                this.StreamWriter.BeginForEachIndex(this.ForEachIndex);
-
-                while (this.Queue.TryDequeue(out var item))
-                {
-                    this.StreamWriter.Write(item);
-                }
-
-                this.StreamWriter.EndForEachIndex();
+                this.StreamWriter.Write(item);
             }
+
+            this.StreamWriter.EndForEachIndex();
         }
     }
 }

@@ -5,6 +5,7 @@ namespace BovineLabs.Event.Tests
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Jobs;
+    using UnityEngine.Profiling;
 
     /// <summary>
     /// The EventSystemImplTests.
@@ -126,11 +127,10 @@ namespace BovineLabs.Event.Tests
             es.Dispose();
         }
 
-        [Test]
-        public void ProduceConsumeSim()
+        [TestCase(2000, 1200)]
+        public void ProduceConsumeSim(int count1, int count2)
         {
-            int count1 = 20;
-            int count2 = 12;
+            var a = new ConvertQueueToStreamJob<TestEvent>();
 
             var es = new EventSystemImpl();
 
@@ -156,10 +156,13 @@ namespace BovineLabs.Event.Tests
             handle = new ConsumerJob
                 {
                     Reader = reader,
+                    Expected = new NativeArray<int>(2, Allocator.TempJob) { [0] = count1, [1] = count2 },
                 }
                 .Schedule(reader.ForEachCount, 1, handle);
 
+            Profiler.BeginSample("EventSystemSample");
             handle.Complete();
+            Profiler.EndSample();
         }
 
         public struct ProducerJob : IJobParallelFor
@@ -176,13 +179,22 @@ namespace BovineLabs.Event.Tests
         {
             public NativeStream.Reader Reader;
 
+            [DeallocateOnJobCompletion]
+            [ReadOnly]
+            public NativeArray<int> Expected;
+
             public void Execute(int index)
             {
                 var count = Reader.BeginForEachIndex(index);
 
-                Assert.IsTrue(count == 20 || count == 12);
+                Assert.IsTrue(count == Expected[0] || count == Expected[1]);
 
-                // this.Reader.EndForEachIndex();
+                for (var i = 0; i != count; i++)
+                {
+                    this.Reader.Read<TestEvent>();
+                }
+
+                this.Reader.EndForEachIndex();
             }
         }
 
