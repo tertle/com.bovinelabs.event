@@ -20,8 +20,12 @@ namespace BovineLabs.Event
         private readonly HashSet<Type> safety = new HashSet<Type>();
 #endif
 
-        internal interface IEventContainer : IDisposable
+        private interface IEventContainer : IDisposable
         {
+            JobHandle Handle { get; }
+
+            NativeStream Stream { get; set; }
+
             void AddJobHandleForProducer(JobHandle handle);
 
             JobHandle GetReader(JobHandle inputHandle, out NativeStream.Reader reader);
@@ -71,7 +75,16 @@ namespace BovineLabs.Event
 
             foreach (var e in this.types)
             {
-                handles[index++] = e.Value.OnUpdate(handle);
+                var eventHandle = JobHandle.CombineDependencies(handle, e.Value.Handle);
+
+                // TODO PRESENTATION
+                if (e.Value.Stream.IsCreated)
+                {
+                    eventHandle = e.Value.Stream.Dispose(eventHandle);
+                    e.Value.Stream = default;
+                }
+
+                handles[index++] = e.Value.OnUpdate(eventHandle);
             }
 
             handle = JobHandle.CombineDependencies(handles);
@@ -185,8 +198,11 @@ namespace BovineLabs.Event
 
             public JobHandle OnUpdate(JobHandle handle)
             {
-                this.readMode = false;
+                this.Handle = default;
 
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                this.readMode = false;
+#endif
 
                 if (this.Stream.IsCreated)
                 {

@@ -11,28 +11,34 @@ namespace BovineLabs.Event
     /// <summary>
     /// The SimulationEventSystem.
     /// </summary>
-    public class SimulationEventSystem : ComponentSystem
+    [UpdateInGroup(typeof(LateSimulationSystemGroup))]
+    public class SimulationEventSystem : JobComponentSystem
     {
         private PresentationEventSystem presentationEventSystem;
-        private EventSystemImpl eventSystem;
 
         private JobHandle producerHandle;
 
         /// <summary>
         /// Gets the event system to share between simulation and presentation systems.
         /// </summary>
-        internal EventSystemImpl EventSystem => this.EventSystem;
+        internal EventSystemImpl EventSystem { get; private set; }
 
-        public NativeQueue<T> GetEventWriter<T>()
+        public NativeQueue<T> CreateEventWriter<T>()
             where T : struct
         {
-            return this.eventSystem.CreateEventWriter<T>();
+            return this.EventSystem.CreateEventWriter<T>();
         }
 
         public void AddJobHandleForProducer<T>(JobHandle handle)
             where T : struct
         {
-            this.eventSystem.AddJobHandleForProducer<T>(handle);
+            this.EventSystem.AddJobHandleForProducer<T>(handle);
+        }
+
+        public JobHandle GetEventWriter<T>(JobHandle handle, out NativeStream.Reader stream)
+            where T : struct
+        {
+            return this.EventSystem.GetEventReader<T>(handle, out stream);
         }
 
         /// <inheritdoc />
@@ -41,19 +47,19 @@ namespace BovineLabs.Event
             this.presentationEventSystem = this.World.GetOrCreateSystem<PresentationEventSystem>();
 
             // Shared event system
-            this.eventSystem = this.presentationEventSystem.EventSystem ?? new EventSystemImpl();
+            this.EventSystem = this.presentationEventSystem.EventSystem ?? new EventSystemImpl();
         }
 
         /// <inheritdoc />
         protected override void OnDestroy()
         {
-            this.eventSystem.Dispose();
-            this.eventSystem = null;
+            this.EventSystem.Dispose();
+            this.EventSystem = null;
         }
 
-        protected override void OnUpdate()
+        protected override JobHandle OnUpdate(JobHandle handle)
         {
-            // NO-OP
+            return this.EventSystem.OnUpdate(handle);
         }
     }
 }

@@ -9,28 +9,27 @@ namespace BovineLabs.Event
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class PresentationEventSystem : ComponentSystem
     {
-        private EventSystemImpl eventSystem;
         private SimulationEventSystem simulationEventSystem;
 
         /// <summary>
         /// Gets the event system to share between simulation and presentation systems.
         /// </summary>
-        internal EventSystemImpl EventSystem => this.EventSystem;
+        internal EventSystemImpl EventSystem { get; private set; }
 
         /// <inheritdoc />
         protected override void OnCreate()
         {
-            this.simulationEventSystem = this.World.GetExistingSystem<SimulationEventSystem>();
+            this.simulationEventSystem = this.World.GetOrCreateSystem<SimulationEventSystem>();
 
             // Shared event system
-            this.eventSystem = this.simulationEventSystem.EventSystem ?? new EventSystemImpl();
+            this.EventSystem = this.simulationEventSystem.EventSystem ?? new EventSystemImpl();
         }
 
         /// <inheritdoc />
         protected override void OnDestroy()
         {
             // SimulationEventSystem handles dispose
-            this.eventSystem = null;
+            this.EventSystem = null;
         }
 
         /// <inheritdoc />

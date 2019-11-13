@@ -130,8 +130,6 @@ namespace BovineLabs.Event.Tests
         [TestCase(2000, 1200)]
         public void ProduceConsumeSim(int count1, int count2)
         {
-            var a = new ConvertQueueToStreamJob<TestEvent>();
-
             var es = new EventSystemImpl();
 
             var job1Handle = new ProducerJob
