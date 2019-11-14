@@ -1,3 +1,7 @@
+// <copyright file="LateSimulationEventSystem.cs" company="BovineLabs">
+// Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event
 {
     using Unity.Entities;

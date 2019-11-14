@@ -208,7 +208,7 @@ namespace BovineLabs.Event.Tests
             public void Execute(int index)
             {
                 this.Events.BeginForEachIndex(index);
-                for (var i = 0; i != 1000; i++)
+                for (var i = 0; i != 100; i++)
                 {
                     this.Events.Write(new TestEvent { Value = index + i });
                 }

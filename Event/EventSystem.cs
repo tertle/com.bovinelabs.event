@@ -15,7 +15,7 @@ namespace BovineLabs.Event
     /// </summary>
     public abstract class EventSystem : JobComponentSystem
     {
-        private readonly Dictionary<Type, IEventContainer> types = new Dictionary<Type, IEventContainer>();
+        private readonly Dictionary<Type, EventContainer> types = new Dictionary<Type, EventContainer>();
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private bool producerSafety;
@@ -23,17 +23,6 @@ namespace BovineLabs.Event
 #endif
 
         private JobHandle consumerHandle;
-
-        private interface IEventContainer : IDisposable
-        {
-            JobHandle Handle { get; }
-
-            IReadOnlyList<ValueTuple<NativeStream.Reader, int>> GetReaders();
-
-            void AddJobHandleForProducer(JobHandle handle);
-
-            void ClearStreams(List<NativeStream> copy);
-        }
 
         public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
             where T : struct
@@ -48,7 +37,7 @@ namespace BovineLabs.Event
             this.producerSafety = true;
 #endif
             var e = this.GetOrCreateEventContainer<T>();
-            return ((EventContainer<T>)e).CreateEventStream(forEachCount);
+            return ((EventContainer)e).CreateEventStream(forEachCount);
         }
 
         public void AddJobHandleForProducer<T>(JobHandle handle)
@@ -79,11 +68,17 @@ namespace BovineLabs.Event
 
             this.consumerSafety = true;
 #endif
-
             var container = this.GetOrCreateEventContainer<T>();
 
+            if (!container.ReadMode)
+            {
+                // TODO
+                container.SetReadMode();
+            }
+
             readers = container.GetReaders();
-            return container.Handle;
+
+            return JobHandle.CombineDependencies(container.ProducerHandle, handle);
         }
 
         public void AddJobHandleForConsumer(JobHandle handle)
@@ -142,38 +137,39 @@ namespace BovineLabs.Event
             return handle;
         }
 
-        private IEventContainer GetOrCreateEventContainer<T>()
+        private EventContainer GetOrCreateEventContainer<T>()
             where T : struct
         {
             if (!this.types.TryGetValue(typeof(T), out var eventContainer))
             {
-                eventContainer = this.types[typeof(T)] = new EventContainer<T>();
+                eventContainer = this.types[typeof(T)] = new EventContainer();
             }
 
             return eventContainer;
         }
 
-        private class EventContainer<T> : IEventContainer
-            where T : struct
+        private class EventContainer
         {
             private readonly List<NativeStream> streams = new List<NativeStream>();
             private readonly List<ValueTuple<NativeStream.Reader, int>> readers = new List<ValueTuple<NativeStream.Reader, int>>();
 
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            private bool readMode;
-#endif
+            /// <summary>
+            /// Gets a value indicating whether the container is in read only mode.
+            /// </summary>
+            public bool ReadMode { get; private set; }
 
-            public JobHandle Handle { get; private set; }
+            /// <summary>
+            /// Gets the producer handle.
+            /// </summary>
+            public JobHandle ProducerHandle { get; private set; }
 
             public NativeStream.Writer CreateEventStream(int forEachCount)
             {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-                if (this.readMode)
+                if (this.ReadMode)
                 {
                     throw new InvalidOperationException(
                         $"CreateEventStream can not be called in read mode.");
                 }
-#endif
 
                 var stream = new NativeStream(forEachCount, Allocator.TempJob);
                 this.streams.Add(stream);
@@ -182,36 +178,63 @@ namespace BovineLabs.Event
                 return stream.AsWriter();
             }
 
+            /// <summary>
+            /// Add a new producer job handle. Can only be called in write mode.
+            /// </summary>
+            /// <param name="handle">The handle.</param>
             public void AddJobHandleForProducer(JobHandle handle)
             {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-                if (this.readMode)
+                if (this.ReadMode)
                 {
                     throw new InvalidOperationException(
                         $"AddJobHandleForProducer can not be called in read mode.");
                 }
-#endif
 
-                this.Handle = JobHandle.CombineDependencies(this.Handle, handle);
+                this.ProducerHandle = JobHandle.CombineDependencies(this.ProducerHandle, handle);
             }
 
+            /// <summary>
+            /// Gets the collection of readers.
+            /// </summary>
+            /// <returns>Returns a tuple where Item1 is the reader, Item2 is the foreachCount.</returns>
             public IReadOnlyList<ValueTuple<NativeStream.Reader, int>> GetReaders()
             {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-                this.readMode = true;
-#endif
+                if (!this.ReadMode)
+                {
+                    throw new InvalidOperationException(
+                        $"SetReadMode can not be called in write mode.");
+                }
+
                 return this.readers;
+            }
+
+            /// <summary>
+            /// Set the event to read mode.
+            /// </summary>
+            /// <param name="externalReadStreams">An optional collection of external streams to add.</param>
+            public void SetReadMode(IReadOnlyList<ValueTuple<NativeStream.Reader, int>> externalReadStreams = null)
+            {
+                if (this.ReadMode)
+                {
+                    throw new InvalidOperationException(
+                        $"SetReadMode can not be called in read mode.");
+                }
+
+                this.ReadMode = true;
+
+                if (externalReadStreams != null)
+                {
+                    this.readers.AddRange(externalReadStreams);
+                }
             }
 
             public void ClearStreams(List<NativeStream> copy)
             {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-                this.readMode = false;
-#endif
+                this.ReadMode = false;
                 copy.AddRange(this.streams);
                 this.streams.Clear();
-                this.readers.Clear();
-                this.Handle = default;
+                this.readers.Clear(); // TODO?
+                this.ProducerHandle = default;
             }
 
             public void Dispose()
