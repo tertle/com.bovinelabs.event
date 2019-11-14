@@ -107,7 +107,7 @@ namespace BovineLabs.Event
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.streamShare = new StreamShare();
+            this.streamShare = StreamShare.Instance;
 
             this.streamShare.Subscribe(this);
         }

@@ -3,8 +3,10 @@ namespace BovineLabs.Event
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Runtime.CompilerServices;
     using Unity.Collections;
     using Unity.Jobs;
+    using UnityEngine;
     using UnityEngine.Assertions;
 
     /// <summary>
@@ -13,10 +15,24 @@ namespace BovineLabs.Event
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity")]
     internal class StreamShare
     {
+        private static StreamShare instance;
+
+        internal static StreamShare Instance => instance ?? (instance = new StreamShare());
+
         private readonly ObjectPool<HashSet<EventSystem>> pool = new ObjectPool<HashSet<EventSystem>>(() => new HashSet<EventSystem>());
 
         private readonly List<EventSystem> subscribers = new List<EventSystem>();
         private readonly Dictionary<NativeStream, HashSet<EventSystem>> streams = new Dictionary<NativeStream, HashSet<EventSystem>>();
+
+        private StreamShare()
+        {
+        }
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void Reset()
+        {
+            instance = null;
+        }
 
         public void Subscribe(EventSystem eventSystem)
         {
@@ -93,10 +109,24 @@ namespace BovineLabs.Event
 
             for (var index = 0; index < newStreams.Count; index++)
             {
-                var stream = newStreams[index];
-                var newHandle = this.RemoveOwner(owner, stream.Item1, inputHandle);
+                var stream = newStreams[index].Item1;
 
-                handle = JobHandle.CombineDependencies(handle, newHandle);
+                Assert.IsTrue(this.streams.ContainsKey(stream));
+
+                var set = this.streams[stream];
+
+                bool result = set.Remove(owner);
+                Assert.IsTrue(result);
+
+                // No one else using stream, need to dispose
+                if (set.Count == 0)
+                {
+                    this.pool.Return(set);
+                    this.streams.Remove(stream);
+
+                    var newHandle = stream.Dispose(inputHandle);
+                    handle = JobHandle.CombineDependencies(handle, newHandle);
+                }
             }
 
             return handle;
