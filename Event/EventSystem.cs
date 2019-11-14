@@ -101,10 +101,13 @@ namespace BovineLabs.Event
             this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
         }
 
-        internal void AddExternalReaders(Type type, IReadOnlyList<(NativeStream, int)> externalStreams, JobHandle consumerHandle)
+        internal void AddExternalReaders(Type type, IReadOnlyList<(NativeStream, int)> externalStreams, JobHandle handle)
         {
             var container = this.GetOrCreateEventContainer(type);
-            container.AddReaders(externalStreams, consumerHandle);
+            container.AddReaders(externalStreams);
+
+            // updates producer handle because this is what consumers depend on
+            container.AddJobHandleForProducer(handle);
         }
 
         /// <inheritdoc/>
@@ -139,7 +142,8 @@ namespace BovineLabs.Event
             {
                 var container = this.containers[i];
 
-                handles[index] = JobHandle.CombineDependencies(container.ConsumerHandle, handle);
+                // Need both handles because might have no writers or readers in this specific systems
+                handles[index] = JobHandle.CombineDependencies(handle, container.ConsumerHandle, container.ProducerHandle);
                 handles[index] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[index]);
                 handles[index] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[index]);
                 index++;
@@ -287,15 +291,13 @@ namespace BovineLabs.Event
                 }
             }
 
-            public void AddReaders(IReadOnlyList<(NativeStream, int)> externalStreams, JobHandle handle)
+            public void AddReaders(IReadOnlyList<(NativeStream, int)> externalStreams)
             {
                 if (this.ReadMode)
                 {
                     throw new InvalidOperationException(
                         $"AddReaders can not be called in read mode.");
                 }
-
-                this.ConsumerHandle = JobHandle.CombineDependencies(this.ConsumerHandle, handle);
 
                 this.externalReaders.AddRange(externalStreams);
             }
@@ -307,6 +309,9 @@ namespace BovineLabs.Event
                 this.streams.Clear();
                 this.externalReaders.Clear();
                 this.readers.Clear();
+
+                this.ConsumerHandle = default;
+                this.ProducerHandle = default;
             }
 
             public void Dispose()

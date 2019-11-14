@@ -1,4 +1,4 @@
-// <copyright file="LateSimulationEventSystem.cs" company="BovineLabs">
+// <copyright file="PresentationEventSystem.cs" company="BovineLabs">
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
