@@ -15,7 +15,7 @@ namespace BovineLabs.Event
     /// </summary>
     public abstract class EventSystem : JobComponentSystem
     {
-        private readonly Dictionary<Type, EventContainer> types = new Dictionary<Type, EventContainer>();
+        private readonly Dictionary<Type, EventContainer> containers = new Dictionary<Type, EventContainer>();
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private bool producerSafety;
@@ -23,6 +23,7 @@ namespace BovineLabs.Event
 #endif
 
         private JobHandle consumerHandle;
+        private StreamShare streamShare;
 
         public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
             where T : struct
@@ -36,8 +37,7 @@ namespace BovineLabs.Event
 
             this.producerSafety = true;
 #endif
-            var e = this.GetOrCreateEventContainer<T>();
-            return ((EventContainer)e).CreateEventStream(forEachCount);
+            return this.GetOrCreateEventContainer<T>().CreateEventStream(forEachCount);
         }
 
         public void AddJobHandleForProducer<T>(JobHandle handle)
@@ -72,7 +72,6 @@ namespace BovineLabs.Event
 
             if (!container.ReadMode)
             {
-                // TODO
                 container.SetReadMode();
             }
 
@@ -96,38 +95,45 @@ namespace BovineLabs.Event
             this.consumerHandle = JobHandle.CombineDependencies(this.consumerHandle, handle);
         }
 
+        internal void AddExternalReaders(Type type, IReadOnlyList<(NativeStream, int)> externalStreams)
+        {
+            this.GetOrCreateEventContainer(type).AddReaders(externalStreams);
+        }
+
+        /// <inheritdoc/>
+        protected override void OnCreate()
+        {
+            this.streamShare = new StreamShare();
+
+            this.streamShare.Subscribe(this);
+        }
+
         /// <inheritdoc />
         protected override void OnDestroy()
         {
-            foreach (var t in this.types)
+            this.streamShare.Unsubscribe(this);
+
+            foreach (var t in this.containers)
             {
                 t.Value.Dispose();
             }
         }
 
+        /// <inheritdoc/>
         protected override JobHandle OnUpdate(JobHandle handle)
         {
-            var handles = new NativeArray<JobHandle>(this.types.Count, Allocator.TempJob);
-
             handle = JobHandle.CombineDependencies(handle, this.consumerHandle);
 
+            var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
             var index = 0;
 
-            foreach (var e in this.types)
+            foreach (var e in this.containers)
             {
-                var streams = new List<NativeStream>();
+                handles[index] = this.streamShare.ReleaseStreams(this, e.Value.ExternalReaders, handle);
+                handles[index] = this.streamShare.AddStreams(this, e.Key, e.Value.Streams, handles[index]);
+                index++;
 
-                e.Value.ClearStreams(streams);
-
-                var eventHandle = handle;
-
-                // TODO COPY
-                foreach (var s in streams)
-                {
-                    eventHandle = s.Dispose(eventHandle);
-                }
-
-                handles[index++] = eventHandle;
+                e.Value.Clear();
             }
 
             this.consumerHandle = default;
@@ -140,9 +146,14 @@ namespace BovineLabs.Event
         private EventContainer GetOrCreateEventContainer<T>()
             where T : struct
         {
-            if (!this.types.TryGetValue(typeof(T), out var eventContainer))
+            return this.GetOrCreateEventContainer(typeof(T));
+        }
+
+        private EventContainer GetOrCreateEventContainer(Type type)
+        {
+            if (!this.containers.TryGetValue(type, out var eventContainer))
             {
-                eventContainer = this.types[typeof(T)] = new EventContainer();
+                eventContainer = this.containers[type] = new EventContainer();
             }
 
             return eventContainer;
@@ -150,7 +161,9 @@ namespace BovineLabs.Event
 
         private class EventContainer
         {
-            private readonly List<NativeStream> streams = new List<NativeStream>();
+            private readonly List<ValueTuple<NativeStream, int>> streams = new List<ValueTuple<NativeStream, int>>();
+            private readonly List<ValueTuple<NativeStream, int>> externalReaders = new List<ValueTuple<NativeStream, int>>();
+
             private readonly List<ValueTuple<NativeStream.Reader, int>> readers = new List<ValueTuple<NativeStream.Reader, int>>();
 
             /// <summary>
@@ -163,6 +176,10 @@ namespace BovineLabs.Event
             /// </summary>
             public JobHandle ProducerHandle { get; private set; }
 
+            public List<ValueTuple<NativeStream, int>> Streams => this.streams;
+
+            public List<ValueTuple<NativeStream, int>> ExternalReaders => this.externalReaders;
+
             public NativeStream.Writer CreateEventStream(int forEachCount)
             {
                 if (this.ReadMode)
@@ -172,8 +189,7 @@ namespace BovineLabs.Event
                 }
 
                 var stream = new NativeStream(forEachCount, Allocator.TempJob);
-                this.streams.Add(stream);
-                this.readers.Add(ValueTuple.Create(stream.AsReader(), forEachCount));
+                this.streams.Add(ValueTuple.Create(stream, forEachCount));
 
                 return stream.AsWriter();
             }
@@ -211,8 +227,7 @@ namespace BovineLabs.Event
             /// <summary>
             /// Set the event to read mode.
             /// </summary>
-            /// <param name="externalReadStreams">An optional collection of external streams to add.</param>
-            public void SetReadMode(IReadOnlyList<ValueTuple<NativeStream.Reader, int>> externalReadStreams = null)
+            public void SetReadMode()
             {
                 if (this.ReadMode)
                 {
@@ -222,24 +237,42 @@ namespace BovineLabs.Event
 
                 this.ReadMode = true;
 
-                if (externalReadStreams != null)
+                foreach (var (stream, forEachCount) in this.streams)
                 {
-                    this.readers.AddRange(externalReadStreams);
+                    this.readers.Add(ValueTuple.Create(stream.AsReader(), forEachCount));
+                }
+
+                foreach (var (stream, forEachCount) in this.externalReaders)
+                {
+                    this.readers.Add(ValueTuple.Create(stream.AsReader(), forEachCount));
                 }
             }
 
-            public void ClearStreams(List<NativeStream> copy)
+            public void AddReaders(IReadOnlyList<(NativeStream, int)> externalStreams)
+            {
+                if (this.ReadMode)
+                {
+                    throw new InvalidOperationException(
+                        $"AddReaders can not be called in read mode.");
+                }
+
+                this.externalReaders.AddRange(externalStreams);
+            }
+
+            public void Clear()
             {
                 this.ReadMode = false;
-                copy.AddRange(this.streams);
+
                 this.streams.Clear();
-                this.readers.Clear(); // TODO?
+                this.externalReaders.Clear();
+                this.readers.Clear();
+
                 this.ProducerHandle = default;
             }
 
             public void Dispose()
             {
-                foreach (var stream in this.streams)
+                foreach (var (stream, _) in this.streams)
                 {
                     stream.Dispose();
                 }
