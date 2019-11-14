@@ -6,6 +6,7 @@ namespace BovineLabs.Event
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
@@ -13,9 +14,12 @@ namespace BovineLabs.Event
     /// <summary>
     /// The EventSystem.
     /// </summary>
+    [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity.")]
     public abstract class EventSystem : JobComponentSystem
     {
-        private readonly Dictionary<Type, EventContainer> containers = new Dictionary<Type, EventContainer>();
+        // separate to avoid allocations when iterating
+        private readonly List<EventContainer> containers = new List<EventContainer>();
+        private readonly Dictionary<Type, int> types = new Dictionary<Type, int>();
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private bool producerSafety;
@@ -113,10 +117,13 @@ namespace BovineLabs.Event
         {
             this.streamShare.Unsubscribe(this);
 
-            foreach (var t in this.containers)
+            for (var index = 0; index < this.containers.Count; index++)
             {
-                t.Value.Dispose();
+                this.containers[index].Dispose();
             }
+
+            this.containers.Clear();
+            this.types.Clear();
         }
 
         /// <inheritdoc/>
@@ -127,13 +134,15 @@ namespace BovineLabs.Event
             var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
             var index = 0;
 
-            foreach (var e in this.containers)
+            for (var i = 0; i < this.containers.Count; i++)
             {
-                handles[index] = this.streamShare.ReleaseStreams(this, e.Value.ExternalReaders, handle);
-                handles[index] = this.streamShare.AddStreams(this, e.Key, e.Value.Streams, handles[index]);
+                var container = this.containers[i];
+
+                handles[index] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handle);
+                handles[index] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[index]);
                 index++;
 
-                e.Value.Clear();
+                container.Clear();
             }
 
             this.consumerHandle = default;
@@ -151,12 +160,13 @@ namespace BovineLabs.Event
 
         private EventContainer GetOrCreateEventContainer(Type type)
         {
-            if (!this.containers.TryGetValue(type, out var eventContainer))
+            if (!this.types.TryGetValue(type, out var index))
             {
-                eventContainer = this.containers[type] = new EventContainer();
+                index = this.types[type] = this.containers.Count;
+                this.containers.Add(new EventContainer(type));
             }
 
-            return eventContainer;
+            return this.containers[index];
         }
 
         private class EventContainer
@@ -165,6 +175,11 @@ namespace BovineLabs.Event
             private readonly List<ValueTuple<NativeStream, int>> externalReaders = new List<ValueTuple<NativeStream, int>>();
 
             private readonly List<ValueTuple<NativeStream.Reader, int>> readers = new List<ValueTuple<NativeStream.Reader, int>>();
+
+            public EventContainer(Type type)
+            {
+                this.Type = type;
+            }
 
             /// <summary>
             /// Gets a value indicating whether the container is in read only mode.
@@ -175,6 +190,8 @@ namespace BovineLabs.Event
             /// Gets the producer handle.
             /// </summary>
             public JobHandle ProducerHandle { get; private set; }
+
+            public Type Type { get; }
 
             public List<ValueTuple<NativeStream, int>> Streams => this.streams;
 
@@ -237,14 +254,16 @@ namespace BovineLabs.Event
 
                 this.ReadMode = true;
 
-                foreach (var (stream, forEachCount) in this.streams)
+                for (var index = 0; index < this.streams.Count; index++)
                 {
-                    this.readers.Add(ValueTuple.Create(stream.AsReader(), forEachCount));
+                    var stream = this.streams[index];
+                    this.readers.Add(ValueTuple.Create(stream.Item1.AsReader(), stream.Item2));
                 }
 
-                foreach (var (stream, forEachCount) in this.externalReaders)
+                for (var index = 0; index < this.externalReaders.Count; index++)
                 {
-                    this.readers.Add(ValueTuple.Create(stream.AsReader(), forEachCount));
+                    var stream = this.externalReaders[index];
+                    this.readers.Add(ValueTuple.Create(stream.Item1.AsReader(), stream.Item2));
                 }
             }
 
@@ -272,9 +291,9 @@ namespace BovineLabs.Event
 
             public void Dispose()
             {
-                foreach (var (stream, _) in this.streams)
+                for (var index = 0; index < this.streams.Count; index++)
                 {
-                    stream.Dispose();
+                    this.streams[index].Item1.Dispose();
                 }
             }
         }

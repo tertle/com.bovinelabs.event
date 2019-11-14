@@ -2,6 +2,7 @@ namespace BovineLabs.Event
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using Unity.Collections;
     using Unity.Jobs;
     using UnityEngine.Assertions;
@@ -9,27 +10,23 @@ namespace BovineLabs.Event
     /// <summary>
     /// The StreamShare.
     /// </summary>
+    [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity")]
     internal class StreamShare
     {
-        /*private readonly Dictionary<EventSystem, Dictionary<Type, StreamContainer>> subscribers =
-            new Dictionary<EventSystem, Dictionary<Type, StreamContainer>>();*/
-
         private readonly ObjectPool<HashSet<EventSystem>> pool = new ObjectPool<HashSet<EventSystem>>(() => new HashSet<EventSystem>());
 
-        private readonly HashSet<EventSystem> subscribers = new HashSet<EventSystem>();
+        private readonly List<EventSystem> subscribers = new List<EventSystem>();
         private readonly Dictionary<NativeStream, HashSet<EventSystem>> streams = new Dictionary<NativeStream, HashSet<EventSystem>>();
 
         public void Subscribe(EventSystem eventSystem)
         {
+            Assert.IsFalse(this.subscribers.Contains(eventSystem));
             this.subscribers.Add(eventSystem);
         }
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="eventSystem"></param>
         public void Unsubscribe(EventSystem eventSystem)
         {
+            Assert.IsTrue(this.subscribers.Contains(eventSystem));
             this.subscribers.Remove(eventSystem);
 
             // Must release streams before call unsubscribe.
@@ -58,22 +55,25 @@ namespace BovineLabs.Event
                 // No subscribers other than ourselves, just dispose the streams
                 JobHandle handle = inputHandle;
 
-                foreach (var (stream, _) in newStreams)
+                for (var index = 0; index < newStreams.Count; index++)
                 {
-                    handle = JobHandle.CombineDependencies(handle, stream.Dispose(inputHandle));
+                    var stream = newStreams[index];
+                    handle = JobHandle.CombineDependencies(handle, stream.Item1.Dispose(inputHandle));
                 }
 
                 return handle;
             }
 
-            foreach (var (stream, _) in newStreams)
+            for (var index = 0; index < newStreams.Count; index++)
             {
+                var stream = newStreams[index];
                 var systems = this.pool.Get();
 
-                this.streams.Add(stream, systems);
+                this.streams.Add(stream.Item1, systems);
 
-                foreach (var subscriber in this.subscribers)
+                for (var i = 0; i < this.subscribers.Count; i++)
                 {
+                    var subscriber = this.subscribers[i];
                     if (subscriber == owner)
                     {
                         continue;
@@ -91,9 +91,10 @@ namespace BovineLabs.Event
         {
             var handle = inputHandle;
 
-            foreach (var (stream, _) in newStreams)
+            for (var index = 0; index < newStreams.Count; index++)
             {
-                var newHandle = this.RemoveOwner(owner, stream, inputHandle);
+                var stream = newStreams[index];
+                var newHandle = this.RemoveOwner(owner, stream.Item1, inputHandle);
 
                 handle = JobHandle.CombineDependencies(handle, newHandle);
             }
