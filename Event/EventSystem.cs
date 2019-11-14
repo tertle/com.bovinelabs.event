@@ -26,10 +26,9 @@ namespace BovineLabs.Event
         private bool consumerSafety;
 #endif
 
-        private JobHandle consumerHandle;
         private StreamShare streamShare;
 
-        public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
+        public JobHandle CreateEventWriter<T>(int forEachCount, JobHandle handle, out NativeStream.Writer writer)
             where T : struct
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -41,7 +40,11 @@ namespace BovineLabs.Event
 
             this.producerSafety = true;
 #endif
-            return this.GetOrCreateEventContainer<T>().CreateEventStream(forEachCount);
+            var container = this.GetOrCreateEventContainer<T>();
+
+            writer = container.CreateEventStream(forEachCount);
+
+            return JobHandle.CombineDependencies(container.ConsumerHandle, handle);
         }
 
         public void AddJobHandleForProducer<T>(JobHandle handle)
@@ -84,7 +87,8 @@ namespace BovineLabs.Event
             return JobHandle.CombineDependencies(container.ProducerHandle, handle);
         }
 
-        public void AddJobHandleForConsumer(JobHandle handle)
+        public void AddJobHandleForConsumer<T>(JobHandle handle)
+            where T : struct
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (!this.consumerSafety)
@@ -96,12 +100,13 @@ namespace BovineLabs.Event
             this.consumerSafety = false;
 #endif
 
-            this.consumerHandle = JobHandle.CombineDependencies(this.consumerHandle, handle);
+            this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
         }
 
-        internal void AddExternalReaders(Type type, IReadOnlyList<(NativeStream, int)> externalStreams)
+        internal void AddExternalReaders(Type type, IReadOnlyList<(NativeStream, int)> externalStreams, JobHandle consumerHandle)
         {
-            this.GetOrCreateEventContainer(type).AddReaders(externalStreams);
+            var container = this.GetOrCreateEventContainer(type);
+            container.AddReaders(externalStreams, consumerHandle);
         }
 
         /// <inheritdoc/>
@@ -129,8 +134,6 @@ namespace BovineLabs.Event
         /// <inheritdoc/>
         protected override JobHandle OnUpdate(JobHandle handle)
         {
-            handle = JobHandle.CombineDependencies(handle, this.consumerHandle);
-
             var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
             var index = 0;
 
@@ -138,14 +141,14 @@ namespace BovineLabs.Event
             {
                 var container = this.containers[i];
 
-                handles[index] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handle);
+                handles[index] = JobHandle.CombineDependencies(container.ProducerHandle, handle);
+                handles[index] = JobHandle.CombineDependencies(container.ConsumerHandle, handle);
+                handles[index] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[index]);
                 handles[index] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[index]);
                 index++;
 
-                container.Clear();
+                container.Reset();
             }
-
-            this.consumerHandle = default;
 
             handle = JobHandle.CombineDependencies(handles);
             handles.Dispose();
@@ -191,6 +194,11 @@ namespace BovineLabs.Event
             /// </summary>
             public JobHandle ProducerHandle { get; private set; }
 
+            /// <summary>
+            /// Gets the producer handle.
+            /// </summary>
+            public JobHandle ConsumerHandle { get; private set; }
+
             public Type Type { get; }
 
             public List<ValueTuple<NativeStream, int>> Streams => this.streams;
@@ -224,6 +232,21 @@ namespace BovineLabs.Event
                 }
 
                 this.ProducerHandle = JobHandle.CombineDependencies(this.ProducerHandle, handle);
+            }
+
+            /// <summary>
+            /// Add a new producer job handle. Can only be called in write mode.
+            /// </summary>
+            /// <param name="handle">The handle.</param>
+            public void AddJobHandleForConsumer(JobHandle handle)
+            {
+                if (!this.ReadMode)
+                {
+                    throw new InvalidOperationException(
+                        $"AddJobHandleForConsumer can only be called in read mode.");
+                }
+
+                this.ConsumerHandle = JobHandle.CombineDependencies(this.ConsumerHandle, handle);
             }
 
             /// <summary>
@@ -267,7 +290,7 @@ namespace BovineLabs.Event
                 }
             }
 
-            public void AddReaders(IReadOnlyList<(NativeStream, int)> externalStreams)
+            public void AddReaders(IReadOnlyList<(NativeStream, int)> externalStreams, JobHandle handle)
             {
                 if (this.ReadMode)
                 {
@@ -275,18 +298,18 @@ namespace BovineLabs.Event
                         $"AddReaders can not be called in read mode.");
                 }
 
+                this.ConsumerHandle = JobHandle.CombineDependencies(this.ConsumerHandle, handle);
+
                 this.externalReaders.AddRange(externalStreams);
             }
 
-            public void Clear()
+            public void Reset()
             {
                 this.ReadMode = false;
 
                 this.streams.Clear();
                 this.externalReaders.Clear();
                 this.readers.Clear();
-
-                this.ProducerHandle = default;
             }
 
             public void Dispose()

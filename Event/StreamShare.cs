@@ -54,8 +54,13 @@ namespace BovineLabs.Event
 #endif
         }
 
-        public JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<(NativeStream, int)> newStreams, JobHandle inputHandle)
+        public JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<(NativeStream, int)> newStreams, JobHandle consumerHandle)
         {
+            if (newStreams.Count == 0)
+            {
+                return consumerHandle;
+            }
+
             if (this.subscribers.Count == 0)
             {
                 throw new InvalidOperationException("No subscribers");
@@ -69,12 +74,12 @@ namespace BovineLabs.Event
                 }
 
                 // No subscribers other than ourselves, just dispose the streams
-                JobHandle handle = inputHandle;
+                JobHandle handle = consumerHandle;
 
                 for (var index = 0; index < newStreams.Count; index++)
                 {
                     var stream = newStreams[index];
-                    handle = JobHandle.CombineDependencies(handle, stream.Item1.Dispose(inputHandle));
+                    handle = JobHandle.CombineDependencies(handle, stream.Item1.Dispose(consumerHandle));
                 }
 
                 return handle;
@@ -96,11 +101,22 @@ namespace BovineLabs.Event
                     }
 
                     systems.Add(subscriber);
-                    subscriber.AddExternalReaders(type, newStreams);
                 }
             }
 
-            return inputHandle;
+            // Fire off these new readers
+            for (var i = 0; i < this.subscribers.Count; i++)
+            {
+                var subscriber = this.subscribers[i];
+                if (subscriber == owner)
+                {
+                    continue;
+                }
+
+                subscriber.AddExternalReaders(type, newStreams, consumerHandle);
+            }
+
+            return consumerHandle;
         }
 
         public JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<(NativeStream, int)> newStreams, JobHandle inputHandle)
@@ -127,27 +143,6 @@ namespace BovineLabs.Event
                     var newHandle = stream.Dispose(inputHandle);
                     handle = JobHandle.CombineDependencies(handle, newHandle);
                 }
-            }
-
-            return handle;
-        }
-
-        private JobHandle RemoveOwner(EventSystem owner, NativeStream stream, JobHandle handle)
-        {
-            Assert.IsTrue(this.streams.ContainsKey(stream));
-
-            var set = this.streams[stream];
-
-            bool result = set.Remove(owner);
-            Assert.IsTrue(result);
-
-            // No one else using stream, need to dispose
-            if (set.Count == 0)
-            {
-                this.pool.Return(set);
-                this.streams.Remove(stream);
-
-                handle = JobHandle.CombineDependencies(handle, stream.Dispose(handle));
             }
 
             return handle;

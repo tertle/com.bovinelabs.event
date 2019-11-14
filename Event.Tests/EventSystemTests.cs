@@ -18,14 +18,14 @@ namespace BovineLabs.Event.Tests
         {
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-            es.CreateEventWriter<TestEvent>(1);
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
+            es.CreateEventWriter<TestEvent>(1, default, out _);
+            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1, default, out _));
 
             es.AddJobHandleForProducer<TestEvent>(default);
 
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
 
-            Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
+            Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1, default, out _));
         }
 
         [Test]
@@ -34,7 +34,7 @@ namespace BovineLabs.Event.Tests
             int foreachCount = 1;
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
-            var writer = es.CreateEventWriter<TestEvent>(foreachCount);
+            es.CreateEventWriter<TestEvent>(foreachCount, default, out var writer);
 
             writer.BeginForEachIndex(0);
             writer.Write(new TestEvent { Value = 3 });
@@ -65,14 +65,14 @@ namespace BovineLabs.Event.Tests
 
             foreach (var count in counts)
             {
-                var writer1 = es.CreateEventWriter<TestEvent>(count);
+                es.CreateEventWriter<TestEvent>(count, default, out var writer);
 
                 for (var i = 0; i < count; i++)
                 {
-                    writer1.BeginForEachIndex(i);
-                    writer1.Write(new TestEvent { Value = i + 1 });
-                    writer1.Write(new TestEvent { Value = i + 2 });
-                    writer1.EndForEachIndex();
+                    writer.BeginForEachIndex(i);
+                    writer.Write(new TestEvent { Value = i + 1 });
+                    writer.Write(new TestEvent { Value = i + 2 });
+                    writer.EndForEachIndex();
                 }
 
                 es.AddJobHandleForProducer<TestEvent>(default);
@@ -108,22 +108,22 @@ namespace BovineLabs.Event.Tests
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-            var writer1 = es.CreateEventWriter<TestEvent>(foreachCount);
+            es.CreateEventWriter<TestEvent>(foreachCount, default, out var writer);
 
             for (var i = 0; i < foreachCount; i++)
             {
-                writer1.BeginForEachIndex(i);
-                writer1.Write(new TestEvent { Value = i + 1 });
-                writer1.Write(new TestEvent { Value = i + 2 });
-                writer1.EndForEachIndex();
+                writer.BeginForEachIndex(i);
+                writer.Write(new TestEvent { Value = i + 1 });
+                writer.Write(new TestEvent { Value = i + 2 });
+                writer.EndForEachIndex();
             }
 
             es.AddJobHandleForProducer<TestEvent>(default);
 
             var handle1 = es.GetEventReaders<TestEvent>(default, out var reader1);
-            es.AddJobHandleForConsumer(handle1);
+            es.AddJobHandleForConsumer<TestEvent>(handle1);
             var handle2 = es.GetEventReaders<TestEvent>(default, out var reader2);
-            es.AddJobHandleForConsumer(handle2);
+            es.AddJobHandleForConsumer<TestEvent>(handle2);
 
             // Just iterates both readers and checks them, as they should be identical.
             foreach (var readers in new List<IReadOnlyList<(NativeStream.Reader, int)>> { reader1, reader2 }.SelectMany(
@@ -151,7 +151,7 @@ namespace BovineLabs.Event.Tests
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
             es.GetEventReaders<TestEvent>(default, out _);
 
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
+            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1, default, out _));
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
         }
 #endif
@@ -168,13 +168,15 @@ namespace BovineLabs.Event.Tests
 
             for (var i = 0; i < producers; i++)
             {
-                var job1Handle = new ProducerJob
-                    {
-                        Events = es.CreateEventWriter<TestEvent>(foreachCount),
-                    }
-                    .Schedule(foreachCount, 8);
+                var handle = es.CreateEventWriter<TestEvent>(foreachCount, default, out var writer);
 
-                es.AddJobHandleForProducer<TestEvent>(job1Handle);
+                handle = new ProducerJob
+                    {
+                        Events = writer,
+                    }
+                    .Schedule(foreachCount, 8, handle);
+
+                es.AddJobHandleForProducer<TestEvent>(handle);
             }
 
             JobHandle finalHandle = default;
@@ -192,7 +194,7 @@ namespace BovineLabs.Event.Tests
                         .Schedule(count, 8, handle);
                 }
 
-                es.AddJobHandleForConsumer(handle);
+                es.AddJobHandleForConsumer<TestEvent>(handle);
 
                 finalHandle = JobHandle.CombineDependencies(finalHandle, handle);
             }
