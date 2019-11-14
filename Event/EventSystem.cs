@@ -28,7 +28,7 @@ namespace BovineLabs.Event
 
         private StreamShare streamShare;
 
-        public JobHandle CreateEventWriter<T>(int forEachCount, JobHandle handle, out NativeStream.Writer writer)
+        public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
             where T : struct
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -42,9 +42,7 @@ namespace BovineLabs.Event
 #endif
             var container = this.GetOrCreateEventContainer<T>();
 
-            writer = container.CreateEventStream(forEachCount);
-
-            return JobHandle.CombineDependencies(container.ConsumerHandle, handle);
+            return container.CreateEventStream(forEachCount);
         }
 
         public void AddJobHandleForProducer<T>(JobHandle handle)
@@ -141,7 +139,6 @@ namespace BovineLabs.Event
             {
                 var container = this.containers[i];
 
-                handles[index] = JobHandle.CombineDependencies(container.ProducerHandle, handle);
                 handles[index] = JobHandle.CombineDependencies(container.ConsumerHandle, handle);
                 handles[index] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[index]);
                 handles[index] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[index]);

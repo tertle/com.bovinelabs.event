@@ -18,14 +18,14 @@ namespace BovineLabs.Event.Tests
         {
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-            es.CreateEventWriter<TestEvent>(1, default, out _);
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1, default, out _));
+            es.CreateEventWriter<TestEvent>(1);
+            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
 
             es.AddJobHandleForProducer<TestEvent>(default);
 
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
 
-            Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1, default, out _));
+            Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
         }
 
         [Test]
@@ -34,7 +34,7 @@ namespace BovineLabs.Event.Tests
             int foreachCount = 1;
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
-            es.CreateEventWriter<TestEvent>(foreachCount, default, out var writer);
+            var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
             writer.BeginForEachIndex(0);
             writer.Write(new TestEvent { Value = 3 });
@@ -65,7 +65,7 @@ namespace BovineLabs.Event.Tests
 
             foreach (var count in counts)
             {
-                es.CreateEventWriter<TestEvent>(count, default, out var writer);
+                var writer = es.CreateEventWriter<TestEvent>(count);
 
                 for (var i = 0; i < count; i++)
                 {
@@ -108,7 +108,7 @@ namespace BovineLabs.Event.Tests
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-            es.CreateEventWriter<TestEvent>(foreachCount, default, out var writer);
+            var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
             for (var i = 0; i < foreachCount; i++)
             {
@@ -151,7 +151,7 @@ namespace BovineLabs.Event.Tests
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
             es.GetEventReaders<TestEvent>(default, out _);
 
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1, default, out _));
+            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
         }
 #endif
@@ -168,13 +168,13 @@ namespace BovineLabs.Event.Tests
 
             for (var i = 0; i < producers; i++)
             {
-                var handle = es.CreateEventWriter<TestEvent>(foreachCount, default, out var writer);
+                var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
-                handle = new ProducerJob
+                var handle = new ProducerJob
                     {
                         Events = writer,
                     }
-                    .Schedule(foreachCount, 8, handle);
+                    .Schedule(foreachCount, 8);
 
                 es.AddJobHandleForProducer<TestEvent>(handle);
             }
