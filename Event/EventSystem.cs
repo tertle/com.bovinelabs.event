@@ -28,6 +28,8 @@ namespace BovineLabs.Event
 
         private StreamShare streamShare;
 
+        protected virtual World EventWorld => this.World;
+
         public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
             where T : struct
         {
@@ -113,7 +115,7 @@ namespace BovineLabs.Event
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.streamShare = StreamShare.Instance;
+            this.streamShare = StreamShare.GetInstance(this.EventWorld);
 
             this.streamShare.Subscribe(this);
         }

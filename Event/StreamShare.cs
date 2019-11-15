@@ -1,11 +1,16 @@
+// <copyright file="StreamShare.cs" company="BovineLabs">
+// Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using System.Runtime.CompilerServices;
     using Unity.Collections;
+    using Unity.Entities;
     using Unity.Jobs;
+    using UnityEditor;
     using UnityEngine;
     using UnityEngine.Assertions;
 
@@ -15,9 +20,7 @@ namespace BovineLabs.Event
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity")]
     internal class StreamShare
     {
-        private static StreamShare instance;
-
-        internal static StreamShare Instance => instance ?? (instance = new StreamShare());
+        private static Dictionary<World, StreamShare> instance = new Dictionary<World, StreamShare>();
 
         private readonly ObjectPool<HashSet<EventSystem>> pool = new ObjectPool<HashSet<EventSystem>>(() => new HashSet<EventSystem>());
 
@@ -28,10 +31,14 @@ namespace BovineLabs.Event
         {
         }
 
-        [RuntimeInitializeOnLoadMethod]
-        private static void Reset()
+        internal static StreamShare GetInstance(World world)
         {
-            instance = null;
+            if (!instance.TryGetValue(world, out var streamShare))
+            {
+                streamShare = instance[world] = new StreamShare();
+            }
+
+            return streamShare;
         }
 
         public void Subscribe(EventSystem eventSystem)
@@ -146,6 +153,12 @@ namespace BovineLabs.Event
             }
 
             return handle;
+        }
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void Reset()
+        {
+            instance = null;
         }
     }
 }

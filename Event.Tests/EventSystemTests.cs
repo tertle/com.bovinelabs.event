@@ -1,9 +1,13 @@
+// <copyright file="EventSystemTests.cs" company="BovineLabs">
+// Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Tests
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using BovineLabs.Common.Tests;
+    using BovineLabs.Tests;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Jobs;
