@@ -12,7 +12,8 @@ namespace BovineLabs.Event
     using Unity.Jobs;
 
     /// <summary>
-    /// The EventSystem.
+    /// The base Event System class. Implement to add your own event system to a world or group.
+    /// By default LateSimulation and Presentation are implemented.
     /// </summary>
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity.")]
     public abstract class EventSystem : JobComponentSystem
@@ -28,25 +29,70 @@ namespace BovineLabs.Event
 
         private StreamShare streamShare;
 
-        protected virtual World EventWorld => this.World;
+        /// <summary>
+        /// The world to use that the event system is linked to.
+        /// </summary>
+        protected enum WorldMode
+        {
+            /// <summary>
+            /// Uses the systems world, this.World
+            /// </summary>
+            Parent,
 
-        public NativeStream.Writer CreateEventWriter<T>(int forEachCount)
+            /// <summary>
+            /// Uses the active world, World.Active
+            /// </summary>
+            Active,
+
+            /// <summary>
+            /// Uses a custom world, this.CustomWorld
+            /// </summary>
+            Custom,
+        }
+
+        /// <summary>
+        /// Gets the . Override to change the sharing state of the
+        /// </summary>
+        // ReSharper disable once VirtualMemberNeverOverridden.Global
+        protected virtual WorldMode Mode => WorldMode.Parent;
+
+        /// <summary>
+        /// Gets the world when using <see cref="WorldMode.Custom"/>.
+        /// </summary>
+        // ReSharper disable once VirtualMemberNeverOverridden.Global
+        protected virtual World CustomWorld =>
+            throw new NotImplementedException("WorldMode.Custom requires CustomWorld to be implemented.");
+
+        /// <summary>
+        /// Create a new NativeStream for writing events to.
+        /// </summary>
+        /// <param name="foreachCount">The <see cref="NativeStream.ForEachCount"/>.</param>
+        /// <typeparam name="T">The type of event.</typeparam>
+        /// <returns>A <see cref="NativeStream.Writer"/> you can write events to.</returns>
+        /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
+        public NativeStream.Writer CreateEventWriter<T>(int foreachCount)
             where T : struct
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.producerSafety)
             {
                 throw new InvalidOperationException(
-                    $"CreateEventWriter must always be balanced by a AddJobHandleForProducer call");
+                    "CreateEventWriter must always be balanced by a AddJobHandleForProducer call");
             }
 
             this.producerSafety = true;
 #endif
             var container = this.GetOrCreateEventContainer<T>();
 
-            return container.CreateEventStream(forEachCount);
+            return container.CreateEventStream(foreachCount);
         }
 
+        /// <summary>
+        /// Adds the specified JobHandle to the events list of producer dependency handles.
+        /// </summary>
+        /// <param name="handle">The job handle to add.</param>
+        /// <typeparam name="T">The type of event to associate the handle to.</typeparam>
+        /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
         public void AddJobHandleForProducer<T>(JobHandle handle)
             where T : struct
         {
@@ -54,7 +100,7 @@ namespace BovineLabs.Event
             if (!this.producerSafety)
             {
                 throw new InvalidOperationException(
-                    $"AddJobHandleForProducer must always be balanced by a GetEventWriter call");
+                    "AddJobHandleForProducer must always be balanced by a GetEventWriter call");
             }
 
             this.producerSafety = false;
@@ -63,6 +109,14 @@ namespace BovineLabs.Event
             this.GetOrCreateEventContainer<T>().AddJobHandleForProducer(handle);
         }
 
+        /// <summary>
+        /// Get the NativeStream for reading events from.
+        /// </summary>
+        /// <param name="handle">Existing dependencies for this event.</param>
+        /// <param name="readers">A collection of <see cref="NativeStream.Reader"/> you can read events from.</param>
+        /// <typeparam name="T">The type of event.</typeparam>
+        /// <returns>The updated dependency handle.</returns>
+        /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
         public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<ValueTuple<NativeStream.Reader, int>> readers)
             where T : struct
         {
@@ -70,7 +124,7 @@ namespace BovineLabs.Event
             if (this.consumerSafety)
             {
                 throw new InvalidOperationException(
-                    $"GetEventReaders must always be balanced by a AddJobHandleForConsumer call");
+                    "GetEventReaders must always be balanced by a AddJobHandleForConsumer call");
             }
 
             this.consumerSafety = true;
@@ -87,6 +141,12 @@ namespace BovineLabs.Event
             return JobHandle.CombineDependencies(container.ProducerHandle, handle);
         }
 
+        /// <summary>
+        /// Adds the specified JobHandle to the events list of consumer dependency handles.
+        /// </summary>
+        /// <param name="handle">The job handle to add.</param>
+        /// <typeparam name="T">The type of event to associate the handle to.</typeparam>
+        /// <exception cref="InvalidOperationException">Throw if unbalanced GetEventReaders and AddJobHandleForConsumer calls.</exception>
         public void AddJobHandleForConsumer<T>(JobHandle handle)
             where T : struct
         {
@@ -94,7 +154,7 @@ namespace BovineLabs.Event
             if (!this.consumerSafety)
             {
                 throw new InvalidOperationException(
-                    $"AddJobHandleForProducer must always be balanced by a GetEventWriter call");
+                    "AddJobHandleForProducer must always be balanced by a GetEventWriter call");
             }
 
             this.consumerSafety = false;
@@ -103,6 +163,12 @@ namespace BovineLabs.Event
             this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
         }
 
+        /// <summary>
+        /// Adds readers from other event systems.
+        /// </summary>
+        /// <param name="type">The type of event.</param>
+        /// <param name="externalStreams">Collection of event streams.</param>
+        /// <param name="handle">The dependency for the streams.</param>
         internal void AddExternalReaders(Type type, IReadOnlyList<(NativeStream, int)> externalStreams, JobHandle handle)
         {
             var container = this.GetOrCreateEventContainer(type);
@@ -115,8 +181,8 @@ namespace BovineLabs.Event
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.streamShare = StreamShare.GetInstance(this.EventWorld);
-
+            var world = this.GetEventWorld();
+            this.streamShare = StreamShare.GetInstance(world);
             this.streamShare.Subscribe(this);
         }
 
@@ -156,6 +222,27 @@ namespace BovineLabs.Event
             handle = JobHandle.CombineDependencies(handles);
             handles.Dispose();
             return handle;
+        }
+
+        private World GetEventWorld()
+        {
+            World world;
+            switch (this.Mode)
+            {
+                case WorldMode.Parent:
+                    world = this.World;
+                    break;
+                case WorldMode.Active:
+                    world = World.Active;
+                    break;
+                case WorldMode.Custom:
+                    world = this.CustomWorld;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            return world;
         }
 
         private EventContainer GetOrCreateEventContainer<T>()
@@ -208,16 +295,16 @@ namespace BovineLabs.Event
 
             public List<ValueTuple<NativeStream, int>> ExternalReaders => this.externalReaders;
 
-            public NativeStream.Writer CreateEventStream(int forEachCount)
+            public NativeStream.Writer CreateEventStream(int foreachCount)
             {
                 if (this.ReadMode)
                 {
                     throw new InvalidOperationException(
-                        $"CreateEventStream can not be called in read mode.");
+                        "CreateEventStream can not be called in read mode.");
                 }
 
-                var stream = new NativeStream(forEachCount, Allocator.TempJob);
-                this.streams.Add(ValueTuple.Create(stream, forEachCount));
+                var stream = new NativeStream(foreachCount, Allocator.TempJob);
+                this.streams.Add(ValueTuple.Create(stream, foreachCount));
 
                 return stream.AsWriter();
             }
@@ -231,7 +318,7 @@ namespace BovineLabs.Event
                 if (this.ReadMode)
                 {
                     throw new InvalidOperationException(
-                        $"AddJobHandleForProducer can not be called in read mode.");
+                        "AddJobHandleForProducer can not be called in read mode.");
                 }
 
                 this.ProducerHandle = JobHandle.CombineDependencies(this.ProducerHandle, handle);
@@ -246,7 +333,7 @@ namespace BovineLabs.Event
                 if (!this.ReadMode)
                 {
                     throw new InvalidOperationException(
-                        $"AddJobHandleForConsumer can only be called in read mode.");
+                        "AddJobHandleForConsumer can only be called in read mode.");
                 }
 
                 this.ConsumerHandle = JobHandle.CombineDependencies(this.ConsumerHandle, handle);
@@ -261,7 +348,7 @@ namespace BovineLabs.Event
                 if (!this.ReadMode)
                 {
                     throw new InvalidOperationException(
-                        $"SetReadMode can not be called in write mode.");
+                        "SetReadMode can not be called in write mode.");
                 }
 
                 return this.readers;
@@ -275,7 +362,7 @@ namespace BovineLabs.Event
                 if (this.ReadMode)
                 {
                     throw new InvalidOperationException(
-                        $"SetReadMode can not be called in read mode.");
+                        "SetReadMode can not be called in read mode.");
                 }
 
                 this.ReadMode = true;
@@ -298,7 +385,7 @@ namespace BovineLabs.Event
                 if (this.ReadMode)
                 {
                     throw new InvalidOperationException(
-                        $"AddReaders can not be called in read mode.");
+                        "AddReaders can not be called in read mode.");
                 }
 
                 this.externalReaders.AddRange(externalStreams);

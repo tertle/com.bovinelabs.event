@@ -10,17 +10,16 @@ namespace BovineLabs.Event
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
-    using UnityEditor;
     using UnityEngine;
     using UnityEngine.Assertions;
 
     /// <summary>
-    /// The StreamShare.
+    /// The stream sharing backend.
     /// </summary>
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity")]
     internal class StreamShare
     {
-        private static Dictionary<World, StreamShare> instance = new Dictionary<World, StreamShare>();
+        private static readonly Dictionary<World, StreamShare> Instances = new Dictionary<World, StreamShare>();
 
         private readonly ObjectPool<HashSet<EventSystem>> pool = new ObjectPool<HashSet<EventSystem>>(() => new HashSet<EventSystem>());
 
@@ -31,23 +30,36 @@ namespace BovineLabs.Event
         {
         }
 
+        /// <summary>
+        /// Get an instance of StreamShare linked to a world.
+        /// </summary>
+        /// <param name="world">The world.</param>
+        /// <returns>A shared instance of StreamShare.</returns>
         internal static StreamShare GetInstance(World world)
         {
-            if (!instance.TryGetValue(world, out var streamShare))
+            if (!Instances.TryGetValue(world, out var streamShare))
             {
-                streamShare = instance[world] = new StreamShare();
+                streamShare = Instances[world] = new StreamShare();
             }
 
             return streamShare;
         }
 
-        public void Subscribe(EventSystem eventSystem)
+        /// <summary>
+        /// Subscribe an EventSystem to get reader updates.
+        /// </summary>
+        /// <param name="eventSystem">The event system.</param>
+        internal void Subscribe(EventSystem eventSystem)
         {
             Assert.IsFalse(this.subscribers.Contains(eventSystem));
             this.subscribers.Add(eventSystem);
         }
 
-        public void Unsubscribe(EventSystem eventSystem)
+        /// <summary>
+        /// Unsubscribe an EventSystem to stop getting reader updates.
+        /// </summary>
+        /// <param name="eventSystem">The event system.</param>
+        internal void Unsubscribe(EventSystem eventSystem)
         {
             Assert.IsTrue(this.subscribers.Contains(eventSystem));
             this.subscribers.Remove(eventSystem);
@@ -61,25 +73,29 @@ namespace BovineLabs.Event
 #endif
         }
 
-        public JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<(NativeStream, int)> newStreams, JobHandle consumerHandle)
+        /// <summary>
+        /// Add a set of event streams to be shared with other systems.
+        /// </summary>
+        /// <param name="owner">The system that owns the streams.</param>
+        /// <param name="type">The type of the event.</param>
+        /// <param name="newStreams">The streams.</param>
+        /// <param name="consumerHandle">The dependency handle for these streams.</param>
+        /// <returns>The new dependency handle.</returns>
+        /// <exception cref="ArgumentException">Thrown  if this owner is not subscribed.</exception>
+        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<(NativeStream, int)> newStreams, JobHandle consumerHandle)
         {
+            if (!this.subscribers.Contains(owner))
+            {
+                throw new ArgumentException("Owner not subscribed");
+            }
+
             if (newStreams.Count == 0)
             {
                 return consumerHandle;
             }
 
-            if (this.subscribers.Count == 0)
-            {
-                throw new InvalidOperationException("No subscribers");
-            }
-
             if (this.subscribers.Count == 1)
             {
-                if (!this.subscribers.Contains(owner))
-                {
-                    throw new ArgumentException("Owner not subscribed");
-                }
-
                 // No subscribers other than ourselves, just dispose the streams
                 JobHandle handle = consumerHandle;
 
@@ -126,25 +142,33 @@ namespace BovineLabs.Event
             return consumerHandle;
         }
 
-        public JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<(NativeStream, int)> newStreams, JobHandle inputHandle)
+        /// <summary>
+        /// Return a set of streams that the system has finished reading.
+        /// </summary>
+        /// <param name="owner">The system the streams are coming from.</param>
+        /// <param name="streamsToRelease">The collection of streams to be released.</param>
+        /// <param name="inputHandle">The dependency handle.</param>
+        /// <returns>New dependency handle.</returns>
+        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<(NativeStream, int)> streamsToRelease, JobHandle inputHandle)
         {
             var handle = inputHandle;
 
-            for (var index = 0; index < newStreams.Count; index++)
+            for (var index = 0; index < streamsToRelease.Count; index++)
             {
-                var stream = newStreams[index].Item1;
+                var stream = streamsToRelease[index].Item1;
 
                 Assert.IsTrue(this.streams.ContainsKey(stream));
 
-                var set = this.streams[stream];
+                var events = this.streams[stream];
 
-                bool result = set.Remove(owner);
+                // Remove the owner handle
+                bool result = events.Remove(owner);
                 Assert.IsTrue(result);
 
                 // No one else using stream, need to dispose
-                if (set.Count == 0)
+                if (events.Count == 0)
                 {
-                    this.pool.Return(set);
+                    this.pool.Return(events);
                     this.streams.Remove(stream);
 
                     var newHandle = stream.Dispose(inputHandle);
@@ -158,7 +182,7 @@ namespace BovineLabs.Event
         [RuntimeInitializeOnLoadMethod]
         private static void Reset()
         {
-            instance = null;
+            Instances.Clear();
         }
     }
 }
