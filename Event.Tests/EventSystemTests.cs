@@ -10,6 +10,7 @@ namespace BovineLabs.Event.Tests
     using BovineLabs.Tests;
     using NUnit.Framework;
     using Unity.Collections;
+    using Unity.Entities;
     using Unity.Jobs;
 
     /// <summary>
@@ -17,13 +18,16 @@ namespace BovineLabs.Event.Tests
     /// </summary>
     public class EventSystemTests : ECSTestsFixture
     {
+        /// <summary> Testing CreateEventWriter calls must be paired with a AddJobHandleForProducer call. </summary>
         [Test]
         public void CreateEventWriterAddJobHandleForProducerMustBePaired()
         {
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
             es.CreateEventWriter<TestEvent>(1);
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
+            Assert.Throws<InvalidOperationException>(
+                () => es.CreateEventWriter<TestEvent>(1),
+                EventSystem.producerException);
 
             es.AddJobHandleForProducer<TestEvent>(default);
 
@@ -32,10 +36,59 @@ namespace BovineLabs.Event.Tests
             Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
         }
 
+        /// <summary> Testing GetEventReaders calls must be paired with a AddJobHandleForConsumer call. </summary>
+        [Test]
+        public void GetEventReadersAddJobHandleForConsumerMustBePaired()
+        {
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+            es.GetEventReaders<TestEvent>(default, out _);
+            Assert.Throws<InvalidOperationException>(
+                () => es.GetEventReaders<TestEvent>(default, out _),
+                EventSystem.consumerException);
+
+            es.AddJobHandleForConsumer<TestEvent>(default);
+
+            Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForConsumer<TestEvent>(default));
+
+            Assert.DoesNotThrow(() => es.GetEventReaders<TestEvent>(default, out _));
+        }
+
+        /// <summary> Ensures that <see cref="EventSystem.WorldMode.Custom"/> requires CustomWorld to be implemented. </summary>
+        [Test]
+        public void WorldModeCustomRequiresCustomWorldImplementation()
+        {
+            Assert.Throws<NotImplementedException>(
+                () => this.World.GetOrCreateSystem<CustomErrorTestEventSystem>(),
+                EventSystem.worldNotImplemented);
+
+            Assert.DoesNotThrow(
+                () => this.World.GetOrCreateSystem<CustomTestEventSystem>(),
+                EventSystem.worldNotImplemented);
+        }
+
+        /// <summary> Checks that <see cref="EventSystem.WorldMode"/> unknown throws an ArgumentOutOfRangeException. </summary>
+        [Test]
+        public void WorldModeUnknownThrowsArgumentOutOfRangeException()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                this.World.GetOrCreateSystem<WorldModeUnknownTestEventSystem>());
+        }
+
+        /// <summary> Checks that <see cref="EventSystem.WorldMode.Active"/> does not throw an exception. </summary>
+        /// <remarks> Need a way to actually test this better. </remarks>
+        [Test]
+        public void WorldModeActiveNoException()
+        {
+            Assert.DoesNotThrow(() =>
+                this.World.GetOrCreateSystem<WorldModeActiveTestEventSystem>());
+        }
+
+        /// <summary> Test producing and consuming. </summary>
         [Test]
         public void ProduceConsume()
         {
-            int foreachCount = 1;
+            const int foreachCount = 1;
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
             var writer = es.CreateEventWriter<TestEvent>(foreachCount);
@@ -60,6 +113,7 @@ namespace BovineLabs.Event.Tests
             reader.EndForEachIndex();
         }
 
+        /// <summary> Test multiple producers for 1 consumer. </summary>
         [Test]
         public void MultipleProducers()
         {
@@ -105,6 +159,7 @@ namespace BovineLabs.Event.Tests
             }
         }
 
+        /// <summary> Test multiple consumer for 1 producer. </summary>
         [Test]
         public void MultipleConsumers()
         {
@@ -148,20 +203,9 @@ namespace BovineLabs.Event.Tests
             }
         }
 
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        /// <summary> Test multiple producer, consumer with job simulation. </summary>
         [Test]
-        public void CanNotWriteInReadMode()
-        {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
-            es.GetEventReaders<TestEvent>(default, out _);
-
-            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
-            Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
-        }
-#endif
-
-        [Test]
-        public void ProduceConsumeSim()
+        public void ProduceConsumeJobSimulation()
         {
             const int foreachCount = 100;
 
@@ -206,6 +250,84 @@ namespace BovineLabs.Event.Tests
             finalHandle.Complete();
         }
 
+        /// <summary> Tests multiple event systems with different update rates. </summary>
+        [Test]
+        public void DifferentUpdateRate()
+        {
+            const int foreachCount = 3;
+
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es2 = this.World.GetOrCreateSystem<TestEventSystem2>();
+
+            var writer = es.CreateEventWriter<TestEvent>(foreachCount);
+
+            for (var i = 0; i < foreachCount; i++)
+            {
+                writer.BeginForEachIndex(i);
+                writer.Write(new TestEvent { Value = i + 1 });
+                writer.Write(new TestEvent { Value = i + 2 });
+                writer.EndForEachIndex();
+            }
+
+            es.AddJobHandleForProducer<TestEvent>(default);
+
+            es.Update();
+
+            var writer2 = es.CreateEventWriter<TestEvent>(foreachCount);
+
+            for (var i = 0; i < foreachCount; i++)
+            {
+                writer2.BeginForEachIndex(i);
+                writer2.Write(new TestEvent { Value = i + 1 + 1 });
+                writer2.Write(new TestEvent { Value = i + 2 + 1 });
+                writer2.EndForEachIndex();
+            }
+
+            es.AddJobHandleForProducer<TestEvent>(default);
+
+            es.Update();
+
+            var handle = es2.GetEventReaders<TestEvent>(default, out var readers);
+
+            Assert.AreEqual(2, readers.Count);
+
+            handle.Complete();
+
+            for (var j = 0; j < readers.Count; j++)
+            {
+                var (reader, count) = readers[j];
+
+                Assert.AreEqual(foreachCount, count);
+                Assert.AreEqual(foreachCount, reader.ForEachCount);
+
+                for (var i = 0; i < count; i++)
+                {
+                    Assert.AreEqual(2, reader.BeginForEachIndex(i));
+                    Assert.AreEqual(i + 1 + j, reader.Read<TestEvent>().Value);
+                    Assert.AreEqual(i + 2 + j, reader.Read<TestEvent>().Value);
+                    reader.EndForEachIndex();
+                }
+            }
+
+            es2.Update(); // releases streams
+        }
+
+        /// <summary> Ensures writing in read mode throws exception. </summary>
+        [Test]
+        public void WriteInReadModeThrowsInvalidOperationException()
+        {
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            es.GetEventReaders<TestEvent>(default, out _);
+
+            Assert.Throws<InvalidOperationException>(
+                () => es.CreateEventWriter<TestEvent>(1),
+                "CreateEventStream can not be called in read mode.");
+
+            Assert.Throws<InvalidOperationException>(
+                () => es.AddJobHandleForProducer<TestEvent>(default),
+                "AddJobHandleForProducer can not be called in read mode.");
+        }
+
         private struct ProducerJob : IJobParallelFor
         {
             public NativeStream.Writer Events;
@@ -248,6 +370,32 @@ namespace BovineLabs.Event.Tests
 
         private class TestEventSystem : EventSystem
         {
+        }
+
+        private class TestEventSystem2 : EventSystem
+        {
+        }
+
+        private class CustomErrorTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => WorldMode.Custom;
+        }
+
+        private class CustomTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => WorldMode.Custom;
+
+            protected override World CustomWorld => World.Active;
+        }
+
+        private class WorldModeUnknownTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => (WorldMode)123;
+        }
+
+        private class WorldModeActiveTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => WorldMode.Active;
         }
     }
 }
