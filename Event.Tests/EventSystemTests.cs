@@ -25,9 +25,7 @@ namespace BovineLabs.Event.Tests
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
             es.CreateEventWriter<TestEvent>(1);
-            Assert.Throws<InvalidOperationException>(
-                () => es.CreateEventWriter<TestEvent>(1),
-                EventSystem.producerException);
+            Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>(1));
 
             es.AddJobHandleForProducer<TestEvent>(default);
 
@@ -43,9 +41,7 @@ namespace BovineLabs.Event.Tests
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
             es.GetEventReaders<TestEvent>(default, out _);
-            Assert.Throws<InvalidOperationException>(
-                () => es.GetEventReaders<TestEvent>(default, out _),
-                EventSystem.consumerException);
+            Assert.Throws<InvalidOperationException>(() => es.GetEventReaders<TestEvent>(default, out _));
 
             es.AddJobHandleForConsumer<TestEvent>(default);
 
@@ -58,13 +54,8 @@ namespace BovineLabs.Event.Tests
         [Test]
         public void WorldModeCustomRequiresCustomWorldImplementation()
         {
-            Assert.Throws<NotImplementedException>(
-                () => this.World.GetOrCreateSystem<CustomErrorTestEventSystem>(),
-                EventSystem.worldNotImplemented);
-
-            Assert.DoesNotThrow(
-                () => this.World.GetOrCreateSystem<CustomTestEventSystem>(),
-                EventSystem.worldNotImplemented);
+            Assert.Throws<NotImplementedException>(() => this.World.GetOrCreateSystem<CustomErrorTestEventSystem>());
+            Assert.DoesNotThrow(() => this.World.GetOrCreateSystem<CustomTestEventSystem>());
         }
 
         /// <summary> Checks that <see cref="EventSystem.WorldMode"/> unknown throws an ArgumentOutOfRangeException. </summary>
@@ -320,12 +311,10 @@ namespace BovineLabs.Event.Tests
             es.GetEventReaders<TestEvent>(default, out _);
 
             Assert.Throws<InvalidOperationException>(
-                () => es.CreateEventWriter<TestEvent>(1),
-                "CreateEventStream can not be called in read mode.");
+                () => es.CreateEventWriter<TestEvent>(1));
 
             Assert.Throws<InvalidOperationException>(
-                () => es.AddJobHandleForProducer<TestEvent>(default),
-                "AddJobHandleForProducer can not be called in read mode.");
+                () => es.AddJobHandleForProducer<TestEvent>(default));
         }
 
         private struct ProducerJob : IJobParallelFor

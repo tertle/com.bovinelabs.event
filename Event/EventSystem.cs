@@ -18,11 +18,11 @@ namespace BovineLabs.Event
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity.")]
     public abstract class EventSystem : JobComponentSystem
     {
-        internal const string producerException = "CreateEventWriter must always be balanced by a AddJobHandleForProducer call";
-        internal const string consumerException = "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
-        internal const string readModeRequired = "Can only be called in read mode.";
-        internal const string writeModeRequired = "Can not be called in read mode.";
-        internal const string worldNotImplemented = "WorldMode.Custom requires CustomWorld to be implemented.";
+        private const string producerException = "CreateEventWriter must always be balanced by a AddJobHandleForProducer call";
+        private const string consumerException = "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
+        private const string readModeRequired = "Can only be called in read mode.";
+        private const string writeModeRequired = "Can not be called in read mode.";
+        private const string worldNotImplemented = "WorldMode.Custom requires CustomWorld to be implemented.";
 
         // separate to avoid allocations when iterating
         private readonly List<EventContainer> containers = new List<EventContainer>();
