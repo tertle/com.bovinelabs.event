@@ -21,10 +21,16 @@ namespace BovineLabs.Event
     {
         private static readonly Dictionary<World, StreamShare> Instances = new Dictionary<World, StreamShare>();
 
-        private readonly ObjectPool<HashSet<EventSystem>> pool = new ObjectPool<HashSet<EventSystem>>(() => new HashSet<EventSystem>());
+        private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
         private readonly List<EventSystem> subscribers = new List<EventSystem>();
-        private readonly Dictionary<NativeStream, HashSet<EventSystem>> streams = new Dictionary<NativeStream, HashSet<EventSystem>>();
+        private readonly Dictionary<NativeStream, StreamHandles> streams = new Dictionary<NativeStream, StreamHandles>();
+
+        private class StreamHandles
+        {
+            public HashSet<EventSystem> Systems { get; } = new HashSet<EventSystem>();
+            public JobHandle Handle { get; set; }
+        }
 
         private StreamShare()
         {
@@ -68,7 +74,7 @@ namespace BovineLabs.Event
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             foreach (var streamPair in this.streams)
             {
-                Assert.IsFalse(streamPair.Value.Remove(eventSystem));
+                Assert.IsFalse(streamPair.Value.Systems.Remove(eventSystem));
             }
 #endif
         }
@@ -111,9 +117,10 @@ namespace BovineLabs.Event
             for (var index = 0; index < newStreams.Count; index++)
             {
                 var stream = newStreams[index];
-                var systems = this.pool.Get();
+                var handles = this.pool.Get();
+                handles.Handle = consumerHandle;
 
-                this.streams.Add(stream.Item1, systems);
+                this.streams.Add(stream.Item1, handles);
 
                 for (var i = 0; i < this.subscribers.Count; i++)
                 {
@@ -123,7 +130,7 @@ namespace BovineLabs.Event
                         continue;
                     }
 
-                    systems.Add(subscriber);
+                    handles.Systems.Add(subscriber);
                 }
             }
 
@@ -151,7 +158,7 @@ namespace BovineLabs.Event
         /// <returns>New dependency handle.</returns>
         internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<(NativeStream, int)> streamsToRelease, JobHandle inputHandle)
         {
-            var handle = inputHandle;
+            JobHandle outputHandle = inputHandle;
 
             for (var index = 0; index < streamsToRelease.Count; index++)
             {
@@ -159,24 +166,31 @@ namespace BovineLabs.Event
 
                 Assert.IsTrue(this.streams.ContainsKey(stream));
 
-                var events = this.streams[stream];
+                var handles = this.streams[stream];
 
                 // Remove the owner handle
-                bool result = events.Remove(owner);
+                bool result = handles.Systems.Remove(owner);
                 Assert.IsTrue(result);
 
+                var handle = JobHandle.CombineDependencies(handles.Handle, inputHandle);
+
                 // No one else using stream, need to dispose
-                if (events.Count == 0)
+                if (handles.Systems.Count == 0)
                 {
-                    this.pool.Return(events);
+                    this.pool.Return(handles);
                     this.streams.Remove(stream);
 
-                    var newHandle = stream.Dispose(inputHandle);
-                    handle = JobHandle.CombineDependencies(handle, newHandle);
+                    handle = stream.Dispose(handle);
                 }
+                else
+                {
+                    handles.Handle = handle;
+                }
+
+                outputHandle = JobHandle.CombineDependencies(outputHandle, handle);
             }
 
-            return handle;
+            return outputHandle;
         }
 
         [RuntimeInitializeOnLoadMethod]
