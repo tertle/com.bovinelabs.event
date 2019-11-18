@@ -182,6 +182,22 @@ namespace BovineLabs.Event
         /// <inheritdoc />
         protected override void OnDestroy()
         {
+            var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
+
+            for (var i = 0; i < this.containers.Count; i++)
+            {
+                var container = this.containers[i];
+
+                // Need both handles because might have no writers or readers in this specific systems
+                handles[i] = JobHandle.CombineDependencies(container.ConsumerHandle, container.ProducerHandle);
+                handles[i] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+
+                container.Reset();
+            }
+
+            JobHandle.CombineDependencies(handles).Complete();
+            handles.Dispose();
+
             this.streamShare.Unsubscribe(this);
 
             for (var index = 0; index < this.containers.Count; index++)
@@ -197,17 +213,15 @@ namespace BovineLabs.Event
         protected override JobHandle OnUpdate(JobHandle handle)
         {
             var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
-            var index = 0;
 
             for (var i = 0; i < this.containers.Count; i++)
             {
                 var container = this.containers[i];
 
                 // Need both handles because might have no writers or readers in this specific systems
-                handles[index] = JobHandle.CombineDependencies(handle, container.ConsumerHandle, container.ProducerHandle);
-                handles[index] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[index]);
-                handles[index] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[index]);
-                index++;
+                handles[i] = JobHandle.CombineDependencies(handle, container.ConsumerHandle, container.ProducerHandle);
+                handles[i] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+                handles[i] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[i]);
 
                 container.Reset();
             }
