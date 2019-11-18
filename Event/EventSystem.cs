@@ -309,7 +309,7 @@ namespace BovineLabs.Event
                     throw new InvalidOperationException(writeModeRequired);
                 }
 
-                var stream = new NativeStream(foreachCount, Allocator.TempJob);
+                var stream = new NativeStream(foreachCount, Allocator.Persistent);
                 this.streams.Add(ValueTuple.Create(stream, foreachCount));
 
                 return stream.AsWriter();
