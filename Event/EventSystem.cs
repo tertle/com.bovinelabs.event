@@ -134,7 +134,7 @@ namespace BovineLabs.Event
             container.AddReaders(externalStreams);
 
             // updates producer handle because this is what consumers depend on
-            container.AddJobHandleForProducerInternal(handle);
+            container.AddJobHandleForProducerUnsafe(handle);
         }
 
         /// <inheritdoc/>

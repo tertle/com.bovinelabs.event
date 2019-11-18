@@ -17,7 +17,7 @@ public class ParallelForProducerSystem : JobComponentSystem
 
     protected override JobHandle OnUpdate(JobHandle handle)
     {
-        const int count = 1000;
+        const int count = 100;
 
         var writer = this.eventSystem.CreateEventWriter<TestEventEmpty>(count);
 

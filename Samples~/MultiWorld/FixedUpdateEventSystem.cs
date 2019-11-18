@@ -1,4 +1,4 @@
-﻿// <copyright file="ActiveWorldEventSystem.cs" company="BovineLabs">
+﻿// <copyright file="FixedUpdateEventSystem.cs" company="BovineLabs">
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -8,7 +8,7 @@ namespace BovineLabs.Samples.MultiWorld
     using Unity.Entities;
 
     [DisableAutoCreation]
-    public class ActiveWorldEventSystem : EventSystem
+    public class FixedUpdateEventSystem : EventSystem
     {
         protected override WorldMode Mode => WorldMode.Active;
     }

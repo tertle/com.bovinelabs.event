@@ -87,10 +87,10 @@ namespace BovineLabs.Event
 
             this.producerSafety = false;
 
-            AddJobHandleForProducerInternal(handle);
+            this.AddJobHandleForProducerUnsafe(handle);
         }
 
-        public void AddJobHandleForProducerInternal(JobHandle handle)
+        public void AddJobHandleForProducerUnsafe(JobHandle handle)
         {
             if (this.ReadMode)
             {

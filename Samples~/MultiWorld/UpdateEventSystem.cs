@@ -1,4 +1,4 @@
-// <copyright file="CustomWorldEventSystem.cs" company="BovineLabs">
+// <copyright file="UpdateEventSystem.cs" company="BovineLabs">
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -8,7 +8,7 @@ namespace BovineLabs.Samples.MultiWorld
     using Unity.Entities;
 
     [DisableAutoCreation]
-    public class CustomWorldEventSystem : EventSystem
+    public class UpdateEventSystem : EventSystem
     {
         private static World customWorld;
 

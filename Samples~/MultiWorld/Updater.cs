@@ -27,10 +27,10 @@ namespace BovineLabs.Samples.MultiWorld
 
         private void FixedUpdate()
         {
-            /*foreach (var system in this.fixedUpdateWorld.Systems)
+            foreach (var system in this.fixedUpdateWorld.Systems)
             {
                 system.Update();
-            }*/
+            }
         }
     }
 }

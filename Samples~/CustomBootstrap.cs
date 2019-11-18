@@ -1,7 +1,8 @@
-namespace BovineLabs.Samples.MultiWorld
+namespace BovineLabs.Samples
 {
     using System;
     using System.Collections.Generic;
+    using BovineLabs.Samples.MultiWorld;
     using Unity.Entities;
     using UnityEngine;
 
@@ -13,15 +14,15 @@ namespace BovineLabs.Samples.MultiWorld
         /// <inheritdoc/>
         public List<Type> Initialize(List<Type> systems)
         {
-            CustomWorldEventSystem.SetWorld(World.Active);
+            UpdateEventSystem.SetWorld(World.Active);
 
             var world = new World("Custom World");
-            world.GetOrCreateSystem<EventCounterSystem<CustomWorldEventSystem>>();
-            world.GetOrCreateSystem<CustomWorldEventSystem>();
+            world.GetOrCreateSystem<UpdateEventCounterSystem>();
+            world.GetOrCreateSystem<UpdateEventSystem>();
 
             var fixedWorld = new World("FixedUpdate World");
-            fixedWorld.GetOrCreateSystem<EventCounterSystem<ActiveWorldEventSystem>>();
-            fixedWorld.GetOrCreateSystem<ActiveWorldEventSystem>();
+            fixedWorld.GetOrCreateSystem<FixedEventCounterSystem>();
+            fixedWorld.GetOrCreateSystem<FixedUpdateEventSystem>();
 
             var updater = new GameObject("Updater").AddComponent<Updater>();
 
