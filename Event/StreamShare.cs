@@ -7,11 +7,13 @@ namespace BovineLabs.Event
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Reflection;
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
     using UnityEngine;
     using UnityEngine.Assertions;
+    using Object = System.Object;
 
     /// <summary>
     /// The stream sharing backend.
@@ -19,7 +21,7 @@ namespace BovineLabs.Event
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity")]
     internal class StreamShare
     {
-        private static readonly Dictionary<World, StreamShare> Instances = new Dictionary<World, StreamShare>();
+        private static readonly Dictionary<World, StreamShare> Instances = new Dictionary<World, StreamShare>(new WorldCompare());
 
         private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
@@ -88,7 +90,7 @@ namespace BovineLabs.Event
         /// <param name="consumerHandle">The dependency handle for these streams.</param>
         /// <returns>The new dependency handle.</returns>
         /// <exception cref="ArgumentException">Thrown  if this owner is not subscribed.</exception>
-        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<Tuple2<NativeStream, int>> newStreams, JobHandle consumerHandle)
+        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<Tuple<NativeStream, int>> newStreams, JobHandle consumerHandle)
         {
             if (!this.subscribers.Contains(owner))
             {
@@ -156,7 +158,7 @@ namespace BovineLabs.Event
         /// <param name="streamsToRelease">The collection of streams to be released.</param>
         /// <param name="inputHandle">The dependency handle.</param>
         /// <returns>New dependency handle.</returns>
-        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<Tuple2<NativeStream, int>> streamsToRelease, JobHandle inputHandle)
+        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<Tuple<NativeStream, int>> streamsToRelease, JobHandle inputHandle)
         {
             JobHandle outputHandle = inputHandle;
 
@@ -197,6 +199,36 @@ namespace BovineLabs.Event
         private static void Reset()
         {
             Instances.Clear();
+        }
+
+        private class WorldCompare : IEqualityComparer<World>
+        {
+            public bool Equals(World x, World y)
+            {
+                return object.Equals(x, y);
+            }
+
+            public int GetHashCode(World world)
+            {
+                return (int)world.SequenceNumber;
+            }
+        }
+
+        private class NativeStreamCompare : IEqualityComparer<NativeStream>
+        {
+            public bool Equals(NativeStream x, NativeStream y)
+            {
+                var xi = (NativeStreamImposter)x;
+                var yi = (NativeStreamImposter)y;
+
+                return xi.Equals(yi);
+            }
+
+            public int GetHashCode(NativeStream stream)
+            {
+                var imposter = (NativeStreamImposter)stream;
+                return imposter.GetHashCode();
+            }
         }
     }
 }

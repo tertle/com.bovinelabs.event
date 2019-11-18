@@ -182,7 +182,7 @@ namespace BovineLabs.Event.Tests
             es.AddJobHandleForConsumer<TestEvent>(handle2);
 
             // Just iterates both readers and checks them, as they should be identical.
-            foreach (var readers in new List<IReadOnlyList<Tuple2<NativeStream.Reader, int>>> { reader1, reader2 }.SelectMany(
+            foreach (var readers in new List<IReadOnlyList<Event.Tuple<NativeStream.Reader, int>>> { reader1, reader2 }.SelectMany(
                 readers => readers))
             {
                 var reader = readers.Item1;
