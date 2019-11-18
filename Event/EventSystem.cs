@@ -10,6 +10,7 @@ namespace BovineLabs.Event
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
+    using UnityEngine.Profiling;
 
     /// <summary>
     /// The base Event System class. Implement to add your own event system to a world or group.
@@ -115,7 +116,7 @@ namespace BovineLabs.Event
         /// <typeparam name="T">The type of event.</typeparam>
         /// <returns>The updated dependency handle.</returns>
         /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
-        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<ValueTuple<NativeStream.Reader, int>> readers)
+        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<Tuple2<NativeStream.Reader, int>> readers)
             where T : struct
         {
             if (this.consumerSafety)
@@ -162,7 +163,7 @@ namespace BovineLabs.Event
         /// <param name="type">The type of event.</param>
         /// <param name="externalStreams">Collection of event streams.</param>
         /// <param name="handle">The dependency for the streams.</param>
-        internal void AddExternalReaders(Type type, IReadOnlyList<(NativeStream, int)> externalStreams, JobHandle handle)
+        internal void AddExternalReaders(Type type, IReadOnlyList<Tuple2<NativeStream, int>> externalStreams, JobHandle handle)
         {
             var container = this.GetOrCreateEventContainer(type);
             container.AddReaders(externalStreams);
@@ -192,6 +193,7 @@ namespace BovineLabs.Event
                 handles[i] = JobHandle.CombineDependencies(container.ConsumerHandle, container.ProducerHandle);
                 handles[i] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[i]);
 
+                container.Dispose();
                 container.Reset();
             }
 
@@ -199,12 +201,6 @@ namespace BovineLabs.Event
             handles.Dispose();
 
             this.streamShare.Unsubscribe(this);
-
-            for (var index = 0; index < this.containers.Count; index++)
-            {
-                this.containers[index].Dispose();
-            }
-
             this.containers.Clear();
             this.types.Clear();
         }
@@ -220,8 +216,13 @@ namespace BovineLabs.Event
 
                 // Need both handles because might have no writers or readers in this specific systems
                 handles[i] = JobHandle.CombineDependencies(handle, container.ConsumerHandle, container.ProducerHandle);
+
+                Profiler.BeginSample("ReleaseStreams");
                 handles[i] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+                Profiler.EndSample();
+                Profiler.BeginSample("AddStreams");
                 handles[i] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[i]);
+                Profiler.EndSample();
 
                 container.Reset();
             }
@@ -271,10 +272,10 @@ namespace BovineLabs.Event
 
         private class EventContainer
         {
-            private readonly List<ValueTuple<NativeStream, int>> streams = new List<ValueTuple<NativeStream, int>>();
-            private readonly List<ValueTuple<NativeStream, int>> externalReaders = new List<ValueTuple<NativeStream, int>>();
+            private readonly List<Tuple2<NativeStream, int>> streams = new List<Tuple2<NativeStream, int>>();
+            private readonly List<Tuple2<NativeStream, int>> externalReaders = new List<Tuple2<NativeStream, int>>();
 
-            private readonly List<ValueTuple<NativeStream.Reader, int>> readers = new List<ValueTuple<NativeStream.Reader, int>>();
+            private readonly List<Tuple2<NativeStream.Reader, int>> readers = new List<Tuple2<NativeStream.Reader, int>>();
 
             public EventContainer(Type type)
             {
@@ -298,9 +299,9 @@ namespace BovineLabs.Event
 
             public Type Type { get; }
 
-            public List<ValueTuple<NativeStream, int>> Streams => this.streams;
+            public List<Tuple2<NativeStream, int>> Streams => this.streams;
 
-            public List<ValueTuple<NativeStream, int>> ExternalReaders => this.externalReaders;
+            public List<Tuple2<NativeStream, int>> ExternalReaders => this.externalReaders;
 
             public NativeStream.Writer CreateEventStream(int foreachCount)
             {
@@ -310,7 +311,7 @@ namespace BovineLabs.Event
                 }
 
                 var stream = new NativeStream(foreachCount, Allocator.Persistent);
-                this.streams.Add(ValueTuple.Create(stream, foreachCount));
+                this.streams.Add(new Tuple2<NativeStream, int>(stream, foreachCount));
 
                 return stream.AsWriter();
             }
@@ -347,7 +348,7 @@ namespace BovineLabs.Event
             /// Gets the collection of readers.
             /// </summary>
             /// <returns>Returns a tuple where Item1 is the reader, Item2 is the foreachCount.</returns>
-            public IReadOnlyList<ValueTuple<NativeStream.Reader, int>> GetReaders()
+            public IReadOnlyList<Tuple2<NativeStream.Reader, int>> GetReaders()
             {
                 if (!this.ReadMode)
                 {
@@ -372,17 +373,17 @@ namespace BovineLabs.Event
                 for (var index = 0; index < this.streams.Count; index++)
                 {
                     var stream = this.streams[index];
-                    this.readers.Add(ValueTuple.Create(stream.Item1.AsReader(), stream.Item2));
+                    this.readers.Add(new Tuple2<NativeStream.Reader, int>(stream.Item1.AsReader(), stream.Item2));
                 }
 
                 for (var index = 0; index < this.externalReaders.Count; index++)
                 {
                     var stream = this.externalReaders[index];
-                    this.readers.Add(ValueTuple.Create(stream.Item1.AsReader(), stream.Item2));
+                    this.readers.Add(new Tuple2<NativeStream.Reader, int>(stream.Item1.AsReader(), stream.Item2));
                 }
             }
 
-            public void AddReaders(IReadOnlyList<(NativeStream, int)> externalStreams)
+            public void AddReaders(IEnumerable<Tuple2<NativeStream, int>> externalStreams)
             {
                 if (this.ReadMode)
                 {

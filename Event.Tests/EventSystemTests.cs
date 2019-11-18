@@ -97,7 +97,9 @@ namespace BovineLabs.Event.Tests
 
             handle.Complete();
 
-            var (reader, count) = readers[0];
+            var r = readers[0];
+            var reader = r.Item1;
+            var count = r.Item2;
 
             Assert.AreEqual(foreachCount, count);
             Assert.AreEqual(2, reader.BeginForEachIndex(0));
@@ -137,7 +139,9 @@ namespace BovineLabs.Event.Tests
 
             for (var j = 0; j < readers.Count; j++)
             {
-                var (reader, count) = readers[j];
+                var r = readers[j];
+                var reader = r.Item1;
+                var count = r.Item2;
 
                 Assert.AreEqual(counts[j], count);
                 Assert.AreEqual(counts[j], reader.ForEachCount);
@@ -178,10 +182,11 @@ namespace BovineLabs.Event.Tests
             es.AddJobHandleForConsumer<TestEvent>(handle2);
 
             // Just iterates both readers and checks them, as they should be identical.
-            foreach (var readers in new List<IReadOnlyList<(NativeStream.Reader, int)>> { reader1, reader2 }.SelectMany(
+            foreach (var readers in new List<IReadOnlyList<Tuple2<NativeStream.Reader, int>>> { reader1, reader2 }.SelectMany(
                 readers => readers))
             {
-                var (reader, count) = readers;
+                var reader = readers.Item1;
+                var count = readers.Item2;
 
                 Assert.AreEqual(foreachCount, count);
                 Assert.AreEqual(foreachCount, reader.ForEachCount);
@@ -226,8 +231,11 @@ namespace BovineLabs.Event.Tests
             {
                 var handle = es.GetEventReaders<TestEvent>(default, out var readers);
 
-                foreach (var (reader, count) in readers)
+                foreach (var r in readers)
                 {
+                    var reader = r.Item1;
+                    var count = r.Item2;
+
                     handle = new ConsumerJob
                         {
                             Reader = reader,
@@ -288,7 +296,9 @@ namespace BovineLabs.Event.Tests
 
             for (var j = 0; j < readers.Count; j++)
             {
-                var (reader, count) = readers[j];
+                var r = readers[j];
+                var reader = r.Item1;
+                var count = r.Item2;
 
                 Assert.AreEqual(foreachCount, count);
                 Assert.AreEqual(foreachCount, reader.ForEachCount);

@@ -88,7 +88,7 @@ namespace BovineLabs.Event
         /// <param name="consumerHandle">The dependency handle for these streams.</param>
         /// <returns>The new dependency handle.</returns>
         /// <exception cref="ArgumentException">Thrown  if this owner is not subscribed.</exception>
-        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<(NativeStream, int)> newStreams, JobHandle consumerHandle)
+        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<Tuple2<NativeStream, int>> newStreams, JobHandle consumerHandle)
         {
             if (!this.subscribers.Contains(owner))
             {
@@ -156,7 +156,7 @@ namespace BovineLabs.Event
         /// <param name="streamsToRelease">The collection of streams to be released.</param>
         /// <param name="inputHandle">The dependency handle.</param>
         /// <returns>New dependency handle.</returns>
-        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<(NativeStream, int)> streamsToRelease, JobHandle inputHandle)
+        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<Tuple2<NativeStream, int>> streamsToRelease, JobHandle inputHandle)
         {
             JobHandle outputHandle = inputHandle;
 
