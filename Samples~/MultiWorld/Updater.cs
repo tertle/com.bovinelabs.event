@@ -1,5 +1,6 @@
 namespace BovineLabs.Samples.MultiWorld
 {
+    using System.Collections.Generic;
     using Unity.Entities;
     using UnityEngine;
 
@@ -8,18 +9,19 @@ namespace BovineLabs.Samples.MultiWorld
     /// </summary>
     public class Updater : MonoBehaviour
     {
-        private World updateWorld;
-        private World fixedUpdateWorld;
+        private List<ComponentSystemBase> updateSystems;
+        private List<ComponentSystemBase> fixedSystems;
 
         public void SetWorlds(World updateWorld, World fixedUpdateWorld)
         {
-            this.updateWorld = updateWorld;
-            this.fixedUpdateWorld = fixedUpdateWorld;
+            this.updateSystems = new List<ComponentSystemBase>(updateWorld.Systems);
+            this.fixedSystems = new List<ComponentSystemBase>(fixedUpdateWorld.Systems);
         }
 
         private void Update()
         {
-            foreach (var system in this.updateWorld.Systems)
+            // Garbage but can't do anything about it and just for the demo
+            foreach (var system in this.updateSystems)
             {
                 system.Update();
             }
@@ -27,7 +29,8 @@ namespace BovineLabs.Samples.MultiWorld
 
         private void FixedUpdate()
         {
-            foreach (var system in this.fixedUpdateWorld.Systems)
+            // Garbage but can't do anything about it and just for the demo
+            foreach (var system in this.fixedSystems)
             {
                 system.Update();
             }

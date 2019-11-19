@@ -15,7 +15,13 @@ namespace BovineLabs.Samples
         [SerializeField]
         private Text updateEvents = default;
 
-        public float updateInterval = 0.5F;
+        [SerializeField]
+        private Text fixedFramesPerSecondText = default;
+
+        [SerializeField]
+        private Text framesPerSecondText = default;
+
+        [SerializeField] private float updateInterval = 0.5F;
 
         private float timeLeft;
 
@@ -58,6 +64,9 @@ namespace BovineLabs.Samples
 
             var fixedEventsPerFrame = this.fixedFrames != 0 ? this.fixedCount / this.fixedFrames : 0;
             this.fixedUpdateEvents.text = fixedEventsPerFrame.ToString();
+
+            this.fixedFramesPerSecondText.text = $"{this.fixedFrames / this.updateInterval}";
+            this.framesPerSecondText.text = $"{this.updateFrames / this.updateInterval}";
 
             this.timeLeft = this.updateInterval;
             this.fixedCount = 0;

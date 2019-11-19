@@ -23,10 +23,9 @@ namespace BovineLabs.Event
     {
         private static readonly Dictionary<World, StreamShare> Instances = new Dictionary<World, StreamShare>(new WorldCompare());
 
-        private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
-
         private readonly List<EventSystem> subscribers = new List<EventSystem>();
-        private readonly Dictionary<NativeStream, StreamHandles> streams = new Dictionary<NativeStream, StreamHandles>();
+        private readonly Dictionary<NativeStream, StreamHandles> streams = new Dictionary<NativeStream, StreamHandles>(new NativeStreamCompare());
+        private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
         private class StreamHandles
         {
@@ -201,6 +200,9 @@ namespace BovineLabs.Event
             Instances.Clear();
         }
 
+        /// <summary>
+        /// Allocation free World comparer.
+        /// </summary>
         private class WorldCompare : IEqualityComparer<World>
         {
             public bool Equals(World x, World y)
@@ -214,6 +216,9 @@ namespace BovineLabs.Event
             }
         }
 
+        /// <summary>
+        /// Allocation free NativeStream comparer.
+        /// </summary>
         private class NativeStreamCompare : IEqualityComparer<NativeStream>
         {
             public bool Equals(NativeStream x, NativeStream y)

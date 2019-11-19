@@ -1,3 +1,7 @@
+// <copyright file="CustomBootstrap.cs" company="BovineLabs">
+// Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Samples
 {
     using System;
