@@ -1,3 +1,7 @@
+// <copyright file="UIOutputSystem.cs" company="BovineLabs">
+// Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Samples
 {
     using BovineLabs.Event;
@@ -15,10 +19,16 @@ namespace BovineLabs.Samples
         private UIOutput uiOutput;
         private PresentationEventSystem eventSystem;
 
+        /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.uiOutput = Object.FindObjectOfType<UIOutput>();
             this.eventSystem = this.World.GetOrCreateSystem<PresentationEventSystem>();
+            this.uiOutput = Object.FindObjectOfType<UIOutput>();
+
+            if (this.uiOutput == null)
+            {
+                this.Disable();
+            }
         }
 
         /// <inheritdoc/>
@@ -28,8 +38,20 @@ namespace BovineLabs.Samples
             this.UpdateFixedEvents();
         }
 
+        private void Disable()
+        {
+            Debug.Log("UIOutput not found in scene. Load Scenes/SampleScene");
+            this.Enabled = false;
+        }
+
         private void UpdateFixedEvents()
         {
+            if (this.uiOutput == null)
+            {
+                this.Disable();
+                return;
+            }
+
             var handle = this.eventSystem.GetEventReaders<FixedUpdateCountEvent>(default, out var readers);
             this.eventSystem.AddJobHandleForConsumer<FixedUpdateCountEvent>(handle); // necessary evil
             handle.Complete();
