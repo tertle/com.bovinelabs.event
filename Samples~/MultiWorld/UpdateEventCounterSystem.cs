@@ -63,7 +63,7 @@ namespace BovineLabs.Samples
                 this.EventCount.Write(new UpdateCountEvent { Value = count });
                 this.EventCount.EndForEachIndex();
 
-                this.Stream.EndForEachIndex();
+                // this.Stream.EndForEachIndex();
             }
         }
     }
