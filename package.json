@@ -20,5 +20,6 @@
       "path": "Samples~"
     }
   ],
-  "type": "library"
+  "type": "library",
+  "unityRelease": "0b10"
 }
