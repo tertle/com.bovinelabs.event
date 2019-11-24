@@ -19,13 +19,13 @@ namespace BovineLabs.Event
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity.")]
     public abstract class EventSystem : JobComponentSystem
     {
-        private const string worldNotImplemented = "WorldMode.Custom requires CustomWorld to be implemented.";
+        private const string worldNotImplemented = "WorldMode.Custom requires Custom to be implemented.";
 
         // separate to avoid allocations when iterating
         private readonly List<EventContainer> containers = new List<EventContainer>();
         private readonly Dictionary<Type, int> types = new Dictionary<Type, int>();
 
-        private StreamShare streamShare;
+        private StreamBus streamBus;
 
         /// <summary>
         /// The world to use that the event system is linked to.
@@ -35,15 +35,15 @@ namespace BovineLabs.Event
             /// <summary>
             /// Uses the systems world, this.World
             /// </summary>
-            Parent,
+            WorldName,
 
             /// <summary>
-            /// Uses the active world, World.Active
+            /// Uses the name "Default World"
             /// </summary>
-            Active,
+            DefaultWorldName,
 
             /// <summary>
-            /// Uses a custom world, this.CustomWorld
+            /// Uses a custom world, this.Custom
             /// </summary>
             Custom,
         }
@@ -52,13 +52,13 @@ namespace BovineLabs.Event
         /// Gets the . Override to change the sharing state of the
         /// </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
-        protected virtual WorldMode Mode => WorldMode.Parent;
+        protected virtual WorldMode Mode => WorldMode.WorldName;
 
         /// <summary>
         /// Gets the world when using <see cref="WorldMode.Custom"/>.
         /// </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
-        protected virtual World CustomWorld => throw new NotImplementedException(worldNotImplemented);
+        protected virtual string CustomKey => throw new NotImplementedException("CustomKey must be implemented if Mode equals WorldMode.Custom");
 
         /// <summary>
         /// Create a new NativeStream for writing events to.
@@ -140,9 +140,9 @@ namespace BovineLabs.Event
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            var world = this.GetEventWorld();
-            this.streamShare = StreamShare.GetInstance(world);
-            this.streamShare.Subscribe(this);
+            var world = this.GetStreamKey();
+            this.streamBus = StreamBus.GetInstance(world);
+            this.streamBus.Subscribe(this);
         }
 
         /// <inheritdoc />
@@ -156,7 +156,7 @@ namespace BovineLabs.Event
 
                 // Need both handles because might have no writers or readers in this specific systems
                 handles[i] = JobHandle.CombineDependencies(container.ConsumerHandle, container.ProducerHandle);
-                handles[i] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+                handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
 
                 container.Dispose();
                 container.Reset();
@@ -165,7 +165,7 @@ namespace BovineLabs.Event
             JobHandle.CombineDependencies(handles).Complete();
             handles.Dispose();
 
-            this.streamShare.Unsubscribe(this);
+            this.streamBus.Unsubscribe(this);
             this.containers.Clear();
             this.types.Clear();
         }
@@ -183,10 +183,10 @@ namespace BovineLabs.Event
                 handles[i] = JobHandle.CombineDependencies(handle, container.ConsumerHandle, container.ProducerHandle);
 
                 Profiler.BeginSample("ReleaseStreams");
-                handles[i] = this.streamShare.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+                handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
                 Profiler.EndSample();
                 Profiler.BeginSample("AddStreams");
-                handles[i] = this.streamShare.AddStreams(this, container.Type, container.Streams, handles[i]);
+                handles[i] = this.streamBus.AddStreams(this, container.Type, container.Streams, handles[i]);
                 Profiler.EndSample();
 
                 container.Reset();
@@ -197,25 +197,20 @@ namespace BovineLabs.Event
             return handle;
         }
 
-        private World GetEventWorld()
+        private string GetStreamKey()
         {
-            World world;
             switch (this.Mode)
             {
-                case WorldMode.Parent:
-                    world = this.World;
-                    break;
-                case WorldMode.Active:
-                    world = World.Active;
-                    break;
+                case WorldMode.WorldName:
+                    return this.World.Name;
+                case WorldMode.DefaultWorldName:
+                    return "Default World";
                 case WorldMode.Custom:
-                    world = this.CustomWorld;
-                    break;
+                    return this.CustomKey;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
-            return world;
         }
 
         private EventContainer GetOrCreateEventContainer<T>()

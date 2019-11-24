@@ -1,4 +1,4 @@
-// <copyright file="StreamShare.cs" company="BovineLabs">
+// <copyright file="StreamBus.cs" company="BovineLabs">
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -7,46 +7,37 @@ namespace BovineLabs.Event
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using System.Reflection;
     using Unity.Collections;
-    using Unity.Entities;
     using Unity.Jobs;
     using UnityEngine;
     using UnityEngine.Assertions;
-    using Object = System.Object;
 
     /// <summary>
     /// The stream sharing backend.
     /// </summary>
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity")]
-    internal class StreamShare
+    internal class StreamBus
     {
-        private static readonly Dictionary<World, StreamShare> Instances = new Dictionary<World, StreamShare>(new WorldCompare());
+        private static readonly Dictionary<string, StreamBus> Instances = new Dictionary<string, StreamBus>();
 
         private readonly List<EventSystem> subscribers = new List<EventSystem>();
         private readonly Dictionary<NativeStream, StreamHandles> streams = new Dictionary<NativeStream, StreamHandles>(new NativeStreamCompare());
         private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
-        private class StreamHandles
-        {
-            public HashSet<EventSystem> Systems { get; } = new HashSet<EventSystem>();
-            public JobHandle Handle { get; set; }
-        }
-
-        private StreamShare()
+        private StreamBus()
         {
         }
 
         /// <summary>
-        /// Get an instance of StreamShare linked to a world.
+        /// Get an instance of StreamBus linked to a key.
         /// </summary>
-        /// <param name="world">The world.</param>
-        /// <returns>A shared instance of StreamShare.</returns>
-        internal static StreamShare GetInstance(World world)
+        /// <param name="key">The bus key.</param>
+        /// <returns>A shared instance of StreamBus.</returns>
+        internal static StreamBus GetInstance(string key)
         {
-            if (!Instances.TryGetValue(world, out var streamShare))
+            if (!Instances.TryGetValue(key, out var streamShare))
             {
-                streamShare = Instances[world] = new StreamShare();
+                streamShare = Instances[key] = new StreamBus();
             }
 
             return streamShare;
@@ -108,8 +99,8 @@ namespace BovineLabs.Event
 
                 for (var index = 0; index < newStreams.Count; index++)
                 {
-                    var stream = newStreams[index];
-                    handle = JobHandle.CombineDependencies(handle, stream.Item1.Dispose(consumerHandle));
+                    var stream = newStreams[index].Item1;
+                    handle = JobHandle.CombineDependencies(handle, stream.Dispose(consumerHandle));
                 }
 
                 return handle;
@@ -200,20 +191,11 @@ namespace BovineLabs.Event
             Instances.Clear();
         }
 
-        /// <summary>
-        /// Allocation free World comparer.
-        /// </summary>
-        private class WorldCompare : IEqualityComparer<World>
+        private class StreamHandles
         {
-            public bool Equals(World x, World y)
-            {
-                return object.Equals(x, y);
-            }
+            public HashSet<EventSystem> Systems { get; } = new HashSet<EventSystem>();
 
-            public int GetHashCode(World world)
-            {
-                return (int)world.SequenceNumber;
-            }
+            public JobHandle Handle { get; set; }
         }
 
         /// <summary>

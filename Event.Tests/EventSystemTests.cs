@@ -9,10 +9,10 @@ namespace BovineLabs.Event.Tests
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using BovineLabs.Tests;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Entities;
+    using Unity.Entities.Tests;
     using Unity.Jobs;
 
     /// <summary>
@@ -386,7 +386,7 @@ namespace BovineLabs.Event.Tests
         {
             protected override WorldMode Mode => WorldMode.Custom;
 
-            protected override World CustomWorld => World.Active;
+            protected override string CustomKey => "test";
         }
 
         private class WorldModeUnknownTestEventSystem : EventSystem
@@ -396,7 +396,7 @@ namespace BovineLabs.Event.Tests
 
         private class WorldModeActiveTestEventSystem : EventSystem
         {
-            protected override WorldMode Mode => WorldMode.Active;
+            protected override WorldMode Mode => WorldMode.DefaultWorldName;
         }
     }
 }
