@@ -7,18 +7,16 @@ namespace BovineLabs.Samples.MultiWorld
     using BovineLabs.Event;
     using Unity.Entities;
 
+    /// <summary>
+    /// The UpdateEventSystem.
+    /// </summary>
     [DisableAutoCreation]
     public class UpdateEventSystem : EventSystem
     {
-        private static World customWorld;
-
+        /// <inheritdoc/>
         protected override WorldMode Mode => WorldMode.Custom;
 
-        protected override World CustomWorld => customWorld;
-
-        public static void SetWorld(World world)
-        {
-            customWorld = world;
-        }
+        /// <inheritdoc/>
+        protected override string CustomKey => "Default World";
     }
 }

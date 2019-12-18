@@ -4,8 +4,6 @@
 
 namespace BovineLabs.Samples
 {
-    using System;
-    using System.Collections.Generic;
     using BovineLabs.Samples.MultiWorld;
     using Unity.Entities;
     using UnityEngine;
@@ -15,10 +13,14 @@ namespace BovineLabs.Samples
     /// </summary>
     public class CustomBootstrap : ICustomBootstrap
     {
-        /// <inheritdoc/>
-        public List<Type> Initialize(List<Type> systems)
+        public bool Initialize(string defaultWorldName)
         {
-            UpdateEventSystem.SetWorld(World.Active);
+            var defaultWorld = new World(defaultWorldName);
+            World.DefaultGameObjectInjectionWorld = defaultWorld;
+
+            var systems = DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default);
+            DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(defaultWorld, systems);
+            ScriptBehaviourUpdateOrder.UpdatePlayerLoop(defaultWorld);
 
             var world = new World("Custom World");
             world.GetOrCreateSystem<UpdateEventCounterSystem>();
@@ -32,7 +34,7 @@ namespace BovineLabs.Samples
 
             updater.SetWorlds(world, fixedWorld);
 
-            return systems;
+            return true;
         }
     }
 }

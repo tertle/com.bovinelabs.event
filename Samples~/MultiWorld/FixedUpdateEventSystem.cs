@@ -7,9 +7,13 @@ namespace BovineLabs.Samples.MultiWorld
     using BovineLabs.Event;
     using Unity.Entities;
 
+    /// <summary>
+    /// The FixedUpdateEventSystem.
+    /// </summary>
     [DisableAutoCreation]
     public class FixedUpdateEventSystem : EventSystem
     {
-        protected override WorldMode Mode => WorldMode.Active;
+        /// <inheritdoc/>
+        protected override WorldMode Mode => WorldMode.DefaultWorldName;
     }
 }
