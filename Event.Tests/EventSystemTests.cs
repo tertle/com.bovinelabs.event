@@ -11,7 +11,6 @@ namespace BovineLabs.Event.Tests
     using System.Linq;
     using NUnit.Framework;
     using Unity.Collections;
-    using Unity.Entities;
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
@@ -33,6 +32,16 @@ namespace BovineLabs.Event.Tests
 
             Assert.Throws<InvalidOperationException>(() => es.AddJobHandleForProducer<TestEvent>(default));
 
+            Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
+        }
+
+        [Test]
+        public void CreateEventWriterMustHaveAValidCount()
+        {
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+            Assert.Throws<ArgumentException>(() => es.CreateEventWriter<TestEvent>(0));
+            Assert.Throws<ArgumentException>(() => es.CreateEventWriter<TestEvent>(-1));
             Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
         }
 
@@ -327,6 +336,25 @@ namespace BovineLabs.Event.Tests
 
             Assert.Throws<InvalidOperationException>(
                 () => es.AddJobHandleForProducer<TestEvent>(default));
+        }
+
+        /// <summary> Tests event readers returns correctly. </summary>
+        [Test]
+        public void HasEventReaders()
+        {
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+            // No writer should return false
+            Assert.IsFalse(es.HasEventReaders<TestEvent>());
+
+            // Update to reset
+            es.Update();
+
+            // Only writers that are empty should also return false
+            es.CreateEventWriter<TestEvent>(1);
+            es.AddJobHandleForProducer<TestEvent>(default);
+
+            Assert.IsTrue(es.HasEventReaders<TestEvent>());
         }
 
         private struct ProducerJob : IJobParallelFor

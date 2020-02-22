@@ -70,6 +70,11 @@ namespace BovineLabs.Event
         public NativeStream.Writer CreateEventWriter<T>(int foreachCount)
             where T : struct
         {
+            if (foreachCount <= 0)
+            {
+                throw new ArgumentException("Should not create a writer with 0 or less length. Early out instead");
+            }
+
             var container = this.GetOrCreateEventContainer<T>();
 
             return container.CreateEventStream(foreachCount);

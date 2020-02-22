@@ -154,20 +154,7 @@ namespace BovineLabs.Event
                 throw new InvalidOperationException(ReadModeRequired);
             }
 
-            if (this.readers.Count == 0)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < this.readers.Count; i++)
-            {
-                if (this.readers[i].Item2 != 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return this.readers.Count != 0;
         }
 
         /// <summary>
