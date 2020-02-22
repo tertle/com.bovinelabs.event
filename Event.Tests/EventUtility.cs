@@ -13,8 +13,15 @@ namespace BovineLabs.Event.Tests
         [Test]
         public void EnsureHashMapCapacity()
         {
-            var hashmap = new NativeHashMap<int, int>(1, Allocator.TempJob);
-            hashmap.Add(1, 1);
+            const int startCount = 1;
+            const int firstEventCount = 5;
+            const int secondEventCount = 3;
+
+            var hashmap = new NativeHashMap<int, int>(startCount, Allocator.TempJob);
+            for (var i = 0; i < startCount; i++)
+            {
+                hashmap.Add(i, i);
+            }
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
@@ -22,7 +29,7 @@ namespace BovineLabs.Event.Tests
 
             // Write some event data
             events1.BeginForEachIndex(0);
-            for (var i = 0; i < 5; i++)
+            for (var i = 0; i < firstEventCount; i++)
             {
                 events1.Write(i);
             }
@@ -34,7 +41,7 @@ namespace BovineLabs.Event.Tests
 
             // Write some event data
             events2.BeginForEachIndex(4);
-            for (var i = 0; i < 3; i++)
+            for (var i = 0; i < secondEventCount; i++)
             {
                 events2.Write(i);
             }
@@ -45,7 +52,7 @@ namespace BovineLabs.Event.Tests
             var handle = es.EnsureHashMapCapacity<TestEvent, int, int>(default, hashmap);
             handle.Complete();
 
-            Assert.AreEqual(9, hashmap.Capacity);
+            Assert.AreEqual(startCount + firstEventCount + secondEventCount, hashmap.Capacity);
         }
     }
 }
