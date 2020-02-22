@@ -53,6 +53,9 @@ namespace BovineLabs.Event.Tests
             handle.Complete();
 
             Assert.AreEqual(startCount + firstEventCount + secondEventCount, hashmap.Capacity);
+
+            // Make sure it doesn't block getting readers
+            es.GetEventReaders<TestEvent>(default, out _).Complete();
         }
     }
 }
