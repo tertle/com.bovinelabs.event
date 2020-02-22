@@ -1,3 +1,7 @@
+// <copyright file="EventUtility.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event
 {
     using System;
@@ -5,7 +9,6 @@ namespace BovineLabs.Event
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
-    using UnityEditor.UIElements;
 
     /// <summary>
     /// The EventUtility.
@@ -30,7 +33,6 @@ namespace BovineLabs.Event
 
                 for (var i = 0; i < readers.Count; i++)
                 {
-
                     var countHandle = new CountJob
                         {
                             Reader = readers[i].Item1,
@@ -58,7 +60,7 @@ namespace BovineLabs.Event
             return handle;
         }
 
-        //[BurstCompile]
+        [BurstCompile]
         private struct CountJob : IJob
         {
             public NativeStream.Reader Reader;
@@ -77,19 +79,21 @@ namespace BovineLabs.Event
             }
         }
 
-        //[BurstCompile]
+        [BurstCompile]
         private struct EnsureHashMapCapacityJob<TK, TV> : IJob
             where TK : struct, IEquatable<TK>
             where TV : struct
         {
-            [ReadOnly] public NativeArray<int> Counter;
+            [ReadOnly]
+            public NativeArray<int> Counter;
 
             public NativeHashMap<TK, TV> HashMap;
 
             public void Execute()
             {
                 var count = 0;
-                for(var i = 0; i < this.Counter.Length; i++)
+
+                for (var i = 0; i < this.Counter.Length; i++)
                 {
                     count += this.Counter[i];
                 }
@@ -102,6 +106,5 @@ namespace BovineLabs.Event
                 }
             }
         }
-
     }
 }

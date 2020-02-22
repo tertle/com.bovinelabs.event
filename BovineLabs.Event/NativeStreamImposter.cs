@@ -1,11 +1,17 @@
+// <copyright file="NativeStreamImposter.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event
 {
+    using JetBrains.Annotations;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
     public unsafe struct NativeStreamImposter
     {
-        public void* BlockStreamData;
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        private readonly void* blockStreamData;
 
         public static implicit operator NativeStreamImposter(NativeStream nativeStream)
         {
@@ -16,13 +22,13 @@ namespace BovineLabs.Event
 
         public bool Equals(NativeStreamImposter other)
         {
-            return this.BlockStreamData == other.BlockStreamData;
+            return this.blockStreamData == other.blockStreamData;
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return unchecked((int)(long)this.BlockStreamData);
+            return unchecked((int)(long)this.blockStreamData);
         }
     }
 }

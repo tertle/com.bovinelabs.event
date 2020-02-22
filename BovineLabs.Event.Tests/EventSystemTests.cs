@@ -35,6 +35,7 @@ namespace BovineLabs.Event.Tests
             Assert.DoesNotThrow(() => es.CreateEventWriter<TestEvent>(1));
         }
 
+        /// <summary> Validates the count input of CreateEventWriter. </summary>
         [Test]
         public void CreateEventWriterMustHaveAValidCount()
         {
@@ -77,7 +78,7 @@ namespace BovineLabs.Event.Tests
                 this.World.GetOrCreateSystem<WorldModeUnknownTestEventSystem>());
         }
 
-        /// <summary> Checks that <see cref="EventSystem.WorldMode.Active"/> does not throw an exception. </summary>
+        /// <summary> Checks that <see cref="EventSystem.WorldMode.DefaultWorldName"/> does not throw an exception. </summary>
         /// <remarks> Need a way to actually test this better. </remarks>
         [Test]
         public void WorldModeActiveNoException()

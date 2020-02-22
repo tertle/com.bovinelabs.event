@@ -1,3 +1,7 @@
+// <copyright file="TestData.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Tests
 {
     using NUnit.Framework;

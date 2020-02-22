@@ -19,8 +19,6 @@ namespace BovineLabs.Event
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity.")]
     public abstract class EventSystem : JobComponentSystem
     {
-        private const string worldNotImplemented = "WorldMode.Custom requires Custom to be implemented.";
-
         // separate to avoid allocations when iterating
         private readonly List<EventContainer> containers = new List<EventContainer>();
         private readonly Dictionary<Type, int> types = new Dictionary<Type, int>();
