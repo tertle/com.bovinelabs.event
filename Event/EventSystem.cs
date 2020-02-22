@@ -87,6 +87,19 @@ namespace BovineLabs.Event
             this.GetOrCreateEventContainer<T>().AddJobHandleForProducer(handle);
         }
 
+        public bool HasEventReaders<T>()
+            where T : struct
+        {
+            var container = this.GetOrCreateEventContainer<T>();
+
+            if (!container.ReadMode)
+            {
+                container.SetReadMode();
+            }
+
+            return container.HasReaders();
+        }
+
         /// <summary>
         /// Get the NativeStream for reading events from.
         /// </summary>

@@ -142,6 +142,34 @@ namespace BovineLabs.Event
             return this.readers;
         }
 
+        public bool HasReaders()
+        {
+            if (this.consumerSafety)
+            {
+                throw new InvalidOperationException(ConsumerException);
+            }
+
+            if (!this.ReadMode)
+            {
+                throw new InvalidOperationException(ReadModeRequired);
+            }
+
+            if (this.readers.Count == 0)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < this.readers.Count; i++)
+            {
+                if (this.readers[i].Item2 != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Set the event to read mode.
         /// </summary>
