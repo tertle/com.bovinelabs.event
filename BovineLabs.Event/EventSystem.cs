@@ -47,7 +47,7 @@ namespace BovineLabs.Event
         }
 
         /// <summary>
-        /// Gets the . Override to change the sharing state of the
+        /// Gets the <see cref="WorldMode"/> of the system.
         /// </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual WorldMode Mode => WorldMode.WorldName;
@@ -245,7 +245,5 @@ namespace BovineLabs.Event
 
             return this.containers[index];
         }
-
-
     }
 }
