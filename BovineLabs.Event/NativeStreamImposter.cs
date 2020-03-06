@@ -4,14 +4,17 @@
 
 namespace BovineLabs.Event
 {
-    using JetBrains.Annotations;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
+    /// <summary>
+    /// An imposter class for <see cref="NativeStream"/> to do garbage free comparisons.
+    /// </summary>
     public unsafe struct NativeStreamImposter
     {
-        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+#pragma warning disable 649
         private readonly void* blockStreamData;
+#pragma warning restore 649
 
         public static implicit operator NativeStreamImposter(NativeStream nativeStream)
         {
@@ -20,6 +23,9 @@ namespace BovineLabs.Event
             return imposter;
         }
 
+        /// <summary> Compares 2 <see cref="NativeStreamImposter"/> to see if they are the same. </summary>
+        /// <param name="other"> The other <see cref="NativeStreamImposter"/> to compare to. </param>
+        /// <returns> True if they are the same. </returns>
         public bool Equals(NativeStreamImposter other)
         {
             return this.blockStreamData == other.blockStreamData;

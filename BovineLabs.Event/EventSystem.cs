@@ -17,7 +17,7 @@ namespace BovineLabs.Event
     /// By default LateSimulation and Presentation are implemented.
     /// </summary>
     [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity.")]
-    public abstract class EventSystem : JobComponentSystem
+    public abstract class EventSystem : SystemBase
     {
         // separate to avoid allocations when iterating
         private readonly List<EventContainer> containers = new List<EventContainer>();
@@ -25,30 +25,20 @@ namespace BovineLabs.Event
 
         private StreamBus streamBus;
 
-        /// <summary>
-        /// The world to use that the event system is linked to.
-        /// </summary>
+        /// <summary> The world to use that the event system is linked to. </summary>
         protected enum WorldMode
         {
-            /// <summary>
-            /// Uses the systems world, this.World
-            /// </summary>
+            /// <summary> Uses the systems world, this.World </summary>
             WorldName,
 
-            /// <summary>
-            /// Uses the name "Default World"
-            /// </summary>
+            /// <summary> Uses the name "Default World" </summary>
             DefaultWorldName,
 
-            /// <summary>
-            /// Uses a custom world, this.Custom
-            /// </summary>
+            /// <summary> Uses a custom world, this.Custom </summary>
             Custom,
         }
 
-        /// <summary>
-        /// Gets the <see cref="WorldMode"/> of the system.
-        /// </summary>
+        /// <summary> Gets the <see cref="WorldMode"/> of the system. </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual WorldMode Mode => WorldMode.WorldName;
 
@@ -58,9 +48,7 @@ namespace BovineLabs.Event
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual string CustomKey => throw new NotImplementedException("CustomKey must be implemented if Mode equals WorldMode.Custom");
 
-        /// <summary>
-        /// Create a new NativeStream for writing events to.
-        /// </summary>
+        /// <summary> Create a new NativeStream for writing events to. </summary>
         /// <param name="foreachCount">The <see cref="NativeStream.ForEachCount"/>.</param>
         /// <typeparam name="T">The type of event.</typeparam>
         /// <returns>A <see cref="NativeStream.Writer"/> you can write events to.</returns>
@@ -78,9 +66,7 @@ namespace BovineLabs.Event
             return container.CreateEventStream(foreachCount);
         }
 
-        /// <summary>
-        /// Adds the specified JobHandle to the events list of producer dependency handles.
-        /// </summary>
+        /// <summary> Adds the specified JobHandle to the events list of producer dependency handles. </summary>
         /// <param name="handle">The job handle to add.</param>
         /// <typeparam name="T">The type of event to associate the handle to.</typeparam>
         /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
@@ -90,6 +76,9 @@ namespace BovineLabs.Event
             this.GetOrCreateEventContainer<T>().AddJobHandleForProducer(handle);
         }
 
+        /// <summary> Checks if an event has any readers. </summary>
+        /// <typeparam name="T">The event type to check.</typeparam>
+        /// <returns>True if there are readers for the event.</returns>
         public bool HasEventReaders<T>()
             where T : struct
         {
@@ -187,8 +176,13 @@ namespace BovineLabs.Event
         }
 
         /// <inheritdoc/>
-        protected override JobHandle OnUpdate(JobHandle handle)
+        protected override void OnUpdate()
         {
+            if (this.containers.Count == 0)
+            {
+                return;
+            }
+
             var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
 
             for (var i = 0; i < this.containers.Count; i++)
@@ -196,7 +190,7 @@ namespace BovineLabs.Event
                 var container = this.containers[i];
 
                 // Need both handles because might have no writers or readers in this specific systems
-                handles[i] = JobHandle.CombineDependencies(handle, container.ConsumerHandle, container.ProducerHandle);
+                handles[i] = JobHandle.CombineDependencies(this.Dependency, container.ConsumerHandle, container.ProducerHandle);
 
                 Profiler.BeginSample("ReleaseStreams");
                 handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
@@ -208,9 +202,8 @@ namespace BovineLabs.Event
                 container.Reset();
             }
 
-            handle = JobHandle.CombineDependencies(handles);
+            this.Dependency = JobHandle.CombineDependencies(handles);
             handles.Dispose();
-            return handle;
         }
 
         private string GetStreamKey()

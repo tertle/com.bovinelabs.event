@@ -7,7 +7,7 @@ namespace BovineLabs.Event
     using Unity.Entities;
 
     /// <summary>
-    /// The LateSimulationEventSystem.
+    /// The EndSimulationEventSystem.
     /// </summary>
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class PresentationEventSystem : EventSystem
