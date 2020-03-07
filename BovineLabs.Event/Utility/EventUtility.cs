@@ -2,9 +2,10 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Event
+namespace BovineLabs.Event.Utility
 {
     using System;
+    using BovineLabs.Event.Systems;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -15,9 +16,7 @@ namespace BovineLabs.Event
     /// </summary>
     public static class EventUtility
     {
-        /// <summary>
-        /// Ensure a <see cref="NativeHashMap{TKey,TValue}"/> has the capacity to be filled with all events of a specific type.
-        /// </summary>
+        /// <summary> Ensure a <see cref="NativeHashMap{TKey,TValue}"/> has the capacity to be filled with all events of a specific type. </summary>
         /// <param name="eventSystem">The event system for the extension.</param>
         /// <param name="handle">Input dependencies.</param>
         /// <param name="hashMap">The <see cref="NativeHashMap{TKey,TValue}"/> to ensure capacity of.</param>
@@ -37,16 +36,15 @@ namespace BovineLabs.Event
 
             JobHandle readerHandle = default;
 
-            if (readers.Count > 0)
+            if (readers.Length > 0)
             {
-                var counter = new NativeArray<int>(readers.Count, Allocator.TempJob);
+                var counter = new NativeArray<int>(readers.Length, Allocator.TempJob);
 
-                for (var i = 0; i < readers.Count; i++)
+                for (var i = 0; i < readers.Length; i++)
                 {
                     var countHandle = new CountJob
                         {
                             Reader = readers[i].Item1,
-                            Count = readers[i].Item2,
                             Counter = counter,
                             Index = i,
                         }
@@ -74,7 +72,6 @@ namespace BovineLabs.Event
         private struct CountJob : IJob
         {
             public NativeStream.Reader Reader;
-            public int Count;
 
             [NativeDisableContainerSafetyRestriction]
             public NativeArray<int> Counter;
@@ -82,10 +79,7 @@ namespace BovineLabs.Event
 
             public void Execute()
             {
-                for (var i = 0; i < this.Count; i++)
-                {
-                    this.Counter[this.Index] += this.Reader.BeginForEachIndex(i);
-                }
+                this.Counter[this.Index] = this.Reader.ComputeItemCount();
             }
         }
 

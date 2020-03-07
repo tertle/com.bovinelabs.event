@@ -5,6 +5,7 @@
 
 namespace BovineLabs.Event.Tests
 {
+    using BovineLabs.Event.Systems;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Jobs;

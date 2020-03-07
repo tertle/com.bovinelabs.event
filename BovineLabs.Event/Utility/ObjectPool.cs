@@ -2,7 +2,7 @@
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Event
+namespace BovineLabs.Event.Utility
 {
     using System;
     using System.Collections.Generic;

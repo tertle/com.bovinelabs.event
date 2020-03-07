@@ -2,11 +2,12 @@
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Event
+namespace BovineLabs.Event.Systems
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using BovineLabs.Event.Data;
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
@@ -95,7 +96,7 @@ namespace BovineLabs.Event
         /// <param name="readers">A collection of <see cref="NativeStream.Reader"/> you can read events from.</param>
         /// <typeparam name="T">The type of event.</typeparam>
         /// <returns>The updated dependency handle.</returns>
-        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<Tuple<NativeStream.Reader, int>> readers)
+        public JobHandle GetEventReaders<T>(JobHandle handle, out NativeArray<ValueTuple<NativeStreamImposter.Reader, int>> readers)
             where T : struct
         {
             var container = this.GetOrCreateEventContainer<T>();
@@ -123,7 +124,7 @@ namespace BovineLabs.Event
         /// <param name="type">The type of event.</param>
         /// <param name="externalStreams">Collection of event streams.</param>
         /// <param name="handle">The dependency for the streams.</param>
-        internal void AddExternalReaders(Type type, IReadOnlyList<Tuple<NativeStream, int>> externalStreams, JobHandle handle)
+        internal void AddExternalReaders(Type type, IReadOnlyList<ValueTuple<NativeStream, int>> externalStreams, JobHandle handle)
         {
             var container = this.GetOrCreateEventContainer(type);
             container.AddReaders(externalStreams);
