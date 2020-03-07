@@ -20,9 +20,8 @@ namespace BovineLabs.Event.Systems
         private const string WriteModeRequired = "Can not be called in read mode.";
 #endif
 
-        private readonly List<ValueTuple<NativeStream, int>> externalReaders = new List<ValueTuple<NativeStream, int>>();
-        private readonly List<ValueTuple<NativeStream.Reader, int>> readers = new List<ValueTuple<NativeStream.Reader, int>>();
-        private NativeList<ValueTuple<NativeStreamImposter.Reader, int>> readerImposters;
+        private readonly List<NativeTuple<NativeStream, int>> externalReaders = new List<NativeTuple<NativeStream, int>>();
+        private NativeList<NativeTuple<NativeStreamImposter.Reader, int>> readers;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private bool producerSafety;
@@ -34,7 +33,7 @@ namespace BovineLabs.Event.Systems
         public EventContainer(Type type)
         {
             this.Type = type;
-            this.readerImposters = new NativeList<(NativeStreamImposter.Reader, int)>(64, Allocator.Persistent);
+            this.readers = new NativeList<NativeTuple<NativeStreamImposter.Reader, int>>(64, Allocator.Persistent);
         }
 
         /// <summary> Gets a value indicating whether the container is in read only mode. </summary>
@@ -50,10 +49,10 @@ namespace BovineLabs.Event.Systems
         public Type Type { get; }
 
         /// <summary> Gets the list of streams. </summary>
-        public List<ValueTuple<NativeStream, int>> Streams { get; } = new List<ValueTuple<NativeStream, int>>();
+        public List<NativeTuple<NativeStream, int>> Streams { get; } = new List<NativeTuple<NativeStream, int>>();
 
         /// <summary> Gets the list of external readers. </summary>
-        public List<ValueTuple<NativeStream, int>> ExternalReaders => this.externalReaders;
+        public List<NativeTuple<NativeStream, int>> ExternalReaders => this.externalReaders;
 
         /// <summary> Create a new stream for the events. </summary>
         /// <param name="foreachCount"> The foreachCount of the <see cref="NativeStream"/>.</param>
@@ -76,7 +75,7 @@ namespace BovineLabs.Event.Systems
 #endif
 
             var stream = new NativeStream(foreachCount, Allocator.TempJob);
-            this.Streams.Add(new ValueTuple<NativeStream, int>(stream, foreachCount));
+            this.Streams.Add(new NativeTuple<NativeStream, int>(stream, foreachCount));
 
             return stream.AsWriter();
         }
@@ -134,7 +133,7 @@ namespace BovineLabs.Event.Systems
 
         /// <summary> Gets the collection of readers. </summary>
         /// <returns> Returns a tuple where Item1 is the reader, Item2 is the foreachCount. </returns>
-        public NativeArray<ValueTuple<NativeStreamImposter.Reader, int>> GetReaders()
+        public NativeArray<NativeTuple<NativeStreamImposter.Reader, int>> GetReaders()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.consumerSafety)
@@ -150,7 +149,7 @@ namespace BovineLabs.Event.Systems
             }
 #endif
 
-            return this.readerImposters;
+            return this.readers;
         }
 
         /// <summary> Check if any readers exist. Requires read mode. </summary>
@@ -170,7 +169,7 @@ namespace BovineLabs.Event.Systems
             }
 #endif
 
-            return this.readers.Count != 0;
+            return this.readers.Length != 0;
         }
 
         /// <summary> Set the event to read mode. </summary>
@@ -190,8 +189,7 @@ namespace BovineLabs.Event.Systems
                 var reader = stream.Item1.AsReader();
                 var count = stream.Item2;
 
-                this.readers.Add(new ValueTuple<NativeStream.Reader, int>(reader, count));
-                this.readerImposters.Add(new ValueTuple<NativeStreamImposter.Reader, int>(reader, count));
+                this.readers.Add(new NativeTuple<NativeStreamImposter.Reader, int>(reader, count));
             }
 
             for (var index = 0; index < this.externalReaders.Count; index++)
@@ -200,15 +198,14 @@ namespace BovineLabs.Event.Systems
                 var reader = stream.Item1.AsReader();
                 var count = stream.Item2;
 
-                this.readers.Add(new ValueTuple<NativeStream.Reader, int>(reader, count));
-                this.readerImposters.Add(new ValueTuple<NativeStreamImposter.Reader, int>(reader, count));
+                this.readers.Add(new NativeTuple<NativeStreamImposter.Reader, int>(reader, count));
             }
         }
 
         /// <summary> Add readers to the container. Requires read mode.  </summary>
         /// <param name="externalStreams"> The readers to be added. </param>
         /// <exception cref="InvalidOperationException"> Throw if not in read mode. </exception>
-        public void AddReaders(IEnumerable<ValueTuple<NativeStream, int>> externalStreams)
+        public void AddReaders(IEnumerable<NativeTuple<NativeStream, int>> externalStreams)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.ReadMode)
@@ -228,7 +225,6 @@ namespace BovineLabs.Event.Systems
             this.Streams.Clear();
             this.externalReaders.Clear();
             this.readers.Clear();
-            this.readerImposters.Clear();
 
             this.ConsumerHandle = default;
             this.ProducerHandle = default;
@@ -242,7 +238,7 @@ namespace BovineLabs.Event.Systems
                 this.Streams[index].Item1.Dispose();
             }
 
-            this.readerImposters.Dispose();
+            this.readers.Dispose();
         }
     }
 }

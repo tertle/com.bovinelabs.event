@@ -194,7 +194,7 @@ namespace BovineLabs.Event.Tests
             es.AddJobHandleForConsumer<TestEvent>(handle2);
 
             // Just iterates both readers and checks them, as they should be identical.
-            foreach (var readers in new List<NativeArray<ValueTuple<NativeStreamImposter.Reader, int>>> { reader1, reader2 }.SelectMany(
+            foreach (var readers in new List<NativeArray<NativeTuple<NativeStreamImposter.Reader, int>>> { reader1, reader2 }.SelectMany(
                 readers => readers))
             {
                 var reader = readers.Item1.AsReader();

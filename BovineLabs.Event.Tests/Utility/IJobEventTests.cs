@@ -10,7 +10,7 @@
     public class IJobEventTests : ECSTestsFixture
     {
         [Test]
-        public void Works()
+        public void ScheduleParallelSplit()
         {
             const int foreachCount = 100;
             const int eventCount = 100;
@@ -38,7 +38,7 @@
                     {
                         Counter = counter.AsParallelWriter(),
                     }
-                    .ScheduleSequential<TestJob, TestEvent>(es, 64, default);
+                    .ScheduleParallel<TestJob, TestEvent>(es, 64, default);
 
                 finalHandle.Complete();
 

@@ -13,13 +13,13 @@ namespace BovineLabs.Event.Data
     {
 #pragma warning disable 649
         private readonly void* blockStreamData;
-        private readonly Allocator allocator;
+        private Allocator allocator;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-        private readonly AtomicSafetyHandle safety;
+        private AtomicSafetyHandle safety;
 
         [NativeSetClassTypeToNullOnSchedule]
-        private readonly DisposeSentinel disposeSentinel;
+        private DisposeSentinel disposeSentinel;
 #endif
 #pragma warning restore 649
 
@@ -51,7 +51,7 @@ namespace BovineLabs.Event.Data
         public struct Reader
         {
             [UsedImplicitly]
-            private fixed byte bytes[64]; // UnsafeUtility.SizeOf<NativeStream.Reader>()
+            private fixed byte bytes[60]; // UnsafeUtility.SizeOf<NativeStream.Reader>()
 
             public static implicit operator NativeStreamImposter.Reader(NativeStream.Reader nativeStream)
             {
@@ -63,6 +63,8 @@ namespace BovineLabs.Event.Data
                 return UnsafeUtilityEx.As<NativeStreamImposter.Reader, NativeStream.Reader>(ref imposter);
             }
 
+            /// <summary> Returns the original <see cref="NativeStream.Reader"/>. </summary>
+            /// <returns> The original <see cref="NativeStream.Reader"/>. </returns>
             public NativeStream.Reader AsReader()
             {
                 return this;
