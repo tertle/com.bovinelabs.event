@@ -357,6 +357,28 @@ namespace BovineLabs.Event.Tests
 
             Assert.IsTrue(es.HasEventReaders<TestEvent>());
         }
+
+        private class CustomErrorTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => WorldMode.Custom;
+        }
+
+        private class CustomTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => WorldMode.Custom;
+
+            protected override string CustomKey => "test";
+        }
+
+        private class WorldModeUnknownTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => (WorldMode)123;
+        }
+
+        private class WorldModeActiveTestEventSystem : EventSystem
+        {
+            protected override WorldMode Mode => WorldMode.DefaultWorldName;
+        }
     }
 }
 

@@ -1,18 +1,18 @@
 // <copyright file="TestData.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
+// ReSharper disable SA1600
 
 namespace BovineLabs.Event.Tests
 {
-    using System.Diagnostics.CodeAnalysis;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Jobs;
 
-    // ReSharper disable once SA1649
-    [SuppressMessage("ReSharper", "SA1649")]
+    /// <summary> Test job for producing events. </summary>
     public struct ProducerJob : IJobParallelFor
     {
+        /// <summary> The event stream writer. </summary>
         public NativeStream.Writer Events;
 
         /// <inheritdoc/>
@@ -28,8 +28,10 @@ namespace BovineLabs.Event.Tests
         }
     }
 
+    /// <summary> Test job for consuming events. </summary>
     public struct ConsumerJob : IJobParallelFor
     {
+        /// <summary> The event stream reader. </summary>
         public NativeStream.Reader Reader;
 
         /// <inheritdoc/>
@@ -46,38 +48,20 @@ namespace BovineLabs.Event.Tests
         }
     }
 
+    /// <summary> Test event. </summary>
     public struct TestEvent
     {
+        /// <summary> The event value. </summary>
         public int Value;
     }
 
+    /// <summary> Test event system. </summary>
     public class TestEventSystem : EventSystem
     {
     }
 
+    /// <summary> A second test event system. </summary>
     public class TestEventSystem2 : EventSystem
     {
-    }
-
-    public class CustomErrorTestEventSystem : EventSystem
-    {
-        protected override WorldMode Mode => WorldMode.Custom;
-    }
-
-    public class CustomTestEventSystem : EventSystem
-    {
-        protected override WorldMode Mode => WorldMode.Custom;
-
-        protected override string CustomKey => "test";
-    }
-
-    public class WorldModeUnknownTestEventSystem : EventSystem
-    {
-        protected override WorldMode Mode => (WorldMode)123;
-    }
-
-    public class WorldModeActiveTestEventSystem : EventSystem
-    {
-        protected override WorldMode Mode => WorldMode.DefaultWorldName;
     }
 }
