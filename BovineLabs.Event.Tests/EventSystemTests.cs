@@ -231,6 +231,7 @@ namespace BovineLabs.Event.Tests
                 var handle = new ProducerJob
                     {
                         Events = writer,
+                        EventCount = 100,
                     }
                     .Schedule(foreachCount, 8);
 

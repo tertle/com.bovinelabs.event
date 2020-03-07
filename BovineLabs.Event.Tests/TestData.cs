@@ -16,11 +16,14 @@ namespace BovineLabs.Event.Tests
         /// <summary> The event stream writer. </summary>
         public NativeStream.Writer Events;
 
+        /// <summary> Number of events to write. </summary>
+        public int EventCount;
+
         /// <inheritdoc/>
         public void Execute(int index)
         {
             this.Events.BeginForEachIndex(index);
-            for (var i = 0; i != 100; i++)
+            for (var i = 0; i != this.EventCount; i++)
             {
                 this.Events.Write(new TestEvent { Value = index + i });
             }

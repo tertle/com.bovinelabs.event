@@ -99,7 +99,7 @@ namespace BovineLabs.Event.Systems
         public JobHandle GetEventReaders<T>(JobHandle handle, out NativeArray<ValueTuple<NativeStreamImposter.Reader, int>> readers)
             where T : struct
         {
-            var container = this.GetOrCreateEventContainer<T>();
+            EventContainer container = this.GetOrCreateEventContainer<T>();
 
             if (!container.ReadMode)
             {
