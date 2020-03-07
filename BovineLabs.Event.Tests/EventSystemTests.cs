@@ -11,6 +11,7 @@ namespace BovineLabs.Event.Tests
     using System.Linq;
     using BovineLabs.Event.Data;
     using BovineLabs.Event.Systems;
+    using BovineLabs.Event.Utility;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Entities.Tests;

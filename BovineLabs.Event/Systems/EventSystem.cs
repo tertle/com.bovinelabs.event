@@ -8,6 +8,7 @@ namespace BovineLabs.Event.Systems
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using BovineLabs.Event.Data;
+    using BovineLabs.Event.Utility;
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;

@@ -1,15 +1,15 @@
-﻿// <copyright file="Tuple.cs" company="BovineLabs">
+﻿// <copyright file="NativeTuple.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Event
+namespace BovineLabs.Event.Utility
 {
     using System;
 
     /// <summary> A simple blittable tuple that does not generate garbage on GetHashCode. </summary>
     /// <typeparam name="T1">Type of first item.</typeparam>
     /// <typeparam name="T2">Type of second item.</typeparam>
-    public struct NativeTuple<T1, T2> : IEquatable<Tuple<T1, T2>>
+    public struct NativeTuple<T1, T2> : IEquatable<NativeTuple<T1, T2>>
         where T1 : struct
         where T2 : struct
     {
@@ -44,7 +44,7 @@ namespace BovineLabs.Event
         }
 
         /// <inheritdoc/>
-        public bool Equals(Tuple<T1, T2> other)
+        public bool Equals(NativeTuple<T1, T2> other)
         {
             return this.Item1.Equals(other.Item1) && this.Item2.Equals(other.Item2);
         }
