@@ -42,9 +42,7 @@ namespace BovineLabs.Event
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual WorldMode Mode => WorldMode.WorldName;
 
-        /// <summary>
-        /// Gets the world when using <see cref="WorldMode.Custom"/>.
-        /// </summary>
+        /// <summary> Gets the world when using <see cref="WorldMode.Custom"/>. </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual string CustomKey => throw new NotImplementedException("CustomKey must be implemented if Mode equals WorldMode.Custom");
 
@@ -92,14 +90,11 @@ namespace BovineLabs.Event
             return container.HasReaders();
         }
 
-        /// <summary>
-        /// Get the NativeStream for reading events from.
-        /// </summary>
+        /// <summary> Get the NativeStream for reading events from. </summary>
         /// <param name="handle">Existing dependencies for this event.</param>
         /// <param name="readers">A collection of <see cref="NativeStream.Reader"/> you can read events from.</param>
         /// <typeparam name="T">The type of event.</typeparam>
         /// <returns>The updated dependency handle.</returns>
-        /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
         public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<Tuple<NativeStream.Reader, int>> readers)
             where T : struct
         {
@@ -115,21 +110,16 @@ namespace BovineLabs.Event
             return JobHandle.CombineDependencies(container.ProducerHandle, handle);
         }
 
-        /// <summary>
-        /// Adds the specified JobHandle to the events list of consumer dependency handles.
-        /// </summary>
+        /// <summary> Adds the specified JobHandle to the events list of consumer dependency handles. </summary>
         /// <param name="handle">The job handle to add.</param>
         /// <typeparam name="T">The type of event to associate the handle to.</typeparam>
-        /// <exception cref="InvalidOperationException">Throw if unbalanced GetEventReaders and AddJobHandleForConsumer calls.</exception>
         public void AddJobHandleForConsumer<T>(JobHandle handle)
             where T : struct
         {
             this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
         }
 
-        /// <summary>
-        /// Adds readers from other event systems.
-        /// </summary>
+        /// <summary> Adds readers from other event systems. </summary>
         /// <param name="type">The type of event.</param>
         /// <param name="externalStreams">Collection of event streams.</param>
         /// <param name="handle">The dependency for the streams.</param>
@@ -164,7 +154,6 @@ namespace BovineLabs.Event
                 handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
 
                 container.Dispose();
-                container.Reset();
             }
 
             JobHandle.CombineDependencies(handles).Complete();

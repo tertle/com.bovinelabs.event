@@ -4,10 +4,13 @@
 
 namespace BovineLabs.Event.Tests
 {
+    using System.Diagnostics.CodeAnalysis;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Jobs;
 
+    // ReSharper disable once SA1649
+    [SuppressMessage("ReSharper", "SA1649")]
     public struct ProducerJob : IJobParallelFor
     {
         public NativeStream.Writer Events;
