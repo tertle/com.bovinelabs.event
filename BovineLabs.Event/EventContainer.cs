@@ -1,5 +1,5 @@
 // <copyright file="EventContainer.cs" company="BovineLabs">
-// Copyright (c) BovineLabs. All rights reserved.
+//     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
 namespace BovineLabs.Event
@@ -12,10 +12,12 @@ namespace BovineLabs.Event
     /// <summary> The container that holds the actual events of each type. </summary>
     internal sealed class EventContainer : IDisposable
     {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         private const string ProducerException = "CreateEventWriter must always be balanced by a AddJobHandleForProducer call";
         private const string ConsumerException = "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
         private const string ReadModeRequired = "Can only be called in read mode.";
         private const string WriteModeRequired = "Can not be called in read mode.";
+#endif
 
         private readonly List<Tuple<NativeStream, int>> externalReaders = new List<Tuple<NativeStream, int>>();
         private readonly List<Tuple<NativeStream.Reader, int>> readers = new List<Tuple<NativeStream.Reader, int>>();

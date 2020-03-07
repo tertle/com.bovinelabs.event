@@ -1,8 +1,8 @@
 ﻿// <copyright file="UIOutput.cs" company="BovineLabs">
-// Copyright (c) BovineLabs. All rights reserved.
+//     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Samples
+namespace BovineLabs.Event.Samples
 {
     using UnityEngine;
     using UnityEngine.UI;

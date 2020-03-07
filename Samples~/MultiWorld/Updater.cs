@@ -1,4 +1,8 @@
-namespace BovineLabs.Samples.MultiWorld
+// <copyright file="Updater.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+namespace BovineLabs.Event.Samples.MultiWorld
 {
     using System.Collections.Generic;
     using Unity.Entities;

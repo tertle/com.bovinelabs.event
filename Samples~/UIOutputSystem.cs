@@ -2,10 +2,10 @@
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Samples
+namespace BovineLabs.Event.Samples
 {
     using BovineLabs.Event;
-    using BovineLabs.Samples.Events;
+    using BovineLabs.Events.Samples.Events;
     using Unity.Entities;
     using UnityEngine;
 

@@ -2,9 +2,9 @@
 // Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Samples
+namespace BovineLabs.Event.Samples
 {
-    using BovineLabs.Samples.MultiWorld;
+    using BovineLabs.Event.Samples.MultiWorld;
     using Unity.Entities;
     using UnityEngine;
 
@@ -13,6 +13,7 @@ namespace BovineLabs.Samples
     /// </summary>
     public class CustomBootstrap : ICustomBootstrap
     {
+        /// <inheritdoc/>
         public bool Initialize(string defaultWorldName)
         {
             var defaultWorld = new World(defaultWorldName);

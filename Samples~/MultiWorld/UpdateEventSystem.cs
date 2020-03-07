@@ -1,8 +1,8 @@
 // <copyright file="UpdateEventSystem.cs" company="BovineLabs">
-// Copyright (c) BovineLabs. All rights reserved.
+//     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Samples.MultiWorld
+namespace BovineLabs.Event.Samples.MultiWorld
 {
     using BovineLabs.Event;
     using Unity.Entities;

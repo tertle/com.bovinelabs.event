@@ -1,8 +1,11 @@
-namespace BovineLabs.Samples
+// <copyright file="UpdateEventCounterSystem.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+namespace BovineLabs.Event.Samples.MultiWorld
 {
     using BovineLabs.Event;
-    using BovineLabs.Samples.Events;
-    using BovineLabs.Samples.MultiWorld;
+    using BovineLabs.Events.Samples.Events;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Entities;

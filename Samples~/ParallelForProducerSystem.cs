@@ -1,58 +1,64 @@
-using BovineLabs.Event;
-using BovineLabs.Samples;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Entities;
-using Unity.Jobs;
-using Unity.Mathematics;
+// <copyright file="ParallelForProducerSystem.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
 
-public class ParallelForProducerSystem : JobComponentSystem
+namespace BovineLabs.Event.Samples
 {
-    private LateSimulationEventSystem eventSystem;
+    using BovineLabs.Event;
+    using Unity.Burst;
+    using Unity.Collections;
+    using Unity.Entities;
+    using Unity.Jobs;
+    using Unity.Mathematics;
 
-    protected override void OnCreate()
+    public class ParallelForProducerSystem : SystemBase
     {
-        this.eventSystem = this.World.GetOrCreateSystem<LateSimulationEventSystem>();
-    }
+        private EndSimulationEventSystem eventSystem;
 
-    protected override JobHandle OnUpdate(JobHandle handle)
-    {
-        const int count = 100;
-
-        var writer = this.eventSystem.CreateEventWriter<TestEventEmpty>(count);
-
-        handle = new ProduceJob
-            {
-                Events = writer,
-                Random = new Random((uint)UnityEngine.Random.Range(0, int.MaxValue)),
-            }
-            .Schedule(count, 64, handle);
-
-        this.eventSystem.AddJobHandleForProducer<TestEventEmpty>(handle);
-
-        return handle;
-    }
-
-    [BurstCompile]
-    private struct ProduceJob : IJobParallelFor
-    {
-        public NativeStream.Writer Events;
-
-        public Random Random;
-
-        public void Execute(int index)
+        /// <inheritdoc/>
+        protected override void OnCreate()
         {
-            this.Random.state = (uint)(this.Random.state + index);
+            this.eventSystem = this.World.GetOrCreateSystem<EndSimulationEventSystem>();
+        }
 
-            var eventCount = this.Random.NextInt(1, 1000);
+        /// <inheritdoc/>
+        protected override void OnUpdate()
+        {
+            const int count = 100;
 
-            this.Events.BeginForEachIndex(index);
-            for (var i = 0; i < eventCount; i++)
+            var writer = this.eventSystem.CreateEventWriter<TestEventEmpty>(count);
+
+            this.Dependency = new ProduceJob
+                {
+                    Events = writer,
+                    Random = new Random((uint)UnityEngine.Random.Range(0, int.MaxValue)),
+                }
+                .Schedule(count, 64, this.Dependency);
+
+            this.eventSystem.AddJobHandleForProducer<TestEventEmpty>(this.Dependency);
+        }
+
+        [BurstCompile]
+        private struct ProduceJob : IJobParallelFor
+        {
+            public NativeStream.Writer Events;
+
+            public Random Random;
+
+            public void Execute(int index)
             {
-                this.Events.Write(default(TestEventEmpty));
-            }
+                this.Random.state = (uint)(this.Random.state + index);
 
-            this.Events.EndForEachIndex();
+                var eventCount = this.Random.NextInt(1, 1000);
+
+                this.Events.BeginForEachIndex(index);
+                for (var i = 0; i < eventCount; i++)
+                {
+                    this.Events.Write(default(TestEventEmpty));
+                }
+
+                this.Events.EndForEachIndex();
+            }
         }
     }
 }
