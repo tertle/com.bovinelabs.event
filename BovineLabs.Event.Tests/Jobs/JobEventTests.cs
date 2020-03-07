@@ -1,16 +1,24 @@
-﻿namespace BovineLabs.Event.Tests
+﻿// <copyright file="JobEventTests.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+#if BOVINELABS_TESTING_ENABLED
+
+namespace BovineLabs.Event.Tests.Jobs
 {
-    using BovineLabs.Event.Utility;
+    using BovineLabs.Event.Jobs;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    public class IJobEventTests : ECSTestsFixture
+    /// <summary> Tests for <see cref="JobEvent"/>. </summary>
+    public class JobEventTests : ECSTestsFixture
     {
+        /// <summary> Tests that <see cref="JobEvent.ScheduleParallel{TJob, T}"/> schedules the job correctly. </summary>
         [Test]
-        public void ScheduleParallelSplit()
+        public void ScheduleParallel()
         {
             const int foreachCount = 100;
             const int eventCount = 100;
@@ -38,7 +46,7 @@
                     {
                         Counter = counter.AsParallelWriter(),
                     }
-                    .ScheduleParallel<TestJob, TestEvent>(es, 64, default);
+                    .ScheduleParallel<TestJob, TestEvent>(es, 64);
 
                 finalHandle.Complete();
 
@@ -58,3 +66,5 @@
         }
     }
 }
+
+#endif

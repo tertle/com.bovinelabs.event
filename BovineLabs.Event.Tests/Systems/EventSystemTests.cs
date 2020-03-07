@@ -4,7 +4,7 @@
 
 #if BOVINELABS_TESTING_ENABLED
 
-namespace BovineLabs.Event.Tests
+namespace BovineLabs.Event.Tests.Systems
 {
     using System;
     using System.Collections.Generic;
@@ -17,9 +17,7 @@ namespace BovineLabs.Event.Tests
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary>
-    /// The EventSystemTests.
-    /// </summary>
+    /// <summary> Tests for <see cref="EventSystem"/>. </summary>
     public class EventSystemTests : ECSTestsFixture
     {
         /// <summary> Testing CreateEventWriter calls must be paired with a AddJobHandleForProducer call. </summary>
