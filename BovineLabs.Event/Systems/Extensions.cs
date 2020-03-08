@@ -72,7 +72,7 @@
                 }
             }
 
-            [BurstCompile]
+            [BurstCompile] // does not work
             private struct EnsureHashMapCapacityJob<TK, TV> : IJob
                 where TK : struct, IEquatable<TK>
                 where TV : struct
@@ -92,9 +92,6 @@
                     }
 
                     var requiredSize = this.HashMap.Length + count;
-
-                    // this.HashMap.Capacity =
-                    //     math.select(requiredSize, this.HashMap.Capacity, this.HashMap.Capacity < requiredSize);
 
                     if (this.HashMap.Capacity < requiredSize)
                     {

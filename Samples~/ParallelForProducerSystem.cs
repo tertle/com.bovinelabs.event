@@ -25,7 +25,7 @@ namespace BovineLabs.Event.Samples
         /// <inheritdoc/>
         protected override void OnUpdate()
         {
-            const int count = 100;
+            const int count = 10240;
 
             var writer = this.eventSystem.CreateEventWriter<TestEventEmpty>(count);
 
@@ -50,7 +50,7 @@ namespace BovineLabs.Event.Samples
             {
                 this.Random.state = (uint)(this.Random.state + index);
 
-                var eventCount = this.Random.NextInt(1, 1000);
+                var eventCount = this.Random.NextInt(1, 1024);
 
                 this.Events.BeginForEachIndex(index);
                 for (var i = 0; i < eventCount; i++)
