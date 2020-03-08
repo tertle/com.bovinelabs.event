@@ -20,8 +20,8 @@ namespace BovineLabs.Event.Jobs
         where T : struct
     {
         /// <summary> Executes the next event. </summary>
-        /// <param name="value"> The event. </param>
-        void Execute(T value);
+        /// <param name="e"> The event. </param>
+        void Execute(T e);
     }
 
     /// <summary> Extension methods for <see cref="IJobEvent{T}"/>. </summary>
@@ -42,7 +42,7 @@ namespace BovineLabs.Event.Jobs
         {
             dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
 
-            for (var i = 0; i < events.Length; i++)
+            for (var i = 0; i < events.Count; i++)
             {
                 var e = events[i];
 

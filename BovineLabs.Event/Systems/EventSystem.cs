@@ -6,7 +6,6 @@ namespace BovineLabs.Event.Systems
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using BovineLabs.Event.Data;
     using BovineLabs.Event.Utility;
     using Unity.Collections;
@@ -18,8 +17,7 @@ namespace BovineLabs.Event.Systems
     /// The base Event System class. Implement to add your own event system to a world or group.
     /// By default LateSimulation and Presentation are implemented.
     /// </summary>
-    [SuppressMessage("ReSharper", "ForCanBeConvertedToForeach", Justification = "Unity.")]
-    public abstract class EventSystem : SystemBase
+    public abstract partial class EventSystem : SystemBase
     {
         // separate to avoid allocations when iterating
         private readonly List<EventContainer> containers = new List<EventContainer>();
@@ -91,7 +89,7 @@ namespace BovineLabs.Event.Systems
         public int GetEventReadersCount<T>()
             where T : struct
         {
-            var container = this.GetOrCreateEventContainer<T>();
+            EventContainer container = this.GetOrCreateEventContainer<T>();
 
             if (!container.ReadMode)
             {
@@ -106,7 +104,7 @@ namespace BovineLabs.Event.Systems
         /// <param name="readers">A collection of <see cref="NativeStream.Reader"/> you can read events from.</param>
         /// <typeparam name="T">The type of event.</typeparam>
         /// <returns>The updated dependency handle.</returns>
-        public JobHandle GetEventReaders<T>(JobHandle handle, out NativeArray<NativeTuple<NativeStreamImposter.Reader, int>> readers)
+        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<NativeTuple<NativeStream.Reader, int>> readers)
             where T : struct
         {
             EventContainer container = this.GetOrCreateEventContainer<T>();
@@ -128,6 +126,12 @@ namespace BovineLabs.Event.Systems
             where T : struct
         {
             this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
+        }
+
+        public Extensions<T> Ex<T>()
+            where T : struct
+        {
+            return new Extensions<T>(this);
         }
 
         /// <summary> Adds readers from other event systems. </summary>

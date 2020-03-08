@@ -6,7 +6,6 @@ namespace BovineLabs.Event.Systems
 {
     using System;
     using System.Collections.Generic;
-    using BovineLabs.Event.Data;
     using BovineLabs.Event.Utility;
     using Unity.Collections;
     using Unity.Jobs;
@@ -15,14 +14,21 @@ namespace BovineLabs.Event.Systems
     internal sealed class EventContainer : IDisposable
     {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-        private const string ProducerException = "CreateEventWriter must always be balanced by a AddJobHandleForProducer call";
-        private const string ConsumerException = "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
+        private const string ProducerException =
+            "CreateEventWriter must always be balanced by a AddJobHandleForProducer call";
+
+        private const string ConsumerException =
+            "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
+
         private const string ReadModeRequired = "Can only be called in read mode.";
         private const string WriteModeRequired = "Can not be called in read mode.";
 #endif
 
-        private readonly List<NativeTuple<NativeStream, int>> externalReaders = new List<NativeTuple<NativeStream, int>>();
-        private NativeList<NativeTuple<NativeStreamImposter.Reader, int>> readers;
+        private readonly List<NativeTuple<NativeStream, int>> externalReaders =
+            new List<NativeTuple<NativeStream, int>>();
+
+        private readonly List<NativeTuple<NativeStream.Reader, int>> readers =
+            new List<NativeTuple<NativeStream.Reader, int>>();
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private bool producerSafety;
@@ -34,7 +40,6 @@ namespace BovineLabs.Event.Systems
         public EventContainer(Type type)
         {
             this.Type = type;
-            this.readers = new NativeList<NativeTuple<NativeStreamImposter.Reader, int>>(64, Allocator.Persistent);
         }
 
         /// <summary> Gets a value indicating whether the container is in read only mode. </summary>
@@ -134,7 +139,7 @@ namespace BovineLabs.Event.Systems
 
         /// <summary> Gets the collection of readers. </summary>
         /// <returns> Returns a tuple where Item1 is the reader, Item2 is the foreachCount. </returns>
-        public NativeArray<NativeTuple<NativeStreamImposter.Reader, int>> GetReaders()
+        public IReadOnlyList<NativeTuple<NativeStream.Reader, int>> GetReaders()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.consumerSafety)
@@ -170,7 +175,7 @@ namespace BovineLabs.Event.Systems
             }
 #endif
 
-            return this.readers.Length;
+            return this.readers.Count;
         }
 
         /// <summary> Set the event to read mode. </summary>
@@ -190,7 +195,7 @@ namespace BovineLabs.Event.Systems
                 var reader = stream.Item1.AsReader();
                 var count = stream.Item2;
 
-                this.readers.Add(new NativeTuple<NativeStreamImposter.Reader, int>(reader, count));
+                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(reader, count));
             }
 
             for (var index = 0; index < this.externalReaders.Count; index++)
@@ -199,7 +204,7 @@ namespace BovineLabs.Event.Systems
                 var reader = stream.Item1.AsReader();
                 var count = stream.Item2;
 
-                this.readers.Add(new NativeTuple<NativeStreamImposter.Reader, int>(reader, count));
+                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(reader, count));
             }
         }
 
@@ -238,8 +243,6 @@ namespace BovineLabs.Event.Systems
             {
                 this.Streams[index].Item1.Dispose();
             }
-
-            this.readers.Dispose();
         }
     }
 }

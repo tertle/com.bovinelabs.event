@@ -5,6 +5,7 @@
 namespace BovineLabs.Event.Samples
 {
     using BovineLabs.Event;
+    using BovineLabs.Event.Systems;
     using BovineLabs.Events.Samples.Events;
     using Unity.Entities;
     using UnityEngine;

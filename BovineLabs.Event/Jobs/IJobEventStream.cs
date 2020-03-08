@@ -44,12 +44,12 @@ namespace BovineLabs.Event.Jobs
         {
             dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
 
-            for (var i = 0; i < events.Length; i++)
+            for (var i = 0; i < events.Count; i++)
             {
 
                 var fullData = new EventJobStreamStruct<TJob, T>
                 {
-                    Readers = events[i].Item1.AsReader(),
+                    Readers = events[i].Item1,
                     JobData = jobData,
                     Index = i,
                 };
@@ -83,6 +83,7 @@ namespace BovineLabs.Event.Jobs
             /// <summary> The job. </summary>
             public TJob JobData;
 
+            /// <summary> The index of the reader. </summary>
             public int Index;
 
             // ReSharper disable once StaticMemberInGenericType

@@ -59,9 +59,9 @@ namespace BovineLabs.Event.Tests.Jobs
         {
             public NativeQueue<int>.ParallelWriter Counter;
 
-            public void Execute(TestEvent value)
+            public void Execute(TestEvent e)
             {
-                this.Counter.Enqueue(value.Value);
+                this.Counter.Enqueue(e.Value);
             }
         }
     }

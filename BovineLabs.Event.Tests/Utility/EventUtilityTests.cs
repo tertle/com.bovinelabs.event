@@ -58,7 +58,7 @@ namespace BovineLabs.Event.Tests.Utility
                 events2.EndForEachIndex();
                 es.AddJobHandleForProducer<TestEvent>(default);
 
-                var handle = es.EnsureHashMapCapacity<TestEvent, int, int>(default, hashmap);
+                var handle = es.Ex<TestEvent>().EnsureHashMapCapacity(default, hashmap);
                 handle.Complete();
 
                 Assert.AreEqual(startCount + firstEventCount + secondEventCount, hashmap.Capacity);
