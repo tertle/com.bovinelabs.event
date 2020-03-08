@@ -5,6 +5,7 @@
 namespace BovineLabs.Event.Utility
 {
     using System;
+    using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
     using Unity.Burst;
     using Unity.Collections;
@@ -32,54 +33,41 @@ namespace BovineLabs.Event.Utility
             where TV : struct
             where TE : struct
         {
-            handle = eventSystem.GetEventReaders<TE>(handle, out var readers);
+            var count = eventSystem.GetEventReadersCount<TE>();
 
-            JobHandle readerHandle = default;
-
-            if (readers.Length > 0)
+            if (count != 0)
             {
-                var counter = new NativeArray<int>(readers.Length, Allocator.TempJob);
+                var counter = new NativeArray<int>(count, Allocator.TempJob);
 
-                for (var i = 0; i < readers.Length; i++)
-                {
-                    var countHandle = new CountJob
-                        {
-                            Reader = readers[i].Item1,
-                            Counter = counter,
-                            Index = i,
-                        }
-                        .Schedule(handle);
-
-                    readerHandle = JobHandle.CombineDependencies(readerHandle, countHandle);
-                }
+                handle = new CountJob<TE>
+                    {
+                        Counter = counter,
+                    }
+                    .Schedule<CountJob<TE>, TE>(eventSystem, handle, true);
 
                 handle = new EnsureHashMapCapacityJob<TK, TV>
                     {
                         Counter = counter,
                         HashMap = hashMap,
                     }
-                    .Schedule(readerHandle);
+                    .Schedule(handle);
 
                 handle = counter.Dispose(handle);
             }
-
-            eventSystem.AddJobHandleForConsumer<TE>(handle);
 
             return handle;
         }
 
         [BurstCompile]
-        private struct CountJob : IJob
+        private struct CountJob<T> : IJobEventStream<T>
+            where T : struct
         {
-            public NativeStream.Reader Reader;
-
             [NativeDisableContainerSafetyRestriction]
             public NativeArray<int> Counter;
-            public int Index;
 
-            public void Execute()
+            public void Execute(NativeStream.Reader reader, int index)
             {
-                this.Counter[this.Index] = this.Reader.ComputeItemCount();
+                this.Counter[index] = reader.ComputeItemCount();
             }
         }
 

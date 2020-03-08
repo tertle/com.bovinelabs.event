@@ -156,7 +156,7 @@ namespace BovineLabs.Event.Systems
         /// <summary> Check if any readers exist. Requires read mode. </summary>
         /// <returns> True if there is at least 1 reader. </returns>
         /// <exception cref="InvalidOperationException"> Throws if is not in read mode or consumer safety is set. </exception>
-        public bool HasReaders()
+        public int GetReadersCount()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.consumerSafety)
@@ -170,7 +170,7 @@ namespace BovineLabs.Event.Systems
             }
 #endif
 
-            return this.readers.Length != 0;
+            return this.readers.Length;
         }
 
         /// <summary> Set the event to read mode. </summary>

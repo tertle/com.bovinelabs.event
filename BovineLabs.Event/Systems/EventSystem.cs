@@ -82,6 +82,15 @@ namespace BovineLabs.Event.Systems
         public bool HasEventReaders<T>()
             where T : struct
         {
+            return this.GetEventReadersCount<T>() != 0;
+        }
+
+        /// <summary> Checks if an event has any readers. </summary>
+        /// <typeparam name="T">The event type to check.</typeparam>
+        /// <returns>True if there are readers for the event.</returns>
+        public int GetEventReadersCount<T>()
+            where T : struct
+        {
             var container = this.GetOrCreateEventContainer<T>();
 
             if (!container.ReadMode)
@@ -89,7 +98,7 @@ namespace BovineLabs.Event.Systems
                 container.SetReadMode();
             }
 
-            return container.HasReaders();
+            return container.GetReadersCount();
         }
 
         /// <summary> Get the NativeStream for reading events from. </summary>

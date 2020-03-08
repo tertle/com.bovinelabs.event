@@ -22,7 +22,8 @@ namespace BovineLabs.Event.Jobs
     {
         /// <summary> Executes the next event. </summary>
         /// <param name="stream"> The stream. </param>
-        void Execute(NativeStream.Reader stream);
+        /// <param name="index"> The stream index. </param>
+        void Execute(NativeStream.Reader stream, int index);
     }
 
     /// <summary> Extension methods for <see cref="IJobEventStream{T}"/>. </summary>
@@ -50,6 +51,7 @@ namespace BovineLabs.Event.Jobs
                 {
                     Readers = events[i].Item1.AsReader(),
                     JobData = jobData,
+                    Index = i,
                 };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
@@ -80,6 +82,8 @@ namespace BovineLabs.Event.Jobs
 
             /// <summary> The job. </summary>
             public TJob JobData;
+
+            public int Index;
 
             // ReSharper disable once StaticMemberInGenericType
             private static IntPtr jobReflectionData;
@@ -121,7 +125,7 @@ namespace BovineLabs.Event.Jobs
                 ref JobRanges ranges,
                 int jobIndex)
             {
-                fullData.JobData.Execute(fullData.Readers);
+                fullData.JobData.Execute(fullData.Readers, fullData.Index);
             }
         }
     }

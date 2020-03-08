@@ -77,7 +77,7 @@ namespace BovineLabs.Event.Tests.Jobs
         {
             public NativeQueue<int>.ParallelWriter Counter;
 
-            public void Execute(NativeStream.Reader stream)
+            public void Execute(NativeStream.Reader stream, int index)
             {
                 this.Counter.Enqueue(stream.ForEachCount);
             }
