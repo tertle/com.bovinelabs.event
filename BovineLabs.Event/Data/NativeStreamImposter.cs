@@ -51,7 +51,12 @@ namespace BovineLabs.Event.Data
         public struct Reader
         {
             [UsedImplicitly]
-            private fixed byte bytes[60]; // UnsafeUtility.SizeOf<NativeStream.Reader>()
+            private fixed byte bytes[40]; // UnsafeUtility.SizeOf<NativeStream.Reader>()
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            private int m_RemainingBlocks;
+            public AtomicSafetyHandle m_Safety;
+#endif
 
             public static implicit operator NativeStreamImposter.Reader(NativeStream.Reader nativeStream)
             {

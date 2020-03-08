@@ -16,14 +16,14 @@ namespace BovineLabs.Event.Utility
     /// </summary>
     public static class EventUtility
     {
-        /// <summary> Ensure a <see cref="NativeHashMap{TKey,TValue}"/> has the capacity to be filled with all events of a specific type. </summary>
-        /// <param name="eventSystem">The event system for the extension.</param>
-        /// <param name="handle">Input dependencies.</param>
-        /// <param name="hashMap">The <see cref="NativeHashMap{TKey,TValue}"/> to ensure capacity of.</param>
-        /// <typeparam name="TE">The event type.</typeparam>
-        /// <typeparam name="TK">The key type of the <see cref="NativeHashMap{TKey,TValue}"/>.</typeparam>
-        /// <typeparam name="TV">The value type of the <see cref="NativeHashMap{TKey,TValue}"/>.</typeparam>
-        /// <returns>The dependency handle.</returns>
+        /// <summary> Ensure a <see cref="NativeHashMap{TKey,TValue}" /> has the capacity to be filled with all events of a specific type. </summary>
+        /// <param name="eventSystem"> The event system for the extension. </param>
+        /// <param name="handle"> Input dependencies. </param>
+        /// <param name="hashMap"> The <see cref="NativeHashMap{TKey,TValue}"/> to ensure capacity of. </param>
+        /// <typeparam name="TE"> The event type. </typeparam>
+        /// <typeparam name="TK"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/>. </typeparam>
+        /// <typeparam name="TV"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/>. </typeparam>
+        /// <returns> The dependency handle. </returns>
         public static JobHandle EnsureHashMapCapacity<TE, TK, TV>(
             this EventSystem eventSystem,
             JobHandle handle,
