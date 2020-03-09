@@ -6,7 +6,6 @@ namespace BovineLabs.Event.Systems
 {
     using System;
     using System.Collections.Generic;
-    using BovineLabs.Event.Data;
     using BovineLabs.Event.Utility;
     using Unity.Collections;
     using Unity.Entities;
@@ -89,13 +88,7 @@ namespace BovineLabs.Event.Systems
         public int GetEventReadersCount<T>()
             where T : struct
         {
-            EventContainer container = this.GetOrCreateEventContainer<T>();
-
-            if (!container.ReadMode)
-            {
-                container.SetReadMode();
-            }
-
+            var container = this.GetOrCreateEventContainer<T>();
             return container.GetReadersCount();
         }
 
@@ -107,15 +100,8 @@ namespace BovineLabs.Event.Systems
         public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<NativeTuple<NativeStream.Reader, int>> readers)
             where T : struct
         {
-            EventContainer container = this.GetOrCreateEventContainer<T>();
-
-            if (!container.ReadMode)
-            {
-                container.SetReadMode();
-            }
-
+            var container = this.GetOrCreateEventContainer<T>();
             readers = container.GetReaders();
-
             return JobHandle.CombineDependencies(container.ProducerHandle, handle);
         }
 
@@ -128,6 +114,9 @@ namespace BovineLabs.Event.Systems
             this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
         }
 
+        /// <summary> A collection of extension for events that avoid having to include long generics in their calls. </summary>
+        /// <typeparam name="T"> The event type. </typeparam>
+        /// <returns> The extensions container. </returns>
         public Extensions<T> Ex<T>()
             where T : struct
         {
@@ -203,7 +192,7 @@ namespace BovineLabs.Event.Systems
                 handles[i] = this.streamBus.AddStreams(this, container.Type, container.Streams, handles[i]);
                 Profiler.EndSample();
 
-                container.Reset();
+                container.Update();
             }
 
             this.Dependency = JobHandle.CombineDependencies(handles);

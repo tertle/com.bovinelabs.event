@@ -329,16 +329,21 @@ namespace BovineLabs.Event.Tests.Systems
 
         /// <summary> Ensures writing in read mode throws exception. </summary>
         [Test]
-        public void WriteInReadModeThrowsInvalidOperationException()
+        public void WriteInReadModeAddsToDeferred()
         {
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
-            es.GetEventReaders<TestEvent>(default, out _);
 
-            Assert.Throws<InvalidOperationException>(
-                () => es.CreateEventWriter<TestEvent>(1));
+            Assert.AreEqual(0, es.GetEventReadersCount<TestEvent>());
 
-            Assert.Throws<InvalidOperationException>(
-                () => es.AddJobHandleForProducer<TestEvent>(default));
+            es.CreateEventWriter<TestEvent>(3);
+
+            // Still deferred
+            Assert.AreEqual(0, es.GetEventReadersCount<TestEvent>());
+
+            es.Update();
+
+            // Returned to read queue.
+            Assert.AreEqual(1, es.GetEventReadersCount<TestEvent>());
         }
 
         /// <summary> Tests event readers returns correctly. </summary>

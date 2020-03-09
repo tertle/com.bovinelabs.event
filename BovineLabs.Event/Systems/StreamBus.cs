@@ -73,9 +73,7 @@ namespace BovineLabs.Event.Systems
 #endif
         }
 
-        /// <summary>
-        /// Add a set of event streams to be shared with other systems.
-        /// </summary>
+        /// <summary> Add a set of event streams to be shared with other systems. </summary>
         /// <param name="owner">The system that owns the streams.</param>
         /// <param name="type">The type of the event.</param>
         /// <param name="newStreams">The streams.</param>

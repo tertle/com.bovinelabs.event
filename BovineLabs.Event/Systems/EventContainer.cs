@@ -30,6 +30,13 @@ namespace BovineLabs.Event.Systems
         private readonly List<NativeTuple<NativeStream.Reader, int>> readers =
             new List<NativeTuple<NativeStream.Reader, int>>();
 
+        private readonly List<NativeTuple<NativeStream, int>> deferredStreams =
+            new List<NativeTuple<NativeStream, int>>();
+
+        private JobHandle deferredProducerHandle;
+
+        private bool isReadMode;
+
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private bool producerSafety;
         private bool consumerSafety;
@@ -41,9 +48,6 @@ namespace BovineLabs.Event.Systems
         {
             this.Type = type;
         }
-
-        /// <summary> Gets a value indicating whether the container is in read only mode. </summary>
-        public bool ReadMode { get; private set; }
 
         /// <summary> Gets the producer handle. </summary>
         public JobHandle ProducerHandle { get; private set; }
@@ -73,15 +77,19 @@ namespace BovineLabs.Event.Systems
             }
 
             this.producerSafety = true;
-
-            if (this.ReadMode)
-            {
-                throw new InvalidOperationException(WriteModeRequired);
-            }
 #endif
 
             var stream = new NativeStream(foreachCount, Allocator.TempJob);
-            this.Streams.Add(new NativeTuple<NativeStream, int>(stream, foreachCount));
+            var tuple = new NativeTuple<NativeStream, int>(stream, foreachCount);
+
+            if (this.isReadMode)
+            {
+                this.deferredStreams.Add(tuple);
+            }
+            else
+            {
+                this.Streams.Add(new NativeTuple<NativeStream, int>(stream, foreachCount));
+            }
 
             return stream.AsWriter();
         }
@@ -106,14 +114,14 @@ namespace BovineLabs.Event.Systems
         /// <param name="handle">The handle.</param>
         public void AddJobHandleForProducerUnsafe(JobHandle handle)
         {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (this.ReadMode)
+            if (this.isReadMode)
             {
-                throw new InvalidOperationException(WriteModeRequired);
+                this.deferredProducerHandle = JobHandle.CombineDependencies(this.deferredProducerHandle, handle);
             }
-#endif
-
-            this.ProducerHandle = JobHandle.CombineDependencies(this.ProducerHandle, handle);
+            else
+            {
+                this.ProducerHandle = JobHandle.CombineDependencies(this.ProducerHandle, handle);
+            }
         }
 
         /// <summary> Add a new producer job handle. Can only be called in write mode. </summary>
@@ -128,7 +136,7 @@ namespace BovineLabs.Event.Systems
 
             this.consumerSafety = false;
 
-            if (!this.ReadMode)
+            if (!this.isReadMode)
             {
                 throw new InvalidOperationException(ReadModeRequired);
             }
@@ -148,12 +156,9 @@ namespace BovineLabs.Event.Systems
             }
 
             this.consumerSafety = true;
-
-            if (!this.ReadMode)
-            {
-                throw new InvalidOperationException(ReadModeRequired);
-            }
 #endif
+
+            this.SetReadMode();
 
             return this.readers;
         }
@@ -168,44 +173,10 @@ namespace BovineLabs.Event.Systems
             {
                 throw new InvalidOperationException(ConsumerException);
             }
-
-            if (!this.ReadMode)
-            {
-                throw new InvalidOperationException(ReadModeRequired);
-            }
 #endif
 
+            this.SetReadMode();
             return this.readers.Count;
-        }
-
-        /// <summary> Set the event to read mode. </summary>
-        public void SetReadMode()
-        {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (this.ReadMode)
-            {
-                throw new InvalidOperationException(WriteModeRequired);
-            }
-#endif
-            this.ReadMode = true;
-
-            for (var index = 0; index < this.Streams.Count; index++)
-            {
-                var stream = this.Streams[index];
-                var reader = stream.Item1.AsReader();
-                var count = stream.Item2;
-
-                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(reader, count));
-            }
-
-            for (var index = 0; index < this.externalReaders.Count; index++)
-            {
-                var stream = this.externalReaders[index];
-                var reader = stream.Item1.AsReader();
-                var count = stream.Item2;
-
-                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(reader, count));
-            }
         }
 
         /// <summary> Add readers to the container. Requires read mode.  </summary>
@@ -214,7 +185,7 @@ namespace BovineLabs.Event.Systems
         public void AddReaders(IEnumerable<NativeTuple<NativeStream, int>> externalStreams)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (this.ReadMode)
+            if (this.isReadMode)
             {
                 throw new InvalidOperationException(WriteModeRequired);
             }
@@ -223,15 +194,21 @@ namespace BovineLabs.Event.Systems
             this.externalReaders.AddRange(externalStreams);
         }
 
-        /// <summary> Reset and clears the container ready for next frame. </summary>
-        public void Reset()
+        /// <summary> Update for the next frame. </summary>
+        public void Update()
         {
-            this.ReadMode = false;
+            this.isReadMode = false;
 
+            // Clear our containers
             this.Streams.Clear();
             this.externalReaders.Clear();
             this.readers.Clear();
 
+            // Copy our deferred containers for the next frame
+            this.Streams.AddRange(this.deferredStreams);
+            this.deferredStreams.Clear();
+
+            // Reset handles
             this.ConsumerHandle = default;
             this.ProducerHandle = default;
         }
@@ -242,6 +219,34 @@ namespace BovineLabs.Event.Systems
             for (var index = 0; index < this.Streams.Count; index++)
             {
                 this.Streams[index].Item1.Dispose();
+            }
+
+            for (var index = 0; index < this.deferredStreams.Count; index++)
+            {
+                this.deferredStreams[index].Item1.Dispose();
+            }
+        }
+
+        /// <summary> Set the event to read mode. </summary>
+        private void SetReadMode()
+        {
+            if (this.isReadMode)
+            {
+                return;
+            }
+
+            this.isReadMode = true;
+
+            for (var index = 0; index < this.Streams.Count; index++)
+            {
+                var stream = this.Streams[index];
+                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(stream.Item1.AsReader(), stream.Item2));
+            }
+
+            for (var index = 0; index < this.externalReaders.Count; index++)
+            {
+                var stream = this.externalReaders[index];
+                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(stream.Item1.AsReader(), stream.Item2));
             }
         }
     }
