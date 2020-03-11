@@ -9,7 +9,6 @@ namespace BovineLabs.Event.Tests.Systems
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using BovineLabs.Event.Data;
     using BovineLabs.Event.Systems;
     using BovineLabs.Event.Utility;
     using NUnit.Framework;

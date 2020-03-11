@@ -6,7 +6,6 @@
 
 namespace BovineLabs.Event.Tests.Utility
 {
-    using BovineLabs.Event.Utility;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Entities.Tests;

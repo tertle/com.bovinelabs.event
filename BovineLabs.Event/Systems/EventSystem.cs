@@ -88,8 +88,8 @@ namespace BovineLabs.Event.Systems
         public int GetEventReadersCount<T>()
             where T : struct
         {
-            var container = this.GetOrCreateEventContainer<T>();
-            return container.GetReadersCount();
+            var container = this.GetEventContainer<T>();
+            return container?.GetReadersCount() ?? 0;
         }
 
         /// <summary> Get the NativeStream for reading events from. </summary>
@@ -213,6 +213,12 @@ namespace BovineLabs.Event.Systems
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private EventContainer GetEventContainer<T>()
+            where T : struct
+        {
+            return this.types.TryGetValue(typeof(T), out var index) ? this.containers[index] : null;
         }
 
         private EventContainer GetOrCreateEventContainer<T>()

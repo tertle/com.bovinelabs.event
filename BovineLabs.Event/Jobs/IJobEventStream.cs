@@ -1,4 +1,4 @@
-﻿// <copyright file="IJobEvent.cs" company="BovineLabs">
+﻿// <copyright file="IJobEventStream.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -46,7 +46,6 @@ namespace BovineLabs.Event.Jobs
 
             for (var i = 0; i < events.Count; i++)
             {
-
                 var fullData = new EventJobStreamStruct<TJob, T>
                 {
                     Readers = events[i].Item1,

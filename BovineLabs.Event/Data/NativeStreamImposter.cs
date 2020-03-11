@@ -4,7 +4,6 @@
 
 namespace BovineLabs.Event.Data
 {
-    using JetBrains.Annotations;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
@@ -46,34 +45,5 @@ namespace BovineLabs.Event.Data
         {
             return unchecked((int)(long)this.blockStreamData);
         }
-
-//         /// <summary> An imposter class for <see cref="NativeStream.Reader"/>. </summary>
-//         public struct Reader
-//         {
-//             [UsedImplicitly]
-//             private fixed byte bytes[40]; // UnsafeUtility.SizeOf<NativeStream.Reader>()
-//
-// #if ENABLE_UNITY_COLLECTIONS_CHECKS
-//             private int m_RemainingBlocks;
-//             public AtomicSafetyHandle m_Safety;
-// #endif
-//
-//             public static implicit operator NativeStreamImposter.Reader(NativeStream.Reader nativeStream)
-//             {
-//                 return UnsafeUtilityEx.As<NativeStream.Reader, NativeStreamImposter.Reader>(ref nativeStream);
-//             }
-//
-//             public static implicit operator NativeStream.Reader(NativeStreamImposter.Reader imposter)
-//             {
-//                 return UnsafeUtilityEx.As<NativeStreamImposter.Reader, NativeStream.Reader>(ref imposter);
-//             }
-//
-//             /// <summary> Returns the original <see cref="NativeStream.Reader"/>. </summary>
-//             /// <returns> The original <see cref="NativeStream.Reader"/>. </returns>
-//             public NativeStream.Reader AsReader()
-//             {
-//                 return this;
-//             }
-//         }
     }
 }
