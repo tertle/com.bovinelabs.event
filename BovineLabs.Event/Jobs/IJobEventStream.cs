@@ -18,7 +18,7 @@ namespace BovineLabs.Event.Jobs
     [SuppressMessage("ReSharper", "TypeParameterCanBeVariant", Justification = "Strict requirements for compiler")]
     [SuppressMessage("ReSharper", "UnusedTypeParameter", Justification = "Required by scheduler")]
     public interface IJobEventStream<T>
-        where T : struct
+        where T : unmanaged
     {
         /// <summary> Executes the next event. </summary>
         /// <param name="stream"> The stream. </param>
@@ -40,7 +40,7 @@ namespace BovineLabs.Event.Jobs
         public static unsafe JobHandle Schedule<TJob, T>(
             this TJob jobData, EventSystem eventSystem, JobHandle dependsOn = default, bool parallel = false)
             where TJob : struct, IJobEventStream<T>
-            where T : struct
+            where T : unmanaged
         {
             dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
 
@@ -73,7 +73,7 @@ namespace BovineLabs.Event.Jobs
         /// <typeparam name="T"> The type of the event. </typeparam>
         internal struct EventJobStreamStruct<TJob, T>
             where TJob : struct, IJobEventStream<T>
-            where T : struct
+            where T : unmanaged
         {
             /// <summary> The <see cref="NativeStream.Reader"/>. </summary>
             [ReadOnly]

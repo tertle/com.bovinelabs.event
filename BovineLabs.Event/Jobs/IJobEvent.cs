@@ -17,7 +17,7 @@ namespace BovineLabs.Event.Jobs
     [JobProducerType(typeof(JobEvent.EventJobStructParallelSplit<,>))]
     [SuppressMessage("ReSharper", "TypeParameterCanBeVariant", Justification = "Strict requirements for compiler")]
     public interface IJobEvent<T>
-        where T : struct
+        where T : unmanaged
     {
         /// <summary> Executes the next event. </summary>
         /// <param name="e"> The event. </param>
@@ -38,7 +38,7 @@ namespace BovineLabs.Event.Jobs
         public static unsafe JobHandle ScheduleParallel<TJob, T>(
             this TJob jobData, EventSystem eventSystem, int minIndicesPerJobCount, JobHandle dependsOn = default)
             where TJob : struct, IJobEvent<T>
-            where T : struct
+            where T : unmanaged
         {
             dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
 
@@ -74,7 +74,7 @@ namespace BovineLabs.Event.Jobs
         /// <typeparam name="T"> The type of the event. </typeparam>
         internal struct EventJobStructParallelSplit<TJob, T>
             where TJob : struct, IJobEvent<T>
-            where T : struct
+            where T : unmanaged
         {
             /// <summary> The <see cref="NativeStream.Reader"/>. </summary>
             [ReadOnly]

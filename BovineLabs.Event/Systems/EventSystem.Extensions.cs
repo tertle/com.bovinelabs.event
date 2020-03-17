@@ -21,7 +21,7 @@ namespace BovineLabs.Event.Systems
         /// </remarks>
         /// <typeparam name="T"> The event type. </typeparam>
         public struct Extensions<T>
-            where T : struct
+            where T : unmanaged
         {
             private readonly EventSystem eventSystem;
 
@@ -69,6 +69,15 @@ namespace BovineLabs.Event.Systems
                 return handle;
             }
 
+            public JobHandle CreateSingleReader(JobHandle handle, Allocator allocator, out NativeStream reader)
+            {
+                handle = this.eventSystem.GetEventReaders<T>(handle, out var readers);
+
+                reader = default;
+
+                return handle;
+            }
+
             [BurstCompile]
             private struct CountJob : IJobEventStream<T>
             {
@@ -100,7 +109,7 @@ namespace BovineLabs.Event.Systems
                         count += this.Counter[i];
                     }
 
-                    var requiredSize = this.HashMap.Length + count;
+                    var requiredSize = this.HashMap.Count() + count;
 
                     if (this.HashMap.Capacity < requiredSize)
                     {

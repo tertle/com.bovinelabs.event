@@ -332,6 +332,10 @@ namespace BovineLabs.Event.Tests.Systems
         {
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
+            // GetEventReadersCount won't create the container so just do it with a dummy GetEventReaders
+            es.GetEventReaders<TestEvent>(default, out _);
+            es.AddJobHandleForConsumer<TestEvent>(default);
+
             Assert.AreEqual(0, es.GetEventReadersCount<TestEvent>());
 
             es.CreateEventWriter<TestEvent>(3);
