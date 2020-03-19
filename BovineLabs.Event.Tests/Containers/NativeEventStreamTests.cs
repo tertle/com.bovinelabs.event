@@ -14,7 +14,7 @@
         [BurstCompile(CompileSynchronously = true)]
         private struct WriteInts : IJobParallelFor
         {
-            public NativeEventStream.Writer Writer;
+            public NativeEventStream<int>.Writer Writer;
 
             public void Execute(int index)
             {
@@ -31,7 +31,7 @@
         [BurstCompile(CompileSynchronously = true)]
         private struct ReadInts : IJobParallelFor
         {
-            public NativeEventStream.Reader Reader;
+            public NativeEventStream<int>.Reader Reader;
 
             public void Execute(int index)
             {
@@ -41,8 +41,8 @@
                 for (int i = 0; i != index; i++)
                 {
                     Assert.AreEqual(index - i, this.Reader.RemainingItemCount);
-                    var peekedValue = this.Reader.Peek<int>();
-                    var value = this.Reader.Read<int>();
+                    var peekedValue = this.Reader.Peek();
+                    var value = this.Reader.Read();
                     Assert.AreEqual(i, value);
                     Assert.AreEqual(i, peekedValue);
                 }
@@ -56,7 +56,7 @@
         {
             var count = JobsUtility.MaxJobThreadCount;
 
-            var stream = new NativeEventStream(Allocator.TempJob);
+            var stream = new NativeEventStream<int>(Allocator.TempJob);
             var fillInts = new WriteInts { Writer = stream.AsWriter() };
             var jobHandle = fillInts.Schedule(count, batchSize);
 
@@ -73,7 +73,7 @@
         [Test]
         public void CreateAndDestroy()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
 
             Assert.IsTrue(stream.IsCreated);
             Assert.IsTrue(stream.ComputeItemCount() == 0);
@@ -87,7 +87,7 @@
         {
             var count = JobsUtility.MaxJobThreadCount;
 
-            var stream = new NativeEventStream(Allocator.TempJob);
+            var stream = new NativeEventStream<int>(Allocator.TempJob);
             var fillInts = new WriteInts { Writer = stream.AsWriter() };
             fillInts.Schedule(count, batchSize).Complete();
 
@@ -99,7 +99,7 @@
         [Test]
         public void DisposeJob()
         {
-            var stream = new NativeEventStream(Allocator.TempJob);
+            var stream = new NativeEventStream<int>(Allocator.TempJob);
             Assert.IsTrue(stream.IsCreated);
 
             var fillInts = new WriteInts { Writer = stream.AsWriter() };
@@ -112,12 +112,12 @@
         }
 
 
-        #if ENABLE_UNITY_COLLECTIONS_CHECKS
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
 
         [Test]
         public void OutOfBoundsWriteThrows()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
             var writer = stream.AsWriter();
             Assert.Throws<ArgumentException>(() => writer.BeginForEachIndex(-1));
             Assert.Throws<ArgumentException>(() => writer.BeginForEachIndex(JobsUtility.MaxJobThreadCount));
@@ -128,7 +128,7 @@
         [Test]
         public void EndForEachIndexWithoutBeginThrows()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
             var writer = stream.AsWriter();
             Assert.Throws<ArgumentException>(() => writer.EndForEachIndex());
 
@@ -138,7 +138,7 @@
         [Test]
         public void WriteWithoutBeginThrows()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
             var writer = stream.AsWriter();
             Assert.Throws<ArgumentException>(() => writer.Write(5));
 
@@ -148,7 +148,7 @@
         [Test]
         public void WriteAfterEndThrows()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
             var writer = stream.AsWriter();
             writer.BeginForEachIndex(0);
             writer.Write(2);
@@ -162,7 +162,7 @@
         [Test]
         public void UnbalancedBeginThrows()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
             var writer = stream.AsWriter();
             writer.BeginForEachIndex(0);
             // Missing EndForEachIndex();
@@ -171,9 +171,9 @@
             stream.Dispose();
         }
 
-        static void CreateBlockStream1And2Int(out NativeEventStream stream)
+        static void CreateBlockStream1And2Int(out NativeEventStream<int> stream)
         {
-            stream = new NativeEventStream(Allocator.Temp);
+            stream = new NativeEventStream<int>(Allocator.Temp);
 
             var writer = stream.AsWriter();
             writer.BeginForEachIndex(0);
@@ -187,30 +187,13 @@
         }
 
         [Test]
-        public void IncompleteReadThrows()
-        {
-            NativeEventStream stream;
-            CreateBlockStream1And2Int(out stream);
-
-            var reader = stream.AsReader();
-
-            reader.BeginForEachIndex(0);
-            reader.Read<byte>();
-            Assert.Throws<ArgumentException>(() => reader.EndForEachIndex());
-
-            reader.BeginForEachIndex(1);
-
-            stream.Dispose();
-        }
-
-        [Test]
         public void ReadWithoutBeginThrows()
         {
-            NativeEventStream stream;
+            NativeEventStream<int> stream;
             CreateBlockStream1And2Int(out stream);
 
             var reader = stream.AsReader();
-            Assert.Throws<ArgumentException>(() => reader.Read<int>());
+            Assert.Throws<ArgumentException>(() => reader.Read());
 
             stream.Dispose();
         }
@@ -218,37 +201,22 @@
         [Test]
         public void TooManyReadsThrows()
         {
-            NativeEventStream stream;
+            NativeEventStream<int> stream;
             CreateBlockStream1And2Int(out stream);
 
             var reader = stream.AsReader();
 
             reader.BeginForEachIndex(0);
-            reader.Read<byte>();
-            Assert.Throws<ArgumentException>(() => reader.Read<byte>());
+            reader.Read();
+            Assert.Throws<ArgumentException>(() => reader.Read());
 
             stream.Dispose();
         }
-
-        [Test]
-        public void OutOfBoundsReadThrows()
-        {
-            NativeEventStream stream;
-            CreateBlockStream1And2Int(out stream);
-
-            var reader = stream.AsReader();
-
-            reader.BeginForEachIndex(0);
-            Assert.Throws<ArgumentException>(() => reader.Read<long>());
-
-            stream.Dispose();
-        }
-
 
         [Test]
         public void CopyWriterByValueThrows()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
             var writer = stream.AsWriter();
 
             writer.BeginForEachIndex(0);
@@ -272,7 +240,7 @@
         [Test]
         public void WriteSameIndexTwiceThrows()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream<int>(Allocator.Temp);
             var writer = stream.AsWriter();
 
             writer.BeginForEachIndex(0);
@@ -287,24 +255,6 @@
 
             stream.Dispose();
         }
-
-        struct ManagedRef
-        {
-            string Value;
-        }
-
-        [Test]
-        public void WriteManagedThrows()
-        {
-            var stream = new NativeEventStream(Allocator.Temp);
-            var writer = stream.AsWriter();
-
-            writer.BeginForEachIndex(0);
-
-            Assert.Throws<ArgumentException>(() => { writer.Write(new ManagedRef()); });
-
-            stream.Dispose();
-        }
-        #endif
+#endif
     }
 }

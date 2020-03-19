@@ -14,7 +14,8 @@
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
     [NativeContainer]
-    public unsafe struct NativeEventStream : IDisposable
+    public unsafe struct NativeEventStream<T> : IDisposable
+        where T : unmanaged
     {
         UnsafeEventStream m_Stream;
 
@@ -35,32 +36,6 @@
         {
             AllocateBlock(out this, allocator);
             this.m_Stream.AllocateForEach(JobsUtility.MaxJobThreadCount);
-        }
-
-        /// <summary>
-        /// Schedule job to construct a new NativeStream using the specified type of memory allocation.
-        /// </summary>
-        /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
-        /// <param name="allocator">A member of the
-        /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
-        public static JobHandle ScheduleConstruct<T>(out NativeEventStream stream, NativeList<T> forEachCountFromList, JobHandle dependency, Allocator allocator)
-            where T : struct
-        {
-            AllocateBlock(out stream, allocator);
-            var jobData = new ConstructJobList<T> { List = forEachCountFromList, Container = stream };
-            return jobData.Schedule(dependency);
-        }
-
-        /// <summary>
-        /// Schedule job to construct a new NativeStream using the specified type of memory allocation.
-        /// </summary>
-        /// <param name="allocator">A member of the
-        /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
-        public static JobHandle ScheduleConstruct(out NativeEventStream stream, NativeArray<int> lengthFromIndex0, JobHandle dependency, Allocator allocator)
-        {
-            AllocateBlock(out stream, allocator);
-            var jobData = new ConstructJob { Length = lengthFromIndex0, Container = stream };
-            return jobData.Schedule(dependency);
         }
 
         /// <summary>
@@ -160,36 +135,7 @@
             return jobHandle;
         }
 
-        [BurstCompile]
-        struct ConstructJobList<T> : IJob
-            where T : struct
-        {
-            public NativeEventStream Container;
-
-            [Unity.Collections.ReadOnly]
-            public NativeList<T> List;
-
-            public void Execute()
-            {
-                this.Container.AllocateForEach(this.List.Length);
-            }
-        }
-
-        [BurstCompile]
-        struct ConstructJob : IJob
-        {
-            public NativeEventStream Container;
-
-            [Unity.Collections.ReadOnly]
-            public NativeArray<int> Length;
-
-            public void Execute()
-            {
-                this.Container.AllocateForEach(this.Length[0]);
-            }
-        }
-
-        static void AllocateBlock(out NativeEventStream stream, Allocator allocator)
+        static void AllocateBlock(out NativeEventStream<T> stream, Allocator allocator)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (allocator <= Allocator.None)
@@ -256,7 +202,7 @@
             void* m_PassByRefCheck;
 #endif
 
-            internal Writer(ref NativeEventStream stream)
+            internal Writer(ref NativeEventStream<T> stream)
             {
                 this.m_Writer = stream.m_Stream.AsWriter();
 
@@ -323,9 +269,9 @@
             /// Write data.
             /// </summary>
             /// <typeparam name="T">The type of value.</typeparam>
-            public void Write<T>(T value) where T : struct
+            public void Write(T value)
             {
-                ref T dst = ref this.Allocate<T>();
+                ref T dst = ref this.Allocate();
                 dst = value;
             }
 
@@ -333,7 +279,7 @@
             /// Allocate space for data.
             /// </summary>
             /// <typeparam name="T">The type of value.</typeparam>
-            public ref T Allocate<T>() where T : struct
+            public ref T Allocate()
             {
                 CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();
@@ -442,7 +388,7 @@
             internal AtomicSafetyHandle m_Safety;
 #endif
 
-            internal Reader(ref NativeEventStream stream)
+            internal Reader(ref NativeEventStream<T> stream)
             {
                 this.m_Reader = stream.m_Stream.AsReader();
 
@@ -553,7 +499,7 @@
             /// Read data.
             /// </summary>
             /// <typeparam name="T">The type of value.</typeparam>
-            public ref T Read<T>() where T : struct
+            public ref T Read()
             {
                 int size = UnsafeUtility.SizeOf<T>();
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
@@ -563,7 +509,7 @@
             /// Peek into data.
             /// </summary>
             /// <typeparam name="T">The type of value.</typeparam>
-            public ref T Peek<T>() where T : struct
+            public ref T Peek()
             {
                 int size = UnsafeUtility.SizeOf<T>();
                 this.ReadChecks(size);
