@@ -2,13 +2,13 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Event.Data
+namespace BovineLabs.Event.Containers
 {
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
     /// <summary> An imposter class for <see cref="NativeStream"/> to do garbage free comparisons. </summary>
-    public unsafe struct NativeStreamImposter
+    internal unsafe struct NativeStreamImposter
     {
 #pragma warning disable 649
         private readonly void* blockStreamData;
