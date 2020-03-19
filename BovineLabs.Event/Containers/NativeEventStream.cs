@@ -6,6 +6,7 @@
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
+    using Unity.Jobs.LowLevel.Unsafe;
     using UnityEngine.Assertions;
 
     /// <summary>
@@ -13,9 +14,9 @@
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
     [NativeContainer]
-    public unsafe struct NativeStream1 : IDisposable
+    public unsafe struct NativeEventStream : IDisposable
     {
-        UnsafeStream m_Stream;
+        UnsafeEventStream m_Stream;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         AtomicSafetyHandle m_Safety;
@@ -30,10 +31,10 @@
         /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
         /// <param name="allocator">A member of the
         /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
-        public NativeStream1(int foreachCount, Allocator allocator)
+        public NativeEventStream(Allocator allocator)
         {
             AllocateBlock(out this, allocator);
-            this.m_Stream.AllocateForEach(foreachCount);
+            this.m_Stream.AllocateForEach(JobsUtility.MaxJobThreadCount);
         }
 
         /// <summary>
@@ -42,7 +43,7 @@
         /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
         /// <param name="allocator">A member of the
         /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
-        public static JobHandle ScheduleConstruct<T>(out NativeStream1 stream, NativeList<T> forEachCountFromList, JobHandle dependency, Allocator allocator)
+        public static JobHandle ScheduleConstruct<T>(out NativeEventStream stream, NativeList<T> forEachCountFromList, JobHandle dependency, Allocator allocator)
             where T : struct
         {
             AllocateBlock(out stream, allocator);
@@ -55,7 +56,7 @@
         /// </summary>
         /// <param name="allocator">A member of the
         /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
-        public static JobHandle ScheduleConstruct(out NativeStream1 stream, NativeArray<int> lengthFromIndex0, JobHandle dependency, Allocator allocator)
+        public static JobHandle ScheduleConstruct(out NativeEventStream stream, NativeArray<int> lengthFromIndex0, JobHandle dependency, Allocator allocator)
         {
             AllocateBlock(out stream, allocator);
             var jobData = new ConstructJob { Length = lengthFromIndex0, Container = stream };
@@ -163,7 +164,7 @@
         struct ConstructJobList<T> : IJob
             where T : struct
         {
-            public NativeStream1 Container;
+            public NativeEventStream Container;
 
             [Unity.Collections.ReadOnly]
             public NativeList<T> List;
@@ -177,7 +178,7 @@
         [BurstCompile]
         struct ConstructJob : IJob
         {
-            public NativeStream1 Container;
+            public NativeEventStream Container;
 
             [Unity.Collections.ReadOnly]
             public NativeArray<int> Length;
@@ -188,7 +189,7 @@
             }
         }
 
-        static void AllocateBlock(out NativeStream1 stream, Allocator allocator)
+        static void AllocateBlock(out NativeEventStream stream, Allocator allocator)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (allocator <= Allocator.None)
@@ -196,7 +197,7 @@
                 throw new ArgumentException("Allocator must be Temp, TempJob or Persistent", "allocator");
             }
 #endif
-            UnsafeStream.AllocateBlock(out stream.m_Stream, allocator);
+            UnsafeEventStream.AllocateBlock(out stream.m_Stream, allocator);
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             DisposeSentinel.Create(out stream.m_Safety, out stream.m_DisposeSentinel, 0, allocator);
@@ -241,7 +242,7 @@
         [NativeContainerSupportsMinMaxWriteRestriction]
         public unsafe struct Writer
         {
-            UnsafeStream.Writer m_Writer;
+            UnsafeEventStream.Writer m_Writer;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             AtomicSafetyHandle m_Safety;
@@ -255,7 +256,7 @@
             void* m_PassByRefCheck;
 #endif
 
-            internal Writer(ref NativeStream1 stream)
+            internal Writer(ref NativeEventStream stream)
             {
                 this.m_Writer = stream.m_Stream.AsWriter();
 
@@ -434,14 +435,14 @@
         [NativeContainerIsReadOnly]
         public unsafe struct Reader
         {
-            UnsafeStream.Reader m_Reader;
+            UnsafeEventStream.Reader m_Reader;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             int m_RemainingBlocks;
             internal AtomicSafetyHandle m_Safety;
 #endif
 
-            internal Reader(ref NativeStream1 stream)
+            internal Reader(ref NativeEventStream stream)
             {
                 this.m_Reader = stream.m_Stream.AsReader();
 

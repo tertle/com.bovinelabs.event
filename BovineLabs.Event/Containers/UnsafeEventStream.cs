@@ -75,7 +75,7 @@
     /// A deterministic data streaming supporting parallel reading and parallel writing.
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
-    public unsafe struct UnsafeStream : IDisposable
+    public unsafe struct UnsafeEventStream : IDisposable
     {
         [NativeDisableUnsafePtrRestriction]
         internal UnsafeStreamBlockData* m_Block;
@@ -84,7 +84,7 @@
         /// <summary>
         /// Constructs a new UnsafeStream using the specified type of memory allocation.
         /// </summary>
-        public UnsafeStream(int foreachCount, Allocator allocator)
+        public UnsafeEventStream(int foreachCount, Allocator allocator)
         {
             AllocateBlock(out this, allocator);
             this.AllocateForEach(foreachCount);
@@ -96,7 +96,7 @@
         /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
         /// <param name="allocator">A member of the
         /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
-        public static JobHandle ScheduleConstruct<T>(out UnsafeStream stream, NativeList<T> forEachCountFromList, JobHandle dependency, Allocator allocator)
+        public static JobHandle ScheduleConstruct<T>(out UnsafeEventStream stream, NativeList<T> forEachCountFromList, JobHandle dependency, Allocator allocator)
             where T : struct
         {
             AllocateBlock(out stream, allocator);
@@ -110,14 +110,14 @@
         /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
         /// <param name="allocator">A member of the
         /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
-        public static JobHandle ScheduleConstruct(out UnsafeStream stream, NativeArray<int> lengthFromIndex0, JobHandle dependency, Allocator allocator)
+        public static JobHandle ScheduleConstruct(out UnsafeEventStream stream, NativeArray<int> lengthFromIndex0, JobHandle dependency, Allocator allocator)
         {
             AllocateBlock(out stream, allocator);
             var jobData = new ConstructJob { Length = lengthFromIndex0, Container = stream };
             return jobData.Schedule(dependency);
         }
 
-        internal static void AllocateBlock(out UnsafeStream stream, Allocator allocator)
+        internal static void AllocateBlock(out UnsafeEventStream stream, Allocator allocator)
         {
             int blockCount = JobsUtility.MaxJobThreadCount;
 
@@ -273,7 +273,7 @@
         [BurstCompile]
         struct DisposeJob : IJob
         {
-            public UnsafeStream Container;
+            public UnsafeEventStream Container;
 
             public void Execute()
             {
@@ -285,7 +285,7 @@
         struct ConstructJobList<T> : IJob
             where T : struct
         {
-            public UnsafeStream Container;
+            public UnsafeEventStream Container;
 
             [ReadOnly]
             public NativeList<T> List;
@@ -299,7 +299,7 @@
         [BurstCompile]
         struct ConstructJob : IJob
         {
-            public UnsafeStream Container;
+            public UnsafeEventStream Container;
 
             [ReadOnly]
             public NativeArray<int> Length;
@@ -338,7 +338,7 @@
             [NativeSetThreadIndex]
             int m_ThreadIndex;
 
-            internal Writer(ref UnsafeStream stream)
+            internal Writer(ref UnsafeEventStream stream)
             {
                 this.m_BlockStream = stream.m_Block;
                 this.m_ForeachIndex = int.MinValue;
@@ -461,7 +461,7 @@
             internal int m_RemainingItemCount;
             internal int m_LastBlockSize;
 
-            internal Reader(ref UnsafeStream stream)
+            internal Reader(ref UnsafeEventStream stream)
             {
                 this.m_BlockStream = stream.m_Block;
                 this.m_CurrentBlock = null;

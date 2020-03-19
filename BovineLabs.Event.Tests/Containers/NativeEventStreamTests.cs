@@ -9,12 +9,12 @@
     using Unity.Jobs.LowLevel.Unsafe;
     using UnityEngine;
 
-    internal class NativeStreamTests
+    internal class NativeEventStreamTests
     {
         [BurstCompile(CompileSynchronously = true)]
         private struct WriteInts : IJobParallelFor
         {
-            public NativeStream1.Writer Writer;
+            public NativeEventStream.Writer Writer;
 
             public void Execute(int index)
             {
@@ -31,7 +31,7 @@
         [BurstCompile(CompileSynchronously = true)]
         private struct ReadInts : IJobParallelFor
         {
-            public NativeStream1.Reader Reader;
+            public NativeEventStream.Reader Reader;
 
             public void Execute(int index)
             {
@@ -56,7 +56,7 @@
         {
             var count = JobsUtility.MaxJobThreadCount;
 
-            var stream = new NativeStream1(count, Allocator.TempJob);
+            var stream = new NativeEventStream(Allocator.TempJob);
             var fillInts = new WriteInts { Writer = stream.AsWriter() };
             var jobHandle = fillInts.Schedule(count, batchSize);
 
@@ -73,7 +73,7 @@
         [Test]
         public void CreateAndDestroy()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
 
             Assert.IsTrue(stream.IsCreated);
             Assert.IsTrue(stream.ComputeItemCount() == 0);
@@ -87,7 +87,7 @@
         {
             var count = JobsUtility.MaxJobThreadCount;
 
-            var stream = new NativeStream1(count, Allocator.TempJob);
+            var stream = new NativeEventStream(Allocator.TempJob);
             var fillInts = new WriteInts { Writer = stream.AsWriter() };
             fillInts.Schedule(count, batchSize).Complete();
 
@@ -99,7 +99,7 @@
         [Test]
         public void DisposeJob()
         {
-            var stream = new NativeStream1(JobsUtility.MaxJobThreadCount, Allocator.TempJob);
+            var stream = new NativeEventStream(Allocator.TempJob);
             Assert.IsTrue(stream.IsCreated);
 
             var fillInts = new WriteInts { Writer = stream.AsWriter() };
@@ -117,10 +117,10 @@
         [Test]
         public void OutOfBoundsWriteThrows()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
             Assert.Throws<ArgumentException>(() => writer.BeginForEachIndex(-1));
-            Assert.Throws<ArgumentException>(() => writer.BeginForEachIndex(2));
+            Assert.Throws<ArgumentException>(() => writer.BeginForEachIndex(JobsUtility.MaxJobThreadCount));
 
             stream.Dispose();
         }
@@ -128,7 +128,7 @@
         [Test]
         public void EndForEachIndexWithoutBeginThrows()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
             Assert.Throws<ArgumentException>(() => writer.EndForEachIndex());
 
@@ -138,7 +138,7 @@
         [Test]
         public void WriteWithoutBeginThrows()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
             Assert.Throws<ArgumentException>(() => writer.Write(5));
 
@@ -148,7 +148,7 @@
         [Test]
         public void WriteAfterEndThrows()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
             writer.BeginForEachIndex(0);
             writer.Write(2);
@@ -162,7 +162,7 @@
         [Test]
         public void UnbalancedBeginThrows()
         {
-            var stream = new NativeStream1(2, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
             writer.BeginForEachIndex(0);
             // Missing EndForEachIndex();
@@ -171,9 +171,9 @@
             stream.Dispose();
         }
 
-        static void CreateBlockStream1And2Int(out NativeStream1 stream)
+        static void CreateBlockStream1And2Int(out NativeEventStream stream)
         {
-            stream = new NativeStream1(2, Allocator.Temp);
+            stream = new NativeEventStream(Allocator.Temp);
 
             var writer = stream.AsWriter();
             writer.BeginForEachIndex(0);
@@ -189,7 +189,7 @@
         [Test]
         public void IncompleteReadThrows()
         {
-            NativeStream1 stream;
+            NativeEventStream stream;
             CreateBlockStream1And2Int(out stream);
 
             var reader = stream.AsReader();
@@ -206,7 +206,7 @@
         [Test]
         public void ReadWithoutBeginThrows()
         {
-            NativeStream1 stream;
+            NativeEventStream stream;
             CreateBlockStream1And2Int(out stream);
 
             var reader = stream.AsReader();
@@ -218,7 +218,7 @@
         [Test]
         public void TooManyReadsThrows()
         {
-            NativeStream1 stream;
+            NativeEventStream stream;
             CreateBlockStream1And2Int(out stream);
 
             var reader = stream.AsReader();
@@ -233,7 +233,7 @@
         [Test]
         public void OutOfBoundsReadThrows()
         {
-            NativeStream1 stream;
+            NativeEventStream stream;
             CreateBlockStream1And2Int(out stream);
 
             var reader = stream.AsReader();
@@ -248,7 +248,7 @@
         [Test]
         public void CopyWriterByValueThrows()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
 
             writer.BeginForEachIndex(0);
@@ -272,7 +272,7 @@
         [Test]
         public void WriteSameIndexTwiceThrows()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
 
             writer.BeginForEachIndex(0);
@@ -296,7 +296,7 @@
         [Test]
         public void WriteManagedThrows()
         {
-            var stream = new NativeStream1(1, Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.Temp);
             var writer = stream.AsWriter();
 
             writer.BeginForEachIndex(0);
