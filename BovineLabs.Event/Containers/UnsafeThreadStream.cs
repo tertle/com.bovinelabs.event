@@ -15,7 +15,7 @@ namespace BovineLabs.Event.Containers
     public unsafe struct UnsafeThreadStream : IDisposable
     {
         [NativeDisableUnsafePtrRestriction]
-        internal UnsafeThreadStreamBlockData* block;
+        private UnsafeThreadStreamBlockData* block;
 
         private Allocator allocator;
 
@@ -86,7 +86,7 @@ namespace BovineLabs.Event.Containers
         public struct Writer
         {
             [NativeDisableUnsafePtrRestriction]
-            internal readonly UnsafeThreadStreamBlockData* blockStream;
+            private readonly UnsafeThreadStreamBlockData* blockStream;
 
             [NativeDisableUnsafePtrRestriction]
             private UnsafeThreadStreamBlock* currentBlock;
@@ -129,14 +129,14 @@ namespace BovineLabs.Event.Containers
                 dst = value;
             }
 
-            private ref T Allocate<T>()
+            public ref T Allocate<T>()
                 where T : struct
             {
                 var size = UnsafeUtility.SizeOf<T>();
                 return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
             }
 
-            private byte* Allocate(int size)
+            public byte* Allocate(int size)
             {
                 this.firstBlock = this.currentBlock;
 
@@ -169,6 +169,119 @@ namespace BovineLabs.Event.Containers
                 this.blockStream->Ranges[this.threadIndex].LastOffset = (int)(this.currentPtr - (byte*)this.currentBlock);
 
                 return ptr;
+            }
+        }
+
+        public struct Reader
+        {
+            [NativeDisableUnsafePtrRestriction]
+            internal UnsafeThreadStreamBlockData* blockStream;
+
+            [NativeDisableUnsafePtrRestriction]
+            internal UnsafeThreadStreamBlock* currentBlock;
+
+            [NativeDisableUnsafePtrRestriction]
+            internal byte* currentPtr;
+
+            [NativeDisableUnsafePtrRestriction]
+            internal byte* currentBlockEnd;
+
+            internal int remainingItemCount;
+
+            internal Reader(ref UnsafeThreadStream stream)
+            {
+                this.blockStream = stream.block;
+                this.currentBlock = null;
+                this.currentPtr = null;
+                this.currentBlockEnd = null;
+                this.remainingItemCount = 0;
+            }
+
+            /// <summary> Gets the for each count. </summary>
+            public int ForEachCount => this.blockStream->RangeCount;
+
+            /// <summary> Gets the remaining item count. </summary>
+            public int RemainingItemCount => this.remainingItemCount;
+
+            /// <summary>
+            /// Begin reading data at the iteration index.
+            /// </summary>
+            /// <param name="index"></param>
+            /// <remarks>BeginForEachIndex must always be called balanced by a EndForEachIndex.</remarks>
+            /// <returns>The number of elements at this index.</returns>
+            public int BeginForEachIndex(int index)
+            {
+                this.remainingItemCount = this.blockStream->Ranges[index].ElementCount;
+
+                this.currentBlock = this.blockStream->Ranges[index].Block;
+                this.currentPtr = (byte*)this.currentBlock + this.blockStream->Ranges[index].OffsetInFirstBlock;
+                this.currentBlockEnd = (byte*)this.currentBlock + UnsafeThreadStreamBlockData.AllocationSize;
+
+                return this.remainingItemCount;
+            }
+
+            /// <summary> Returns pointer to data. </summary>
+            public byte* ReadUnsafePtr(int size)
+            {
+                this.remainingItemCount--;
+
+                byte* ptr = this.currentPtr;
+                this.currentPtr += size;
+
+                if (this.currentPtr > this.currentBlockEnd)
+                {
+                    this.currentBlock = this.currentBlock->Next;
+                    this.currentPtr = this.currentBlock->Data;
+
+                    this.currentBlockEnd = (byte*)this.currentBlock + UnsafeThreadStreamBlockData.AllocationSize;
+
+                    ptr = this.currentPtr;
+                    this.currentPtr += size;
+                }
+
+                return ptr;
+            }
+
+            /// <summary> Read data. </summary>
+            /// <typeparam name="T">The type of value.</typeparam>
+            public ref T Read<T>()
+                where T : struct
+            {
+                int size = UnsafeUtility.SizeOf<T>();
+                return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
+            }
+
+            /// <summary>
+            /// Peek into data.
+            /// </summary>
+            /// <typeparam name="T">The type of value.</typeparam>
+            public ref T Peek<T>()
+                where T : struct
+            {
+                int size = UnsafeUtility.SizeOf<T>();
+
+                byte* ptr = this.currentPtr;
+                if (ptr + size > this.currentBlockEnd)
+                {
+                    ptr = this.currentBlock->Next->Data;
+                }
+
+                return ref UnsafeUtilityEx.AsRef<T>(ptr);
+            }
+
+            /// <summary>
+            /// Compute item count.
+            /// </summary>
+            /// <returns>Item count.</returns>
+            public int ComputeItemCount()
+            {
+                int itemCount = 0;
+                for (int i = 0; i != this.blockStream->RangeCount; i++)
+                {
+                    itemCount += this.blockStream->Ranges[i].ElementCount;
+                }
+
+                return itemCount;
             }
         }
     }
