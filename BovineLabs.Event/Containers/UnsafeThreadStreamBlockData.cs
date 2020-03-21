@@ -1,4 +1,8 @@
-﻿namespace BovineLabs.Event.Containers
+﻿// <copyright file="UnsafeThreadStreamBlockData.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+namespace BovineLabs.Event.Containers
 {
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -13,7 +17,6 @@
         internal int BlockCount;
 
         internal UnsafeThreadStreamRange* Ranges;
-        internal int RangeCount;
 
         internal UnsafeThreadStreamBlock* Allocate(UnsafeThreadStreamBlock* oldBlock, int threadIndex)
         {
@@ -54,12 +57,6 @@
     {
         internal unsafe UnsafeThreadStreamBlock* Next;
         internal unsafe fixed byte Data[1];
-    }
-
-    internal unsafe struct UnsafeThreadeStreamBlock
-    {
-        internal UnsafeThreadStreamBlock* Next;
-        internal fixed byte Data[1];
     }
 
     internal unsafe struct UnsafeThreadStreamRange

@@ -12,12 +12,36 @@ namespace BovineLabs.Event.Containers
     using Unity.Jobs.LowLevel.Unsafe;
 
     [SuppressMessage("ReSharper", "SA1600", Justification = "TODO LATER")]
+    [SuppressMessage("ReSharper", "SA1642", Justification = "TODO LATER")]
+    [SuppressMessage("ReSharper", "SA1623", Justification = "TODO LATER")]
+    [SuppressMessage("ReSharper", "SA1614", Justification = "TODO LATER")]
+    [SuppressMessage("ReSharper", "SA1615", Justification = "TODO LATER")]
+    [SuppressMessage("ReSharper", "SA1611", Justification = "TODO LATER")]
     public unsafe struct UnsafeThreadStream : IDisposable
     {
+        public const int ForEachCount = JobsUtility.MaxJobThreadCount;
+
         [NativeDisableUnsafePtrRestriction]
         private UnsafeThreadStreamBlockData* block;
 
         private Allocator allocator;
+
+        /// <summary>
+        /// Constructs a new UnsafeStream using the specified type of memory allocation.
+        /// </summary>
+        public UnsafeThreadStream(Allocator allocator)
+        {
+            AllocateBlock(out this, allocator);
+            this.AllocateForEach();
+        }
+
+        /// <summary>
+        /// Reports whether memory for the container is allocated.
+        /// </summary>
+        /// <value>True if this container object's internal storage has been allocated.</value>
+        /// <remarks>Note that the container storage is not created if you use the default constructor. You must specify
+        /// at least an allocation type to construct a usable container.</remarks>
+        public bool IsCreated => this.block != null;
 
         /// <inheritdoc/>
         public void Dispose()
@@ -30,11 +54,30 @@ namespace BovineLabs.Event.Containers
             return new Writer(ref this);
         }
 
+        public Reader AsReader()
+        {
+            return new Reader(ref this);
+        }
+
+        /// <summary>
+        /// Compute item count.
+        /// </summary>
+        /// <returns>Item count.</returns>
+        public int ComputeItemCount()
+        {
+            var itemCount = 0;
+
+            for (var i = 0; i != ForEachCount; i++)
+            {
+                itemCount += this.block->Ranges[i].ElementCount;
+            }
+
+            return itemCount;
+        }
+
         internal static void AllocateBlock(out UnsafeThreadStream stream, Allocator allocator)
         {
-            int blockCount = JobsUtility.MaxJobThreadCount;
-
-            int allocationSize = sizeof(UnsafeThreadStreamBlockData) + (sizeof(UnsafeThreadStreamBlockData*) * blockCount);
+            int allocationSize = sizeof(UnsafeThreadStreamBlockData) + (sizeof(UnsafeThreadStreamBlock*) * ForEachCount);
             byte* buffer = (byte*)UnsafeUtility.Malloc(allocationSize, 16, allocator);
             UnsafeUtility.MemClear(buffer, allocationSize);
 
@@ -44,18 +87,16 @@ namespace BovineLabs.Event.Containers
             stream.allocator = allocator;
 
             block->Allocator = allocator;
-            block->BlockCount = blockCount;
-            block->Blocks = (UnsafeThreadStreamBlock**)(buffer + sizeof(UnsafeThreadStreamBlock));
+            block->BlockCount = ForEachCount;
+            block->Blocks = (UnsafeThreadStreamBlock**)(buffer + sizeof(UnsafeThreadStreamBlockData));
 
             block->Ranges = null;
-            block->RangeCount = 0;
         }
 
-        internal void AllocateForEach(int forEachCount)
+        internal void AllocateForEach()
         {
-            long allocationSize = sizeof(UnsafeThreadStreamRange) * forEachCount;
+            long allocationSize = sizeof(UnsafeThreadStreamRange) * ForEachCount;
             this.block->Ranges = (UnsafeThreadStreamRange*)UnsafeUtility.Malloc(allocationSize, 16, this.allocator);
-            this.block->RangeCount = forEachCount;
             UnsafeUtility.MemClear(this.block->Ranges, allocationSize);
         }
 
@@ -68,10 +109,10 @@ namespace BovineLabs.Event.Containers
 
             for (int i = 0; i != this.block->BlockCount; i++)
             {
-                UnsafeThreadStreamBlock* b = this.block->Blocks[i];
+                var b = this.block->Blocks[i];
                 while (b != null)
                 {
-                    UnsafeThreadStreamBlock* next = b->Next;
+                    var next = b->Next;
                     UnsafeUtility.Free(b, this.allocator);
                     b = next;
                 }
@@ -113,7 +154,7 @@ namespace BovineLabs.Event.Containers
                 this.firstBlock = null;
                 this.threadIndex = 0;
 
-                for (var i = 0; i < JobsUtility.MaxJobThreadCount; i++)
+                for (var i = 0; i < ForEachCount; i++)
                 {
                     this.blockStream->Ranges[i].ElementCount = 0;
                     this.blockStream->Ranges[i].NumberOfBlocks = 0;
@@ -175,68 +216,68 @@ namespace BovineLabs.Event.Containers
         public struct Reader
         {
             [NativeDisableUnsafePtrRestriction]
-            internal UnsafeThreadStreamBlockData* blockStream;
+            internal readonly UnsafeThreadStreamBlockData* BlockStream;
 
             [NativeDisableUnsafePtrRestriction]
-            internal UnsafeThreadStreamBlock* currentBlock;
+            internal UnsafeThreadStreamBlock* CurrentBlock;
 
             [NativeDisableUnsafePtrRestriction]
-            internal byte* currentPtr;
+            internal byte* CurrentPtr;
 
             [NativeDisableUnsafePtrRestriction]
-            internal byte* currentBlockEnd;
+            internal byte* CurrentBlockEnd;
 
-            internal int remainingItemCount;
+            internal int RemainingCount;
+            internal int LastBlockSize;
 
             internal Reader(ref UnsafeThreadStream stream)
             {
-                this.blockStream = stream.block;
-                this.currentBlock = null;
-                this.currentPtr = null;
-                this.currentBlockEnd = null;
-                this.remainingItemCount = 0;
+                this.BlockStream = stream.block;
+                this.CurrentBlock = null;
+                this.CurrentPtr = null;
+                this.CurrentBlockEnd = null;
+                this.RemainingCount = 0;
+                this.LastBlockSize = 0;
             }
 
-            /// <summary> Gets the for each count. </summary>
-            public int ForEachCount => this.blockStream->RangeCount;
-
             /// <summary> Gets the remaining item count. </summary>
-            public int RemainingItemCount => this.remainingItemCount;
+            public int RemainingItemCount => this.RemainingCount;
 
             /// <summary>
             /// Begin reading data at the iteration index.
             /// </summary>
-            /// <param name="index"></param>
+            /// <param name="foreachIndex"></param>
             /// <remarks>BeginForEachIndex must always be called balanced by a EndForEachIndex.</remarks>
             /// <returns>The number of elements at this index.</returns>
-            public int BeginForEachIndex(int index)
+            public int BeginForEachIndex(int foreachIndex)
             {
-                this.remainingItemCount = this.blockStream->Ranges[index].ElementCount;
+                this.RemainingCount = this.BlockStream->Ranges[foreachIndex].ElementCount;
+                this.LastBlockSize = this.BlockStream->Ranges[foreachIndex].LastOffset;
 
-                this.currentBlock = this.blockStream->Ranges[index].Block;
-                this.currentPtr = (byte*)this.currentBlock + this.blockStream->Ranges[index].OffsetInFirstBlock;
-                this.currentBlockEnd = (byte*)this.currentBlock + UnsafeThreadStreamBlockData.AllocationSize;
+                this.CurrentBlock = this.BlockStream->Ranges[foreachIndex].Block;
+                this.CurrentPtr = (byte*)this.CurrentBlock + this.BlockStream->Ranges[foreachIndex].OffsetInFirstBlock;
+                this.CurrentBlockEnd = (byte*)this.CurrentBlock + UnsafeThreadStreamBlockData.AllocationSize;
 
-                return this.remainingItemCount;
+                return this.RemainingCount;
             }
 
             /// <summary> Returns pointer to data. </summary>
             public byte* ReadUnsafePtr(int size)
             {
-                this.remainingItemCount--;
+                this.RemainingCount--;
 
-                byte* ptr = this.currentPtr;
-                this.currentPtr += size;
+                byte* ptr = this.CurrentPtr;
+                this.CurrentPtr += size;
 
-                if (this.currentPtr > this.currentBlockEnd)
+                if (this.CurrentPtr > this.CurrentBlockEnd)
                 {
-                    this.currentBlock = this.currentBlock->Next;
-                    this.currentPtr = this.currentBlock->Data;
+                    this.CurrentBlock = this.CurrentBlock->Next;
+                    this.CurrentPtr = this.CurrentBlock->Data;
 
-                    this.currentBlockEnd = (byte*)this.currentBlock + UnsafeThreadStreamBlockData.AllocationSize;
+                    this.CurrentBlockEnd = (byte*)this.CurrentBlock + UnsafeThreadStreamBlockData.AllocationSize;
 
-                    ptr = this.currentPtr;
-                    this.currentPtr += size;
+                    ptr = this.CurrentPtr;
+                    this.CurrentPtr += size;
                 }
 
                 return ptr;
@@ -260,10 +301,10 @@ namespace BovineLabs.Event.Containers
             {
                 int size = UnsafeUtility.SizeOf<T>();
 
-                byte* ptr = this.currentPtr;
-                if (ptr + size > this.currentBlockEnd)
+                byte* ptr = this.CurrentPtr;
+                if (ptr + size > this.CurrentBlockEnd)
                 {
-                    ptr = this.currentBlock->Next->Data;
+                    ptr = this.CurrentBlock->Next->Data;
                 }
 
                 return ref UnsafeUtilityEx.AsRef<T>(ptr);
@@ -276,9 +317,9 @@ namespace BovineLabs.Event.Containers
             public int ComputeItemCount()
             {
                 int itemCount = 0;
-                for (int i = 0; i != this.blockStream->RangeCount; i++)
+                for (int i = 0; i != ForEachCount; i++)
                 {
-                    itemCount += this.blockStream->Ranges[i].ElementCount;
+                    itemCount += this.BlockStream->Ranges[i].ElementCount;
                 }
 
                 return itemCount;
