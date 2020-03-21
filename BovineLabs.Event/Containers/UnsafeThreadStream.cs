@@ -7,8 +7,10 @@ namespace BovineLabs.Event.Containers
     using System;
     using System.Diagnostics.CodeAnalysis;
     using JetBrains.Annotations;
+    using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
+    using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
 
     [SuppressMessage("ReSharper", "SA1600", Justification = "TODO LATER")]
@@ -47,6 +49,24 @@ namespace BovineLabs.Event.Containers
         public void Dispose()
         {
             this.Deallocate();
+        }
+
+        /// <summary>
+        /// Safely disposes of this container and deallocates its memory when the jobs that use it have completed.
+        /// </summary>
+        /// <remarks>You can call this function dispose of the container immediately after scheduling the job. Pass
+        /// the [JobHandle](https://docs.unity3d.com/ScriptReference/Unity.Jobs.JobHandle.html) returned by
+        /// the [Job.Schedule](https://docs.unity3d.com/ScriptReference/Unity.Jobs.IJobExtensions.Schedule.html)
+        /// method using the `jobHandle` parameter so the job scheduler can dispose the container after all jobs
+        /// using it have run.</remarks>
+        /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
+        /// <returns>A new job handle containing the prior handles as well as the handle for the job that deletes
+        /// the container.</returns>
+        public JobHandle Dispose(JobHandle dependency)
+        {
+            var jobHandle = new DisposeJob { Container = this }.Schedule(dependency);
+            this.block = null;
+            return jobHandle;
         }
 
         public Writer AsWriter()
@@ -124,6 +144,17 @@ namespace BovineLabs.Event.Containers
             this.allocator = Allocator.None;
         }
 
+        [BurstCompile]
+        private struct DisposeJob : IJob
+        {
+            public UnsafeThreadStream Container;
+
+            public void Execute()
+            {
+                this.Container.Deallocate();
+            }
+        }
+
         public struct Writer
         {
             [NativeDisableUnsafePtrRestriction]
@@ -152,7 +183,7 @@ namespace BovineLabs.Event.Containers
                 this.currentBlockEnd = null;
                 this.currentPtr = null;
                 this.firstBlock = null;
-                this.threadIndex = 0;
+                this.threadIndex = 0; // 0 so main thread works
 
                 for (var i = 0; i < ForEachCount; i++)
                 {

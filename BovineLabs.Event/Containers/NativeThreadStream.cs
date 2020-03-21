@@ -9,6 +9,7 @@ namespace BovineLabs.Event.Containers
     using System.Diagnostics.CodeAnalysis;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
+    using Unity.Jobs;
     using UnityEngine.Assertions;
 
     [SuppressMessage("ReSharper", "SA1600", Justification = "TODO LATER")]
@@ -48,6 +49,8 @@ namespace BovineLabs.Event.Containers
         /// at least an allocation type to construct a usable container.</remarks>
         public bool IsCreated => this.stream.IsCreated;
 
+        public int ForEachCount => UnsafeThreadStream.ForEachCount;
+
         public Writer AsWriter()
         {
             return new Writer(ref this);
@@ -81,7 +84,7 @@ namespace BovineLabs.Event.Containers
             var reader = this.AsReader();
 
             int offset = 0;
-            for (var i = 0; i != UnsafeThreadStream.ForEachCount; i++)
+            for (var i = 0; i != this.ForEachCount; i++)
             {
                 reader.BeginForEachIndex(i);
                 int rangeItemCount = reader.RemainingItemCount;
@@ -93,6 +96,34 @@ namespace BovineLabs.Event.Containers
             }
 
             return array;
+        }
+
+        /// <summary>
+        /// Safely disposes of this container and deallocates its memory when the jobs that use it have completed.
+        /// </summary>
+        /// <remarks>You can call this function dispose of the container immediately after scheduling the job. Pass
+        /// the [JobHandle](https://docs.unity3d.com/ScriptReference/Unity.Jobs.JobHandle.html) returned by
+        /// the [Job.Schedule](https://docs.unity3d.com/ScriptReference/Unity.Jobs.IJobExtensions.Schedule.html)
+        /// method using the `jobHandle` parameter so the job scheduler can dispose the container after all jobs
+        /// using it have run.</remarks>
+        /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
+        /// <returns>A new job handle containing the prior handles as well as the handle for the job that deletes
+        /// the container.</returns>
+        public JobHandle Dispose(JobHandle dependency)
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            // [DeallocateOnJobCompletion] is not supported, but we want the deallocation
+            // to happen in a thread. DisposeSentinel needs to be cleared on main thread.
+            // AtomicSafetyHandle can be destroyed after the job was scheduled (Job scheduling
+            // will check that no jobs are writing to the container).
+            DisposeSentinel.Clear(ref this.m_DisposeSentinel);
+#endif
+            var jobHandle = this.stream.Dispose(dependency);
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            AtomicSafetyHandle.Release(this.m_Safety);
+#endif
+            return jobHandle;
         }
 
         public void Dispose()
@@ -127,7 +158,7 @@ namespace BovineLabs.Event.Containers
         }
 
         [NativeContainer]
-        [NativeContainerSupportsMinMaxWriteRestriction]
+        [NativeContainerIsAtomicWriteOnly]
         public struct Writer
         {
             private UnsafeThreadStream.Writer writer;
