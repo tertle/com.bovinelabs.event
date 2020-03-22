@@ -1,13 +1,13 @@
 {
   "name": "com.bovinelabs.event",
   "description": "Event System.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "unity": "2019.3",
   "displayName": "BovineLabs Event",
   "dependencies": {
-	"com.unity.burst": "1.2.3",
-    "com.unity.collections": "0.6.0-preview.9",
-    "com.unity.entities": "0.7.0-preview.19"
+	"com.unity.burst": "1.3.0-preview.7",
+    "com.unity.collections": "0.7.0-preview.2",
+    "com.unity.entities": "0.8.0-preview.8"
   },
   "samples": [
     {
