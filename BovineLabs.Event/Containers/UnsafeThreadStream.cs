@@ -5,7 +5,6 @@
 namespace BovineLabs.Event.Containers
 {
     using System;
-    using System.Diagnostics.CodeAnalysis;
     using JetBrains.Annotations;
     using Unity.Burst;
     using Unity.Collections;
@@ -13,14 +12,15 @@ namespace BovineLabs.Event.Containers
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
 
-    [SuppressMessage("ReSharper", "SA1600", Justification = "TODO LATER")]
-    [SuppressMessage("ReSharper", "SA1642", Justification = "TODO LATER")]
-    [SuppressMessage("ReSharper", "SA1623", Justification = "TODO LATER")]
-    [SuppressMessage("ReSharper", "SA1614", Justification = "TODO LATER")]
-    [SuppressMessage("ReSharper", "SA1615", Justification = "TODO LATER")]
-    [SuppressMessage("ReSharper", "SA1611", Justification = "TODO LATER")]
+    /// <summary>
+    /// A deterministic thread data stream supporting parallel reading and parallel writing.
+    /// Allows you to write different types or arrays into a single stream.
+    /// </summary>
     public unsafe struct UnsafeThreadStream : IDisposable
     {
+        /// <summary>
+        /// The number of streams the list can use. Fixed to <see cref="JobsUtility.MaxJobThreadCount"/>.
+        /// </summary>
         public const int ForEachCount = JobsUtility.MaxJobThreadCount;
 
         [NativeDisableUnsafePtrRestriction]
@@ -28,24 +28,23 @@ namespace BovineLabs.Event.Containers
 
         private Allocator allocator;
 
-        /// <summary>
-        /// Constructs a new UnsafeStream using the specified type of memory allocation.
-        /// </summary>
+        /// <summary> Initializes a new instance of the <see cref="UnsafeThreadStream"/> struct. </summary>
+        /// <param name="allocator">The specified type of memory allocation.</param>
         public UnsafeThreadStream(Allocator allocator)
         {
             AllocateBlock(out this, allocator);
             this.AllocateForEach();
         }
 
-        /// <summary>
-        /// Reports whether memory for the container is allocated.
-        /// </summary>
+        /// <summary> Gets a value indicating whether memory for the container is allocated. </summary>
         /// <value>True if this container object's internal storage has been allocated.</value>
-        /// <remarks>Note that the container storage is not created if you use the default constructor. You must specify
-        /// at least an allocation type to construct a usable container.</remarks>
+        /// <remarks>
+        /// <para>Note that the container storage is not created if you use the default constructor.
+        /// You must specify at least an allocation type to construct a usable container.</para>
+        /// </remarks>
         public bool IsCreated => this.block != null;
 
-        /// <inheritdoc/>
+        /// <summary> Disposes of this stream and deallocates its memory immediately. </summary>
         public void Dispose()
         {
             this.Deallocate();
@@ -69,19 +68,21 @@ namespace BovineLabs.Event.Containers
             return jobHandle;
         }
 
+        /// <summary>Returns writer instance.</summary>
+        /// <returns>The writer instance.</returns>
         public Writer AsWriter()
         {
             return new Writer(ref this);
         }
 
+        /// <summary>Returns reader instance.</summary>
+        /// <returns>The reader instance.</returns>
         public Reader AsReader()
         {
             return new Reader(ref this);
         }
 
-        /// <summary>
-        /// Compute item count.
-        /// </summary>
+        /// <summary>Compute the item count.</summary>
         /// <returns>Item count.</returns>
         public int ComputeItemCount()
         {
@@ -155,6 +156,7 @@ namespace BovineLabs.Event.Containers
             }
         }
 
+        /// <summary> The writer instance. </summary>
         public struct Writer
         {
             [NativeDisableUnsafePtrRestriction]
@@ -176,6 +178,8 @@ namespace BovineLabs.Event.Containers
             [UsedImplicitly(ImplicitUseKindFlags.Assign)]
             private int threadIndex;
 
+            /// <summary>Initializes a new instance of the <see cref="Writer"/> struct.</summary>
+            /// <param name="stream">The stream reference.</param>
             internal Writer(ref UnsafeThreadStream stream)
             {
                 this.blockStream = stream.block;
@@ -194,6 +198,9 @@ namespace BovineLabs.Event.Containers
                 }
             }
 
+            /// <summary>Write data.</summary>
+            /// <param name="value">The data to write.</param>
+            /// <typeparam name="T">The type of value.</typeparam>
             public void Write<T>(T value)
                 where T : struct
             {
@@ -201,6 +208,9 @@ namespace BovineLabs.Event.Containers
                 dst = value;
             }
 
+            /// <summary>Allocate space for data.</summary>
+            /// <typeparam name="T">The type of value.</typeparam>
+            /// <returns>Reference for the allocated space.</returns>
             public ref T Allocate<T>()
                 where T : struct
             {
@@ -208,6 +218,9 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
             }
 
+            /// <summary>Allocate space for data.</summary>
+            /// <param name="size">Size in bytes.</param>
+            /// <returns>Pointer for the allocated space.</returns>
             public byte* Allocate(int size)
             {
                 this.firstBlock = this.currentBlock;
@@ -244,6 +257,7 @@ namespace BovineLabs.Event.Containers
             }
         }
 
+        /// <summary> The reader instance. </summary>
         public struct Reader
         {
             [NativeDisableUnsafePtrRestriction]
@@ -261,6 +275,8 @@ namespace BovineLabs.Event.Containers
             internal int RemainingCount;
             internal int LastBlockSize;
 
+            /// <summary>Initializes a new instance of the <see cref="Reader"/> struct.</summary>
+            /// <param name="stream">The stream reference.</param>
             internal Reader(ref UnsafeThreadStream stream)
             {
                 this.BlockStream = stream.block;
@@ -274,11 +290,8 @@ namespace BovineLabs.Event.Containers
             /// <summary> Gets the remaining item count. </summary>
             public int RemainingItemCount => this.RemainingCount;
 
-            /// <summary>
-            /// Begin reading data at the iteration index.
-            /// </summary>
-            /// <param name="foreachIndex"></param>
-            /// <remarks>BeginForEachIndex must always be called balanced by a EndForEachIndex.</remarks>
+            /// <summary> Begin reading data at the iteration index. </summary>
+            /// <param name="foreachIndex">The index to start reading.</param>
             /// <returns>The number of elements at this index.</returns>
             public int BeginForEachIndex(int foreachIndex)
             {
@@ -341,9 +354,7 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(ptr);
             }
 
-            /// <summary>
-            /// Compute item count.
-            /// </summary>
+            /// <summary>Compute item count.</summary>
             /// <returns>Item count.</returns>
             public int ComputeItemCount()
             {

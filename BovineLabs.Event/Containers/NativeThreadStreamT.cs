@@ -1,4 +1,4 @@
-﻿// <copyright file="NativeThreadStream.cs" company="BovineLabs">
+﻿// <copyright file="NativeThreadStreamT.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -12,12 +12,11 @@ namespace BovineLabs.Event.Containers
     using Unity.Jobs;
     using UnityEngine.Assertions;
 
-    /// <summary>
-    /// A deterministic thread data stream supporting parallel reading and parallel writing.
-    /// Allows you to write different types or arrays into a single stream.
-    /// </summary>
+    /// <summary>A deterministic thread generic data stream supporting parallel reading and parallel writing.</summary>
+    /// <typeparam name="T">The type of the elements in the container.</typeparam>
     [NativeContainer]
-    public unsafe struct NativeThreadStream : IDisposable
+    public unsafe struct NativeThreadStream<T> : IDisposable
+        where T : unmanaged
     {
         private UnsafeThreadStream stream;
 
@@ -32,7 +31,7 @@ namespace BovineLabs.Event.Containers
         private DisposeSentinel m_DisposeSentinel;
 #endif
 
-        /// <summary> Initializes a new instance of the <see cref="NativeThreadStream"/> struct. </summary>
+        /// <summary> Initializes a new instance of the <see cref="NativeThreadStream{T}"/> struct. </summary>
         /// <param name="allocator">The specified type of memory allocation.</param>
         public NativeThreadStream(Allocator allocator)
         {
@@ -115,8 +114,7 @@ namespace BovineLabs.Event.Containers
         /// <typeparam name="T">The type of the elements in the container.</typeparam>
         /// <returns>A new NativeArray, allocated with the given strategy and wrapping the stream data.</returns>
         /// <remarks><para>The array is a copy of stream data.</para></remarks>
-        public NativeArray<T> ToNativeArray<T>(Allocator allocator)
-            where T : struct
+        public NativeArray<T> ToNativeArray(Allocator allocator)
         {
             var array = new NativeArray<T>(this.ComputeItemCount(), allocator, NativeArrayOptions.UninitializedMemory);
             var reader = this.AsReader();
@@ -128,7 +126,7 @@ namespace BovineLabs.Event.Containers
                 int rangeItemCount = reader.RemainingItemCount;
                 for (int j = 0; j < rangeItemCount; ++j)
                 {
-                    array[offset] = reader.Read<T>();
+                    array[offset] = reader.Read();
                     offset++;
                 }
             }
@@ -136,7 +134,7 @@ namespace BovineLabs.Event.Containers
             return array;
         }
 
-        private static void AllocateBlock(out NativeThreadStream stream, Allocator allocator)
+        private static void AllocateBlock(out NativeThreadStream<T> stream, Allocator allocator)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (allocator <= Allocator.None)
@@ -174,7 +172,7 @@ namespace BovineLabs.Event.Containers
 
             /// <summary>Initializes a new instance of the <see cref="Writer"/> struct.</summary>
             /// <param name="stream">The stream reference.</param>
-            internal Writer(ref NativeThreadStream stream)
+            internal Writer(ref NativeThreadStream<T> stream)
             {
                 this.writer = stream.stream.AsWriter();
 
@@ -185,19 +183,15 @@ namespace BovineLabs.Event.Containers
 
             /// <summary>Write data.</summary>
             /// <param name="value">The data to write.</param>
-            /// <typeparam name="T">The type of value.</typeparam>
-            public void Write<T>(T value)
-                where T : struct
+            public void Write(T value)
             {
-                ref T dst = ref this.Allocate<T>();
+                ref T dst = ref this.Allocate();
                 dst = value;
             }
 
             /// <summary>Allocate space for data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>Reference for the allocated space.</returns>
-            public ref T Allocate<T>()
-                where T : struct
+            public ref T Allocate()
             {
                 CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();
@@ -244,7 +238,7 @@ namespace BovineLabs.Event.Containers
 
             /// <summary>Initializes a new instance of the <see cref="Reader"/> struct.</summary>
             /// <param name="stream">The stream reference.</param>
-            internal Reader(ref NativeThreadStream stream)
+            internal Reader(ref NativeThreadStream<T> stream)
             {
                 this.reader = stream.stream.AsReader();
 
@@ -257,7 +251,7 @@ namespace BovineLabs.Event.Containers
             /// <summary> Gets the remaining item count. </summary>
             public int RemainingItemCount => this.reader.RemainingItemCount;
 
-            /// <summary>Begin reading data at the iteration index.</summary>
+            /// <summary> Begin reading data at the iteration index. </summary>
             /// <param name="foreachIndex">The index to start reading.</param>
             /// <returns>The number of elements at this index.</returns>
             public int BeginForEachIndex(int foreachIndex)
@@ -326,20 +320,16 @@ namespace BovineLabs.Event.Containers
             }
 
             /// <summary>Read data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>The returned data.</returns>
-            public ref T Read<T>()
-                where T : struct
+            public ref T Read()
             {
                 int size = UnsafeUtility.SizeOf<T>();
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
             }
 
             /// <summary> Peek into data. </summary>
-            /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>The returned data.</returns>
-            public ref T Peek<T>()
-                where T : struct
+            public ref T Peek()
             {
                 int size = UnsafeUtility.SizeOf<T>();
                 this.ReadChecks(size);
