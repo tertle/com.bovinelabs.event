@@ -293,12 +293,12 @@ namespace BovineLabs.Event.Containers
 
                     if (this.remainingBlocks < 0)
                     {
-                        throw new System.ArgumentException("Reading out of bounds");
+                        throw new System.ArgumentException("Reading out of bounds 1");
                     }
 
                     if (this.remainingBlocks == 0 && size + sizeof(void*) > this.reader.LastBlockSize)
                     {
-                        throw new System.ArgumentException("Reading out of bounds");
+                        throw new System.ArgumentException("Reading out of bounds 2");
                     }
 
                     if (this.remainingBlocks <= 0)

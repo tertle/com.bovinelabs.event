@@ -65,8 +65,12 @@ namespace BovineLabs.Event.Containers
         internal int OffsetInFirstBlock;
         internal int ElementCount;
 
-        /// One byte past the end of the last byte written
+        // One byte past the end of the last byte written
         internal int LastOffset;
         internal int NumberOfBlocks;
+
+        internal UnsafeThreadStreamBlock* CurrentBlock;
+        internal byte* CurrentPtr;
+        internal byte* CurrentBlockEnd;
     }
 }

@@ -47,8 +47,8 @@ namespace BovineLabs.Event.Tests.Containers
 
         [Test]
         public void ItemCount(
-            [Values(1, 10, UnsafeThreadStream.ForEachCount + 1)] int count,
-            [Values(1, 3, 10)] int batchSize)
+            [Values(1, 10, UnsafeThreadStream.ForEachCount + 1, 1024)] int count,
+            [Values(1, 3, 10, 128)] int batchSize)
         {
             var stream = new NativeThreadStream<int>(Allocator.TempJob);
             var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };

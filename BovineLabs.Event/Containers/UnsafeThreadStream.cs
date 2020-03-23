@@ -162,18 +162,6 @@ namespace BovineLabs.Event.Containers
             [NativeDisableUnsafePtrRestriction]
             private readonly UnsafeThreadStreamBlockData* blockStream;
 
-            [NativeDisableUnsafePtrRestriction]
-            private UnsafeThreadStreamBlock* currentBlock;
-
-            [NativeDisableUnsafePtrRestriction]
-            private byte* currentPtr;
-
-            [NativeDisableUnsafePtrRestriction]
-            private byte* currentBlockEnd;
-
-            [NativeDisableUnsafePtrRestriction]
-            private UnsafeThreadStreamBlock* firstBlock;
-
             [NativeSetThreadIndex]
             [UsedImplicitly(ImplicitUseKindFlags.Assign)]
             private int threadIndex;
@@ -183,18 +171,18 @@ namespace BovineLabs.Event.Containers
             internal Writer(ref UnsafeThreadStream stream)
             {
                 this.blockStream = stream.block;
-                this.currentBlock = null;
-                this.currentBlockEnd = null;
-                this.currentPtr = null;
-                this.firstBlock = null;
                 this.threadIndex = 0; // 0 so main thread works
 
                 for (var i = 0; i < ForEachCount; i++)
                 {
                     this.blockStream->Ranges[i].ElementCount = 0;
+                    this.blockStream->Ranges[i].CurrentBlock = null;
+                    this.blockStream->Ranges[i].CurrentBlockEnd = null;
+                    this.blockStream->Ranges[i].CurrentPtr = null;
                     this.blockStream->Ranges[i].NumberOfBlocks = 0;
-                    this.blockStream->Ranges[i].Block = this.currentBlock;
-                    this.blockStream->Ranges[i].OffsetInFirstBlock = (int)(this.currentPtr - (byte*)this.currentBlock);
+                    this.blockStream->Ranges[i].OffsetInFirstBlock = 0;
+                    this.blockStream->Ranges[i].Block = null;
+                    this.blockStream->Ranges[i].LastOffset = 0;
                 }
             }
 
@@ -223,35 +211,37 @@ namespace BovineLabs.Event.Containers
             /// <returns>Pointer for the allocated space.</returns>
             public byte* Allocate(int size)
             {
-                this.firstBlock = this.currentBlock;
+                byte* ptr = this.blockStream->Ranges[this.threadIndex].CurrentPtr;
+                this.blockStream->Ranges[this.threadIndex].CurrentPtr += size;
 
-                byte* ptr = this.currentPtr;
-                this.currentPtr += size;
-
-                if (this.currentPtr > this.currentBlockEnd)
+                if (this.blockStream->Ranges[this.threadIndex].CurrentPtr > this.blockStream->Ranges[this.threadIndex].CurrentBlockEnd)
                 {
-                    UnsafeThreadStreamBlock* oldBlock = this.currentBlock;
+                    UnsafeThreadStreamBlock* oldBlock = this.blockStream->Ranges[this.threadIndex].CurrentBlock;
 
-                    this.currentBlock = this.blockStream->Allocate(oldBlock, this.threadIndex);
-                    this.currentPtr = this.currentBlock->Data;
+                    this.blockStream->Ranges[this.threadIndex].CurrentBlock = this.blockStream->Allocate(oldBlock, this.threadIndex);
+                    this.blockStream->Ranges[this.threadIndex].CurrentPtr = this.blockStream->Ranges[this.threadIndex].CurrentBlock->Data;
 
-                    if (this.firstBlock == null)
+                    if (this.blockStream->Ranges[this.threadIndex].Block == null)
                     {
-                       this.blockStream->Ranges[this.threadIndex].OffsetInFirstBlock = (int)(this.currentPtr - (byte*)this.currentBlock);
-                       this.blockStream->Ranges[this.threadIndex].Block = this.currentBlock;
+                       this.blockStream->Ranges[this.threadIndex].OffsetInFirstBlock =
+                           (int)(this.blockStream->Ranges[this.threadIndex].CurrentPtr - (byte*)this.blockStream->Ranges[this.threadIndex].CurrentBlock);
+
+                       this.blockStream->Ranges[this.threadIndex].Block = this.blockStream->Ranges[this.threadIndex].CurrentBlock;
                     }
                     else
                     {
                         this.blockStream->Ranges[this.threadIndex].NumberOfBlocks++;
                     }
 
-                    this.currentBlockEnd = (byte*)this.currentBlock + UnsafeThreadStreamBlockData.AllocationSize;
-                    ptr = this.currentPtr;
-                    this.currentPtr += size;
+                    this.blockStream->Ranges[this.threadIndex].CurrentBlockEnd =
+                        (byte*)this.blockStream->Ranges[this.threadIndex].CurrentBlock + UnsafeThreadStreamBlockData.AllocationSize;
+                    ptr = this.blockStream->Ranges[this.threadIndex].CurrentPtr;
+                    this.blockStream->Ranges[this.threadIndex].CurrentPtr += size;
                 }
 
                 this.blockStream->Ranges[this.threadIndex].ElementCount++;
-                this.blockStream->Ranges[this.threadIndex].LastOffset = (int)(this.currentPtr - (byte*)this.currentBlock);
+                this.blockStream->Ranges[this.threadIndex].LastOffset =
+                    (int)(this.blockStream->Ranges[this.threadIndex].CurrentPtr - (byte*)this.blockStream->Ranges[this.threadIndex].CurrentBlock);
 
                 return ptr;
             }
