@@ -277,6 +277,12 @@ namespace BovineLabs.Event.Containers
                 return remainingItemCount;
             }
 
+            /// <summary>Ensures that all data has been read for the active iteration index.</summary>
+            public void EndForEachIndex()
+            {
+                this.EndForEachIndexChecks();
+            }
+
             /// <summary>Returns pointer to data.</summary>
             /// <param name="size">The size of data.</param>
             /// <returns>Pointer to data.</returns>
@@ -389,6 +395,20 @@ namespace BovineLabs.Event.Containers
                     throw new System.ArgumentOutOfRangeException(nameof(forEachIndex), $"foreachIndex: {forEachIndex} must be between 0 and ForEachCount: {UnsafeThreadStream.ForEachCount}");
                 }
 #endif
+            }
+
+            [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+            private void EndForEachIndexChecks()
+            {
+                if (this.reader.RemainingItemCount != 0)
+                {
+                    throw new System.ArgumentException("Not all elements (Count) have been read. If this is intentional, simply skip calling EndForEachIndex();");
+                }
+
+                if (this.reader.CurrentBlockEnd != this.reader.CurrentPtr)
+                {
+                    throw new System.ArgumentException("Not all data (Data Size) has been read. If this is intentional, simply skip calling EndForEachIndex();");
+                }
             }
         }
     }

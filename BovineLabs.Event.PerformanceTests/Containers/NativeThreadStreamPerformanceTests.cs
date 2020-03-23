@@ -6,46 +6,53 @@ namespace BovineLabs.Event.PerformanceTests.Containers
 {
     using BovineLabs.Event.Containers;
     using NUnit.Framework;
+    using Unity.Burst;
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Entities.Tests;
+    using Unity.Jobs;
     using Unity.PerformanceTesting;
+    using UnityEngine;
 
     internal class NativeThreadStreamPerformanceTests : ECSTestsFixture
     {
-        private const int EntitiesForEachCount = 1000000;
-
         [Test]
         [Performance]
-        public void WriteEntitiesForEachNativeThreadStream()
+        public void WriteEntitiesForEachNativeThreadStream(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(EntitiesForEachCount);
+            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
             NativeThreadStream<int> stream = default;
 
             Measure.Method(() => system.NativeThreadStreamTest(stream))
-                   .SetUp(() => { stream = new NativeThreadStream<int>(Allocator.TempJob); })
-                   .CleanUp(() => stream.Dispose())
-                   .Run();
+                .SetUp(() => { stream = new NativeThreadStream<int>(Allocator.TempJob); })
+                .CleanUp(() => stream.Dispose())
+                .Run();
         }
 
         [Test]
         [Performance]
-        public void WriteEntitiesForEachNativeStream()
+        public void WriteEntitiesForEachNativeStream(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(EntitiesForEachCount);
+            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
             NativeStream stream = default;
 
             Measure.Method(() => system.NativeStreamTest(stream))
-                   .SetUp(() => { stream = new NativeStream(EntitiesForEachCount, Allocator.TempJob); })
+                   .SetUp(() => { stream = new NativeStream(entities, Allocator.TempJob); })
                    .CleanUp(() => stream.Dispose())
                    .Run();
         }
 
         [Test]
         [Performance]
-        public void WriteEntitiesForEachNativeQueue()
+        public void WriteEntitiesForEachNativeQueue(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(EntitiesForEachCount);
+            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
             NativeQueue<int> queue = default;
 
             Measure.Method(() => system.NativeQueueTest(queue))
@@ -54,16 +61,88 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                    .Run();
         }
 
+        [Test]
+        [Performance]
+        public void ReadParallelNativeThreadStream(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
+        {
+            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            NativeThreadStream<int> stream = default;
+            NativeQueue<int> output = default;
+
+            Measure.Method(() =>
+                {
+                    new ReadNativeThreadStreamJob
+                        {
+                            Reader = stream.AsReader(),
+                            Output = output.AsParallelWriter(),
+                        }
+                        .Schedule(stream.ForEachCount, 1).Complete();
+
+                    Assert.AreEqual(entities, output.Count);
+                })
+                .SetUp(() =>
+                {
+                    stream = new NativeThreadStream<int>(Allocator.TempJob);
+                    system.NativeThreadStreamTest(stream);
+
+                    output = new NativeQueue<int>(Allocator.TempJob);
+                })
+                .CleanUp(() =>
+                {
+                    stream.Dispose();
+                    output.Dispose();
+                })
+                .Run();
+        }
+
+        [Test]
+        [Performance]
+        public void ReadParallelNativeStream(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
+        {
+            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            NativeStream stream = default;
+            NativeQueue<int> output = default;
+
+            Measure.Method(() =>
+                {
+                    new ReadNativeStreamJob
+                        {
+                            Reader = stream.AsReader(),
+                            Output = output.AsParallelWriter(),
+                        }
+                        .Schedule(entities, 256).Complete();
+
+                    Assert.AreEqual(entities, output.Count);
+                })
+                .SetUp(() =>
+                {
+                    stream = new NativeStream(entities, Allocator.TempJob);
+                    system.NativeStreamTest(stream);
+
+                    output = new NativeQueue<int>(Allocator.TempJob);
+                })
+                .CleanUp(() =>
+                {
+                    stream.Dispose();
+                    output.Dispose();
+                })
+                .Run();
+        }
+
         [DisableAutoCreation]
         private class EntitiesForEachTest : SystemBase
         {
-            private const int Archetypes = 16;
-
             private readonly int count;
+            private readonly int archetypes;
 
-            public EntitiesForEachTest(int count)
+            public EntitiesForEachTest(int count, int archetypes)
             {
                 this.count = count;
+                this.archetypes = archetypes;
             }
 
             public void NativeThreadStreamTest(NativeThreadStream<int> stream)
@@ -122,7 +201,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                     {
                         var entity = entities[index];
 
-                        this.EntityManager.SetSharedComponentData(entity, new TestComponent { Chunk = index % Archetypes });
+                        this.EntityManager.SetSharedComponentData(entity, new TestComponent { Chunk = index % this.archetypes });
                     }
                 }
             }
@@ -134,6 +213,54 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             private struct TestComponent : ISharedComponentData
             {
                 public int Chunk;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true)]
+        public struct ReadNativeThreadStreamJob : IJobParallelFor
+        {
+            [ReadOnly]
+            public NativeThreadStream<int>.Reader Reader;
+
+            public NativeQueue<int>.ParallelWriter Output;
+
+            /// <inheritdoc/>
+            public void Execute(int index)
+            {
+                var foreachCount = this.Reader.BeginForEachIndex(index);
+
+                //Debug.Log($"{index}:{foreachCount}");
+
+                for (var i = 0; i < foreachCount; i++)
+                {
+                    this.Output.Enqueue(this.Reader.Read());
+                }
+
+                this.Reader.EndForEachIndex();
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true)]
+        public struct ReadNativeStreamJob : IJobParallelFor
+        {
+            [ReadOnly]
+            public NativeStream.Reader Reader;
+
+            public NativeQueue<int>.ParallelWriter Output;
+
+            /// <inheritdoc/>
+            public void Execute(int index)
+            {
+                var foreachCount = this.Reader.BeginForEachIndex(index);
+
+                //Debug.Log($"{index}:{foreachCount}");
+
+                for (var i = 0; i < foreachCount; i++)
+                {
+                    this.Output.Enqueue(this.Reader.Read<int>());
+                }
+
+                this.Reader.EndForEachIndex();
             }
         }
     }
