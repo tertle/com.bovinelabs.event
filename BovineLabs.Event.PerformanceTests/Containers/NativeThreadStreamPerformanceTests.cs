@@ -133,6 +133,42 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .Run();
         }
 
+        [Test]
+        [Performance]
+        public void ReadNativeQueue(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
+        {
+            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            NativeQueue<int> queue = default;
+            NativeQueue<int> output = default;
+
+            Measure.Method(() =>
+                {
+                    new ReadNativeQueueJob
+                        {
+                            Reader = queue,
+                            Output = output.AsParallelWriter(),
+                        }
+                        .Schedule().Complete();
+
+                    Assert.AreEqual(entities, output.Count);
+                })
+                .SetUp(() =>
+                {
+                    queue = new NativeQueue<int>(Allocator.TempJob);
+                    system.NativeQueueTest(queue);
+
+                    output = new NativeQueue<int>(Allocator.TempJob);
+                })
+                .CleanUp(() =>
+                {
+                    queue.Dispose();
+                    output.Dispose();
+                })
+                .Run();
+        }
+
         [DisableAutoCreation]
         private class EntitiesForEachTest : SystemBase
         {
@@ -229,8 +265,6 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             {
                 var foreachCount = this.Reader.BeginForEachIndex(index);
 
-                //Debug.Log($"{index}:{foreachCount}");
-
                 for (var i = 0; i < foreachCount; i++)
                 {
                     this.Output.Enqueue(this.Reader.Read());
@@ -253,14 +287,30 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             {
                 var foreachCount = this.Reader.BeginForEachIndex(index);
 
-                //Debug.Log($"{index}:{foreachCount}");
-
                 for (var i = 0; i < foreachCount; i++)
                 {
                     this.Output.Enqueue(this.Reader.Read<int>());
                 }
 
                 this.Reader.EndForEachIndex();
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true)]
+        public struct ReadNativeQueueJob : IJob
+        {
+            [ReadOnly]
+            public NativeQueue<int> Reader;
+
+            public NativeQueue<int>.ParallelWriter Output;
+
+            /// <inheritdoc/>
+            public void Execute()
+            {
+                while (this.Reader.TryDequeue(out var item))
+                {
+                    this.Output.Enqueue(item);
+                }
             }
         }
     }
