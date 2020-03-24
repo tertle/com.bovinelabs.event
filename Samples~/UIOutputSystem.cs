@@ -61,11 +61,9 @@ namespace BovineLabs.Event.Samples
 
             for (var i = 0; i < readers.Count; i++)
             {
-                var r = readers[i];
-                var reader = r.Item1;
-                var foreachCount = r.Item2;
+                var reader = readers[i];
 
-                for (var j = 0; j < foreachCount; j++)
+                for (var j = 0; j < reader.ForEachCount; j++)
                 {
                     var count = reader.BeginForEachIndex(j);
                     for (var k = 0; k < count; k++)
@@ -90,11 +88,9 @@ namespace BovineLabs.Event.Samples
 
             for (var i = 0; i < readers.Count; i++)
             {
-                var r = readers[i];
-                var reader = r.Item1;
-                var foreachCount = r.Item2;
+                var reader = readers[i];
 
-                for (var j = 0; j < foreachCount; j++)
+                for (var j = 0; j < reader.ForEachCount; j++)
                 {
                     var count = reader.BeginForEachIndex(j);
                     for (var k = 0; k < count; k++)
