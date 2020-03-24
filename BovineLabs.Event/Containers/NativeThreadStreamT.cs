@@ -12,10 +12,10 @@ namespace BovineLabs.Event.Containers
     using Unity.Jobs;
     using UnityEngine.Assertions;
 
-    /// <summary>A deterministic thread generic data stream supporting parallel reading and parallel writing.</summary>
+    /// <summary>A thread generic data stream supporting parallel reading and parallel writing.</summary>
     /// <typeparam name="T">The type of the elements in the container.</typeparam>
     [NativeContainer]
-    public unsafe struct NativeThreadStream<T> : IDisposable
+    public unsafe struct NativeThreadStream<T> : IDisposable, IEquatable<NativeThreadStream<T>>
         where T : unmanaged
     {
         private UnsafeThreadStream stream;
@@ -134,6 +134,18 @@ namespace BovineLabs.Event.Containers
             return array;
         }
 
+        /// <inheritdoc/>
+        public bool Equals(NativeThreadStream<T> other)
+        {
+            return this.stream.Equals(other.stream);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return this.stream.GetHashCode();
+        }
+
         private static void AllocateBlock(out NativeThreadStream<T> stream, Allocator allocator)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -250,6 +262,9 @@ namespace BovineLabs.Event.Containers
 
             /// <summary> Gets the remaining item count. </summary>
             public int RemainingItemCount => this.reader.RemainingItemCount;
+
+            /// <summary> Gets the number of streams the container can use. </summary>
+            public int ForEachCount => UnsafeThreadStream.ForEachCount;
 
             /// <summary> Begin reading data at the iteration index. </summary>
             /// <param name="foreachIndex">The index to start reading.</param>

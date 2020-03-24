@@ -7,6 +7,7 @@
 namespace BovineLabs.Event.Tests.Jobs
 {
     using System;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
     using NUnit.Framework;
@@ -50,7 +51,7 @@ namespace BovineLabs.Event.Tests.Jobs
 
             for (var i = 0; i < producers; i++)
             {
-                var writer = es.CreateEventWriter<TestEvent>(foreachCount);
+                var writer = es.CreateEventWriter<TestEvent>();
 
                 var handle = new ProducerJob
                     {
@@ -77,7 +78,7 @@ namespace BovineLabs.Event.Tests.Jobs
         {
             public NativeQueue<int>.ParallelWriter Counter;
 
-            public void Execute(NativeStream.Reader stream, int index)
+            public void Execute(NativeThreadStream.Reader stream, int index)
             {
                 this.Counter.Enqueue(stream.ForEachCount);
             }

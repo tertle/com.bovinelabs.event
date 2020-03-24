@@ -6,6 +6,7 @@ namespace BovineLabs.Event.Jobs
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Systems;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -23,7 +24,7 @@ namespace BovineLabs.Event.Jobs
         /// <summary> Executes the next event. </summary>
         /// <param name="stream"> The stream. </param>
         /// <param name="index"> The stream index. </param>
-        void Execute(NativeStream.Reader stream, int index);
+        void Execute(NativeThreadStream.Reader stream, int index);
     }
 
     /// <summary> Extension methods for <see cref="IJobEventStream{T}"/>. </summary>
@@ -48,7 +49,7 @@ namespace BovineLabs.Event.Jobs
             {
                 var fullData = new EventJobStreamStruct<TJob, T>
                 {
-                    Readers = events[i].Item1,
+                    Readers = events[i],
                     JobData = jobData,
                     Index = i,
                 };
@@ -75,9 +76,9 @@ namespace BovineLabs.Event.Jobs
             where TJob : struct, IJobEventStream<T>
             where T : unmanaged
         {
-            /// <summary> The <see cref="NativeStream.Reader"/>. </summary>
+            /// <summary> The <see cref="NativeThreadStream.Reader"/>. </summary>
             [ReadOnly]
-            public NativeStream.Reader Readers;
+            public NativeThreadStream.Reader Readers;
 
             /// <summary> The job. </summary>
             public TJob JobData;

@@ -5,6 +5,7 @@
 namespace BovineLabs.Event.Systems
 {
     using System;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using Unity.Burst;
     using Unity.Collections;
@@ -69,22 +70,13 @@ namespace BovineLabs.Event.Systems
                 return handle;
             }
 
-            public JobHandle CreateSingleReader(JobHandle handle, Allocator allocator, out NativeStream reader)
-            {
-                handle = this.eventSystem.GetEventReaders<T>(handle, out var readers);
-
-                reader = default;
-
-                return handle;
-            }
-
             [BurstCompile]
             private struct CountJob : IJobEventStream<T>
             {
                 [NativeDisableContainerSafetyRestriction]
                 public NativeArray<int> Counter;
 
-                public void Execute(NativeStream.Reader reader, int index)
+                public void Execute(NativeThreadStream.Reader reader, int index)
                 {
                     this.Counter[index] = reader.ComputeItemCount();
                 }

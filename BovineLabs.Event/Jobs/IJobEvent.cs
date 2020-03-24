@@ -6,11 +6,13 @@ namespace BovineLabs.Event.Jobs
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Systems;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
+    using UnityEngine;
 
     /// <summary> Job that visits each event. </summary>
     /// <typeparam name="T"> Type of event. </typeparam>
@@ -30,25 +32,28 @@ namespace BovineLabs.Event.Jobs
         /// <summary> Schedule a <see cref="IJobEvent{T}"/> job. </summary>
         /// <param name="jobData"> The job. </param>
         /// <param name="eventSystem"> The event system. </param>
-        /// <param name="minIndicesPerJobCount"> Min indices per job count. </param>
         /// <param name="dependsOn">T he job handle dependency. </param>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
         public static unsafe JobHandle ScheduleParallel<TJob, T>(
-            this TJob jobData, EventSystem eventSystem, int minIndicesPerJobCount, JobHandle dependsOn = default)
+            this TJob jobData,
+            EventSystem eventSystem,
+            JobHandle dependsOn = default)
             where TJob : struct, IJobEvent<T>
             where T : unmanaged
         {
             dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
 
+            dependsOn.Complete();
+
             for (var i = 0; i < events.Count; i++)
             {
-                var e = events[i];
+                var reader = events[i];
 
                 var fullData = new EventJobStructParallelSplit<TJob, T>
                 {
-                    Reader = e.Item1,
+                    Reader = reader,
                     JobData = jobData,
                 };
 
@@ -60,8 +65,8 @@ namespace BovineLabs.Event.Jobs
 
                 dependsOn = JobsUtility.ScheduleParallelFor(
                     ref scheduleParams,
-                    e.Item2,
-                    minIndicesPerJobCount);
+                    reader.ForEachCount,
+                    1);
             }
 
             eventSystem.AddJobHandleForConsumer<T>(dependsOn);
@@ -76,9 +81,9 @@ namespace BovineLabs.Event.Jobs
             where TJob : struct, IJobEvent<T>
             where T : unmanaged
         {
-            /// <summary> The <see cref="NativeStream.Reader"/>. </summary>
+            /// <summary> The <see cref="NativeThreadStream.Reader"/>. </summary>
             [ReadOnly]
-            public NativeStream.Reader Reader;
+            public NativeThreadStream.Reader Reader;
 
             /// <summary> The job. </summary>
             public TJob JobData;

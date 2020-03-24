@@ -6,6 +6,7 @@
 
 namespace BovineLabs.Event.Tests.Jobs
 {
+    using System.Linq;
     using BovineLabs.Event.Jobs;
     using NUnit.Framework;
     using Unity.Burst;
@@ -26,11 +27,13 @@ namespace BovineLabs.Event.Tests.Jobs
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
+            JobHandle handle = default;
+
             for (var i = 0; i < producers; i++)
             {
-                var writer = es.CreateEventWriter<TestEvent>(foreachCount);
+                var writer = es.CreateEventWriter<TestEvent>();
 
-                var handle = new ProducerJob
+                var defaultHandle = new ProducerJob
                     {
                         Events = writer,
                         EventCount = eventCount,
@@ -38,6 +41,7 @@ namespace BovineLabs.Event.Tests.Jobs
                     .Schedule(foreachCount, 8);
 
                 es.AddJobHandleForProducer<TestEvent>(handle);
+                handle = JobHandle.CombineDependencies(handle, defaultHandle);
             }
 
             using (var counter = new NativeQueue<int>(Allocator.TempJob))
@@ -46,7 +50,7 @@ namespace BovineLabs.Event.Tests.Jobs
                     {
                         Counter = counter.AsParallelWriter(),
                     }
-                    .ScheduleParallel<TestJob, TestEvent>(es, 64);
+                    .ScheduleParallel<TestJob, TestEvent>(es, handle);
 
                 finalHandle.Complete();
 
@@ -54,7 +58,7 @@ namespace BovineLabs.Event.Tests.Jobs
             }
         }
 
-        [BurstCompile]
+        //[BurstCompile]
         private struct TestJob : IJobEvent<TestEvent>
         {
             public NativeQueue<int>.ParallelWriter Counter;

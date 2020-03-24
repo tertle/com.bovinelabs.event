@@ -13,11 +13,11 @@ namespace BovineLabs.Event.Containers
     using UnityEngine.Assertions;
 
     /// <summary>
-    /// A deterministic thread data stream supporting parallel reading and parallel writing.
+    /// A thread data stream supporting parallel reading and parallel writing.
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
     [NativeContainer]
-    public unsafe struct NativeThreadStream : IDisposable
+    public unsafe struct NativeThreadStream : IDisposable, IEquatable<NativeThreadStream>
     {
         private UnsafeThreadStream stream;
 
@@ -36,7 +36,7 @@ namespace BovineLabs.Event.Containers
         /// <param name="allocator">The specified type of memory allocation.</param>
         public NativeThreadStream(Allocator allocator)
         {
-            AllocateBlock(out this, allocator);
+            Allocate(out this, allocator);
             this.stream.AllocateForEach();
         }
 
@@ -136,7 +136,7 @@ namespace BovineLabs.Event.Containers
             return array;
         }
 
-        private static void AllocateBlock(out NativeThreadStream stream, Allocator allocator)
+        private static void Allocate(out NativeThreadStream stream, Allocator allocator)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (allocator <= Allocator.None)
@@ -257,6 +257,9 @@ namespace BovineLabs.Event.Containers
             /// <summary> Gets the remaining item count. </summary>
             public int RemainingItemCount => this.reader.RemainingItemCount;
 
+            /// <summary> Gets the number of streams the container can use. </summary>
+            public int ForEachCount => UnsafeThreadStream.ForEachCount;
+
             /// <summary>Begin reading data at the iteration index.</summary>
             /// <param name="foreachIndex">The index to start reading.</param>
             /// <returns>The number of elements at this index.</returns>
@@ -341,7 +344,7 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
             }
 
-            /// <summary> Peek into data. </summary>
+            /// <summary>Peek into data.</summary>
             /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>The returned data.</returns>
             public ref T Peek<T>()
@@ -410,6 +413,18 @@ namespace BovineLabs.Event.Containers
                     throw new System.ArgumentException("Not all data (Data Size) has been read. If this is intentional, simply skip calling EndForEachIndex();");
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(NativeThreadStream other)
+        {
+            return this.stream.Equals(other.stream);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return this.stream.GetHashCode();
         }
     }
 }

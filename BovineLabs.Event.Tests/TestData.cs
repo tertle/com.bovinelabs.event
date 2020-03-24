@@ -5,16 +5,16 @@
 
 namespace BovineLabs.Event.Tests
 {
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Systems;
     using NUnit.Framework;
-    using Unity.Collections;
     using Unity.Jobs;
 
     /// <summary> Test job for producing events. </summary>
     public struct ProducerJob : IJobParallelFor
     {
         /// <summary> The event stream writer. </summary>
-        public NativeStream.Writer Events;
+        public NativeThreadStream.Writer Events;
 
         /// <summary> Number of events to write. </summary>
         public int EventCount;
@@ -22,13 +22,10 @@ namespace BovineLabs.Event.Tests
         /// <inheritdoc/>
         public void Execute(int index)
         {
-            this.Events.BeginForEachIndex(index);
             for (var i = 0; i != this.EventCount; i++)
             {
-                this.Events.Write(new TestEvent { Value = index + i });
+                this.Events.Write(new TestEvent { Value = i });
             }
-
-            this.Events.EndForEachIndex();
         }
     }
 
@@ -36,7 +33,7 @@ namespace BovineLabs.Event.Tests
     public struct ConsumerJob : IJobParallelFor
     {
         /// <summary> The event stream reader. </summary>
-        public NativeStream.Reader Reader;
+        public NativeThreadStream.Reader Reader;
 
         /// <inheritdoc/>
         public void Execute(int index)
@@ -45,7 +42,7 @@ namespace BovineLabs.Event.Tests
 
             for (var i = 0; i != count; i++)
             {
-                Assert.AreEqual(index + i, this.Reader.Read<TestEvent>().Value);
+                this.Reader.Read<TestEvent>();
             }
 
             this.Reader.EndForEachIndex();

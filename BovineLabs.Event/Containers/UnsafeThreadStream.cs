@@ -13,10 +13,10 @@ namespace BovineLabs.Event.Containers
     using Unity.Jobs.LowLevel.Unsafe;
 
     /// <summary>
-    /// A deterministic thread data stream supporting parallel reading and parallel writing.
+    /// A thread data stream supporting parallel reading and parallel writing.
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
-    public unsafe struct UnsafeThreadStream : IDisposable
+    public unsafe struct UnsafeThreadStream : IDisposable, IEquatable<UnsafeThreadStream>
     {
         /// <summary>
         /// The number of streams the list can use. Fixed to <see cref="JobsUtility.MaxJobThreadCount"/>.
@@ -96,6 +96,9 @@ namespace BovineLabs.Event.Containers
             return itemCount;
         }
 
+        /// <summary>Allocate the stream block for data.</summary>
+        /// <param name="stream">The stream that is being allocated.</param>
+        /// <param name="allocator">The specified type of memory allocation.</param>
         internal static void AllocateBlock(out UnsafeThreadStream stream, Allocator allocator)
         {
             int allocationSize = sizeof(UnsafeThreadStreamBlockData) + (sizeof(UnsafeThreadStreamBlock*) * ForEachCount);
@@ -114,6 +117,7 @@ namespace BovineLabs.Event.Containers
             block->Ranges = null;
         }
 
+        /// <summary>Allocates the data for each thread based off <see cref="ForEachCount"/>.</summary>
         internal void AllocateForEach()
         {
             long allocationSize = sizeof(UnsafeThreadStreamRange) * ForEachCount;
@@ -143,17 +147,6 @@ namespace BovineLabs.Event.Containers
             UnsafeUtility.Free(this.block, this.allocator);
             this.block = null;
             this.allocator = Allocator.None;
-        }
-
-        [BurstCompile]
-        private struct DisposeJob : IJob
-        {
-            public UnsafeThreadStream Container;
-
-            public void Execute()
-            {
-                this.Container.Deallocate();
-            }
         }
 
         /// <summary> The writer instance. </summary>
@@ -317,8 +310,9 @@ namespace BovineLabs.Event.Containers
                 return ptr;
             }
 
-            /// <summary> Read data. </summary>
+            /// <summary>Read data.</summary>
             /// <typeparam name="T">The type of value.</typeparam>
+            /// <returns>The returned data.</returns>
             public ref T Read<T>()
                 where T : struct
             {
@@ -326,10 +320,9 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
             }
 
-            /// <summary>
-            /// Peek into data.
-            /// </summary>
+            /// <summary>Peek into data.</summary>
             /// <typeparam name="T">The type of value.</typeparam>
+            /// /// <returns>The returned data.</returns>
             public ref T Peek<T>()
                 where T : struct
             {
@@ -356,6 +349,29 @@ namespace BovineLabs.Event.Containers
 
                 return itemCount;
             }
+        }
+
+        [BurstCompile]
+        private struct DisposeJob : IJob
+        {
+            public UnsafeThreadStream Container;
+
+            public void Execute()
+            {
+                this.Container.Deallocate();
+            }
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(UnsafeThreadStream other)
+        {
+            return this.block == other.block;
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return unchecked((int)(long)this.block);
         }
     }
 }

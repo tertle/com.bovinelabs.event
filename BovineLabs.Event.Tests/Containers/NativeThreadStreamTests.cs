@@ -133,9 +133,10 @@ namespace BovineLabs.Event.Tests.Containers
         {
             public NativeThreadStream<int>.Writer Writer;
 
+#pragma warning disable 649
             [NativeSetThreadIndex]
-            [UsedImplicitly(ImplicitUseKindFlags.Assign)]
             private int threadIndex;
+#pragma warning restore 649
 
             public void Execute(int index)
             {
