@@ -7,7 +7,6 @@ namespace BovineLabs.Event.Tests
 {
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Systems;
-    using NUnit.Framework;
     using Unity.Jobs;
 
     /// <summary> Test job for producing events. </summary>

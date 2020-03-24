@@ -6,7 +6,6 @@
 
 namespace BovineLabs.Event.Tests.Jobs
 {
-    using System.Linq;
     using BovineLabs.Event.Jobs;
     using NUnit.Framework;
     using Unity.Burst;
@@ -58,7 +57,7 @@ namespace BovineLabs.Event.Tests.Jobs
             }
         }
 
-        //[BurstCompile]
+        [BurstCompile]
         private struct TestJob : IJobEvent<TestEvent>
         {
             public NativeQueue<int>.ParallelWriter Counter;

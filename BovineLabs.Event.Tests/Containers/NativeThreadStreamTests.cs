@@ -6,7 +6,6 @@ namespace BovineLabs.Event.Tests.Containers
 {
     using System;
     using BovineLabs.Event.Containers;
-    using JetBrains.Annotations;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
