@@ -12,7 +12,6 @@ namespace BovineLabs.Event.Jobs
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
-    using UnityEngine;
 
     /// <summary> Job that visits each event. </summary>
     /// <typeparam name="T"> Type of event. </typeparam>

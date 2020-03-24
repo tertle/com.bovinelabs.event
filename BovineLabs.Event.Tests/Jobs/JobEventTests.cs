@@ -6,10 +6,8 @@
 
 namespace BovineLabs.Event.Tests.Jobs
 {
-    using System.Linq;
     using BovineLabs.Event.Jobs;
     using NUnit.Framework;
-    using Unity.Burst;
     using Unity.Collections;
     using Unity.Entities.Tests;
     using Unity.Jobs;
