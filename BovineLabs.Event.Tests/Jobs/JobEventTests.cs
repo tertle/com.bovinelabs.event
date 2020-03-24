@@ -8,11 +8,12 @@ namespace BovineLabs.Event.Tests.Jobs
 {
     using BovineLabs.Event.Jobs;
     using NUnit.Framework;
+    using Unity.Burst;
     using Unity.Collections;
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="JobEvent"/>. </summary>
+    /// <summary> Tests for <see cref="JobEvent"/> . </summary>
     public class JobEventTests : ECSTestsFixture
     {
         /// <summary> Tests that <see cref="JobEvent.ScheduleParallel{TJob, T}"/> schedules the job correctly. </summary>
@@ -56,7 +57,7 @@ namespace BovineLabs.Event.Tests.Jobs
             }
         }
 
-        //[BurstCompile]
+        [BurstCompile]
         private struct TestJob : IJobEvent<TestEvent>
         {
             public NativeQueue<int>.ParallelWriter Counter;

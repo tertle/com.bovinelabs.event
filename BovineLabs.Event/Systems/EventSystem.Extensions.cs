@@ -17,8 +17,8 @@ namespace BovineLabs.Event.Systems
     {
         /// <summary> The container for common extension methods for events. </summary>
         /// <remarks>
-        /// <para>Setup like this rather than as methods to work around having to declare explicit generic arguments.
-        /// For example, As{T}().Method(handle, map) instead of .Method{T, TK, TV}(handle, map).</para>
+        /// <para> Setup like this rather than as methods to work around having to declare explicit generic arguments.
+        /// For example, As{T}().Method(handle, map) instead of .Method{T, TK, TV}(handle, map). </para>
         /// </remarks>
         /// <typeparam name="T"> The event type. </typeparam>
         public struct Extensions<T>
@@ -36,8 +36,8 @@ namespace BovineLabs.Event.Systems
             /// <summary> Ensure a <see cref="NativeHashMap{TKey,TValue}" /> has the capacity to be filled with all events of a specific type. </summary>
             /// <param name="handle"> Input dependencies. </param>
             /// <param name="hashMap"> The <see cref="NativeHashMap{TKey,TValue}"/> to ensure capacity of. </param>
-            /// <typeparam name="TK"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/>. </typeparam>
-            /// <typeparam name="TV"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/>. </typeparam>
+            /// <typeparam name="TK"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
+            /// <typeparam name="TV"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
             /// <returns> The dependency handle. </returns>
             public JobHandle EnsureHashMapCapacity<TK, TV>(
                 JobHandle handle,

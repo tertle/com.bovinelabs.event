@@ -15,8 +15,10 @@ namespace BovineLabs.Event.Tests.Containers
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
 
+    /// <summary> Tests for <see cref="NativeThreadStream"/> . </summary>
     internal class NativeThreadStreamTests : ECSTestsFixture
     {
+        /// <summary> Tests that you can create and destroy. </summary>
         [Test]
         public void CreateAndDestroy()
         {
@@ -29,6 +31,8 @@ namespace BovineLabs.Event.Tests.Containers
             Assert.IsFalse(stream.IsCreated);
         }
 
+        /// <summary> Tests that the dispose job works. </summary>
+        /// <remarks> The stream will be marked as not created straight away. </remarks>
         [Test]
         public void DisposeJob()
         {
@@ -44,6 +48,7 @@ namespace BovineLabs.Event.Tests.Containers
             disposeJob.Complete();
         }
 
+        /// <summary> Tests that the dispose job works. </summary>
         [Test]
         public void ItemCount(
             [Values(1, 10, UnsafeThreadStream.ForEachCount + 1, 1024)] int count,

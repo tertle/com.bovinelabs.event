@@ -27,7 +27,7 @@ namespace BovineLabs.Event.Jobs
         void Execute(NativeThreadStream.Reader stream, int index);
     }
 
-    /// <summary> Extension methods for <see cref="IJobEventStream{T}"/>. </summary>
+    /// <summary> Extension methods for <see cref="IJobEventStream{T}"/> . </summary>
     public static class JobEventStream
     {
         /// <summary> Schedule a <see cref="IJobEventStream{T}"/> job. </summary>
@@ -76,7 +76,7 @@ namespace BovineLabs.Event.Jobs
             where TJob : struct, IJobEventStream<T>
             where T : unmanaged
         {
-            /// <summary> The <see cref="NativeThreadStream.Reader"/>. </summary>
+            /// <summary> The <see cref="NativeThreadStream.Reader"/> . </summary>
             [ReadOnly]
             public NativeThreadStream.Reader Readers;
 
