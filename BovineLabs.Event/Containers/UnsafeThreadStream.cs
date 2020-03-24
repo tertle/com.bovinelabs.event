@@ -29,7 +29,7 @@ namespace BovineLabs.Event.Containers
         private Allocator allocator;
 
         /// <summary> Initializes a new instance of the <see cref="UnsafeThreadStream"/> struct. </summary>
-        /// <param name="allocator">The specified type of memory allocation.</param>
+        /// <param name="allocator"> The specified type of memory allocation. </param>
         public UnsafeThreadStream(Allocator allocator)
         {
             AllocateBlock(out this, allocator);
@@ -37,10 +37,10 @@ namespace BovineLabs.Event.Containers
         }
 
         /// <summary> Gets a value indicating whether memory for the container is allocated. </summary>
-        /// <value>True if this container object's internal storage has been allocated.</value>
+        /// <value> True if this container object's internal storage has been allocated. </value>
         /// <remarks>
-        /// <para>Note that the container storage is not created if you use the default constructor.
-        /// You must specify at least an allocation type to construct a usable container.</para>
+        /// <para> Note that the container storage is not created if you use the default constructor.
+        /// You must specify at least an allocation type to construct a usable container. </para>
         /// </remarks>
         public bool IsCreated => this.block != null;
 
@@ -53,14 +53,16 @@ namespace BovineLabs.Event.Containers
         /// <summary>
         /// Safely disposes of this container and deallocates its memory when the jobs that use it have completed.
         /// </summary>
-        /// <remarks>You can call this function dispose of the container immediately after scheduling the job. Pass
+        /// <remarks>
+        /// <para> You can call this function dispose of the container immediately after scheduling the job. Pass
         /// the [JobHandle](https://docs.unity3d.com/ScriptReference/Unity.Jobs.JobHandle.html) returned by
         /// the [Job.Schedule](https://docs.unity3d.com/ScriptReference/Unity.Jobs.IJobExtensions.Schedule.html)
         /// method using the `jobHandle` parameter so the job scheduler can dispose the container after all jobs
-        /// using it have run.</remarks>
-        /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
-        /// <returns>A new job handle containing the prior handles as well as the handle for the job that deletes
-        /// the container.</returns>
+        /// using it have run. </para>
+        /// </remarks>
+        /// <param name="dependency"> All jobs spawned will depend on this JobHandle. </param>
+        /// <returns> A new job handle containing the prior handles as well as the handle for the job that deletes
+        /// the container. </returns>
         public JobHandle Dispose(JobHandle dependency)
         {
             var jobHandle = new DisposeJob { Container = this }.Schedule(dependency);
@@ -68,22 +70,22 @@ namespace BovineLabs.Event.Containers
             return jobHandle;
         }
 
-        /// <summary>Returns writer instance.</summary>
-        /// <returns>The writer instance.</returns>
+        /// <summary> Returns writer instance. </summary>
+        /// <returns> The writer instance. </returns>
         public Writer AsWriter()
         {
             return new Writer(ref this);
         }
 
-        /// <summary>Returns reader instance.</summary>
-        /// <returns>The reader instance.</returns>
+        /// <summary> Returns reader instance. </summary>
+        /// <returns> The reader instance. </returns>
         public Reader AsReader()
         {
             return new Reader(ref this);
         }
 
-        /// <summary>Compute the item count.</summary>
-        /// <returns>Item count.</returns>
+        /// <summary> Compute the item count. </summary>
+        /// <returns> Item count. </returns>
         public int ComputeItemCount()
         {
             var itemCount = 0;
@@ -96,9 +98,9 @@ namespace BovineLabs.Event.Containers
             return itemCount;
         }
 
-        /// <summary>Allocate the stream block for data.</summary>
-        /// <param name="stream">The stream that is being allocated.</param>
-        /// <param name="allocator">The specified type of memory allocation.</param>
+        /// <summary> Allocate the stream block for data. </summary>
+        /// <param name="stream"> The stream that is being allocated. </param>
+        /// <param name="allocator"> The specified type of memory allocation. </param>
         internal static void AllocateBlock(out UnsafeThreadStream stream, Allocator allocator)
         {
             int allocationSize = sizeof(UnsafeThreadStreamBlockData) + (sizeof(UnsafeThreadStreamBlock*) * ForEachCount);
@@ -117,7 +119,7 @@ namespace BovineLabs.Event.Containers
             block->Ranges = null;
         }
 
-        /// <summary>Allocates the data for each thread based off <see cref="ForEachCount"/>.</summary>
+        /// <summary> Allocates the data for each thread based off <see cref="ForEachCount"/> . </summary>
         internal void AllocateForEach()
         {
             long allocationSize = sizeof(UnsafeThreadStreamRange) * ForEachCount;
@@ -159,8 +161,8 @@ namespace BovineLabs.Event.Containers
             [UsedImplicitly(ImplicitUseKindFlags.Assign)]
             private int threadIndex;
 
-            /// <summary>Initializes a new instance of the <see cref="Writer"/> struct.</summary>
-            /// <param name="stream">The stream reference.</param>
+            /// <summary> Initializes a new instance of the <see cref="Writer"/> struct. </summary>
+            /// <param name="stream"> The stream reference. </param>
             internal Writer(ref UnsafeThreadStream stream)
             {
                 this.blockStream = stream.block;
@@ -179,9 +181,9 @@ namespace BovineLabs.Event.Containers
                 }
             }
 
-            /// <summary>Write data.</summary>
-            /// <param name="value">The data to write.</param>
-            /// <typeparam name="T">The type of value.</typeparam>
+            /// <summary> Write data. </summary>
+            /// <param name="value"> The data to write. </param>
+            /// <typeparam name="T"> The type of value. </typeparam>
             public void Write<T>(T value)
                 where T : struct
             {
@@ -189,9 +191,9 @@ namespace BovineLabs.Event.Containers
                 dst = value;
             }
 
-            /// <summary>Allocate space for data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// <returns>Reference for the allocated space.</returns>
+            /// <summary> Allocate space for data. </summary>
+            /// <typeparam name="T"> The type of value. </typeparam>
+            /// <returns> Reference for the allocated space. </returns>
             public ref T Allocate<T>()
                 where T : struct
             {
@@ -199,9 +201,9 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
             }
 
-            /// <summary>Allocate space for data.</summary>
-            /// <param name="size">Size in bytes.</param>
-            /// <returns>Pointer for the allocated space.</returns>
+            /// <summary> Allocate space for data. </summary>
+            /// <param name="size"> Size in bytes. </param>
+            /// <returns> Pointer for the allocated space. </returns>
             public byte* Allocate(int size)
             {
                 byte* ptr = this.blockStream->Ranges[this.threadIndex].CurrentPtr;
@@ -258,8 +260,8 @@ namespace BovineLabs.Event.Containers
             internal int RemainingCount;
             internal int LastBlockSize;
 
-            /// <summary>Initializes a new instance of the <see cref="Reader"/> struct.</summary>
-            /// <param name="stream">The stream reference.</param>
+            /// <summary> Initializes a new instance of the <see cref="Reader"/> struct. </summary>
+            /// <param name="stream"> The stream reference. </param>
             internal Reader(ref UnsafeThreadStream stream)
             {
                 this.BlockStream = stream.block;
@@ -274,8 +276,8 @@ namespace BovineLabs.Event.Containers
             public int RemainingItemCount => this.RemainingCount;
 
             /// <summary> Begin reading data at the iteration index. </summary>
-            /// <param name="foreachIndex">The index to start reading.</param>
-            /// <returns>The number of elements at this index.</returns>
+            /// <param name="foreachIndex"> The index to start reading. </param>
+            /// <returns> The number of elements at this index. </returns>
             public int BeginForEachIndex(int foreachIndex)
             {
                 this.RemainingCount = this.BlockStream->Ranges[foreachIndex].ElementCount;
@@ -310,9 +312,9 @@ namespace BovineLabs.Event.Containers
                 return ptr;
             }
 
-            /// <summary>Read data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// <returns>The returned data.</returns>
+            /// <summary> Read data. </summary>
+            /// <typeparam name="T"> The type of value. </typeparam>
+            /// <returns> The returned data. </returns>
             public ref T Read<T>()
                 where T : struct
             {
@@ -320,9 +322,9 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
             }
 
-            /// <summary>Peek into data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// /// <returns>The returned data.</returns>
+            /// <summary> Peek into data. </summary>
+            /// <typeparam name="T"> The type of value. </typeparam>
+            /// /// <returns> The returned data. </returns>
             public ref T Peek<T>()
                 where T : struct
             {
@@ -337,8 +339,8 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(ptr);
             }
 
-            /// <summary>Compute item count.</summary>
-            /// <returns>Item count.</returns>
+            /// <summary> Compute item count. </summary>
+            /// <returns> Item count. </returns>
             public int ComputeItemCount()
             {
                 int itemCount = 0;

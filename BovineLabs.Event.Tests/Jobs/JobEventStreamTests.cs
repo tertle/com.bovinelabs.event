@@ -1,4 +1,4 @@
-﻿// <copyright file="JobEventTests.cs" company="BovineLabs">
+﻿// <copyright file="JobEventStreamTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -16,7 +16,7 @@ namespace BovineLabs.Event.Tests.Jobs
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="JobEventStream"/>. </summary>
+    /// <summary> Tests for <see cref="JobEventStream"/> . </summary>
     public class JobEventStreamTests : ECSTestsFixture
     {
         /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob, T}"/> with parallel false. </summary>

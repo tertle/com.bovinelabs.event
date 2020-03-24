@@ -12,7 +12,6 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.PerformanceTesting;
-    using UnityEngine;
 
     internal class NativeThreadStreamPerformanceTests : ECSTestsFixture
     {

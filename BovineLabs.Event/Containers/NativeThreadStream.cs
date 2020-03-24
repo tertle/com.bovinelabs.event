@@ -33,7 +33,7 @@ namespace BovineLabs.Event.Containers
 #endif
 
         /// <summary> Initializes a new instance of the <see cref="NativeThreadStream"/> struct. </summary>
-        /// <param name="allocator">The specified type of memory allocation.</param>
+        /// <param name="allocator"> The specified type of memory allocation. </param>
         public NativeThreadStream(Allocator allocator)
         {
             Allocate(out this, allocator);
@@ -41,10 +41,10 @@ namespace BovineLabs.Event.Containers
         }
 
         /// <summary> Gets a value indicating whether memory for the container is allocated. </summary>
-        /// <value>True if this container object's internal storage has been allocated.</value>
+        /// <value> True if this container object's internal storage has been allocated. </value>
         /// <remarks>
-        /// <para>Note that the container storage is not created if you use the default constructor.
-        /// You must specify at least an allocation type to construct a usable container.</para>
+        /// <para> Note that the container storage is not created if you use the default constructor.
+        /// You must specify at least an allocation type to construct a usable container. </para>
         /// </remarks>
         public bool IsCreated => this.stream.IsCreated;
 
@@ -63,14 +63,14 @@ namespace BovineLabs.Event.Containers
         /// <summary>
         /// Safely disposes of this container and deallocates its memory when the jobs that use it have completed.
         /// </summary>
-        /// <remarks>You can call this function dispose of the container immediately after scheduling the job. Pass
+        /// <remarks> You can call this function dispose of the container immediately after scheduling the job. Pass
         /// the [JobHandle](https://docs.unity3d.com/ScriptReference/Unity.Jobs.JobHandle.html) returned by
         /// the [Job.Schedule](https://docs.unity3d.com/ScriptReference/Unity.Jobs.IJobExtensions.Schedule.html)
         /// method using the `jobHandle` parameter so the job scheduler can dispose the container after all jobs
-        /// using it have run.</remarks>
-        /// <param name="dependency">All jobs spawned will depend on this JobHandle.</param>
-        /// <returns>A new job handle containing the prior handles as well as the handle for the job that deletes
-        /// the container.</returns>
+        /// using it have run. </remarks>
+        /// <param name="dependency"> All jobs spawned will depend on this JobHandle. </param>
+        /// <returns> A new job handle containing the prior handles as well as the handle for the job that deletes
+        /// the container. </returns>
         public JobHandle Dispose(JobHandle dependency)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -88,33 +88,33 @@ namespace BovineLabs.Event.Containers
             return jobHandle;
         }
 
-        /// <summary>Returns writer instance.</summary>
-        /// <returns>The writer instance.</returns>
+        /// <summary> Returns writer instance. </summary>
+        /// <returns> The writer instance. </returns>
         public Writer AsWriter()
         {
             return new Writer(ref this);
         }
 
-        /// <summary>Returns reader instance.</summary>
-        /// <returns>The reader instance.</returns>
+        /// <summary> Returns reader instance. </summary>
+        /// <returns> The reader instance. </returns>
         public Reader AsReader()
         {
             return new Reader(ref this);
         }
 
-        /// <summary>Compute the item count.</summary>
-        /// <returns>Item count.</returns>
+        /// <summary> Compute the item count. </summary>
+        /// <returns> Item count. </returns>
         public int ComputeItemCount()
         {
             this.CheckReadAccess();
             return this.stream.ComputeItemCount();
         }
 
-        /// <summary>Copies stream data into NativeArray.</summary>
-        /// <param name="allocator">The specified type of memory allocation.</param>
-        /// <typeparam name="T">The type of the elements in the container.</typeparam>
-        /// <returns>A new NativeArray, allocated with the given strategy and wrapping the stream data.</returns>
-        /// <remarks><para>The array is a copy of stream data.</para></remarks>
+        /// <summary> Copies stream data into NativeArray. </summary>
+        /// <param name="allocator"> The specified type of memory allocation. </param>
+        /// <typeparam name="T"> The type of the elements in the container. </typeparam>
+        /// <returns> A new NativeArray, allocated with the given strategy and wrapping the stream data. </returns>
+        /// <remarks> <para> The array is a copy of stream data. </para> </remarks>
         public NativeArray<T> ToNativeArray<T>(Allocator allocator)
             where T : struct
         {
@@ -172,8 +172,8 @@ namespace BovineLabs.Event.Containers
             private AtomicSafetyHandle m_Safety;
 #endif
 
-            /// <summary>Initializes a new instance of the <see cref="Writer"/> struct.</summary>
-            /// <param name="stream">The stream reference.</param>
+            /// <summary> Initializes a new instance of the <see cref="Writer"/> struct. </summary>
+            /// <param name="stream"> The stream reference. </param>
             internal Writer(ref NativeThreadStream stream)
             {
                 this.writer = stream.stream.AsWriter();
@@ -183,9 +183,9 @@ namespace BovineLabs.Event.Containers
 #endif
             }
 
-            /// <summary>Write data.</summary>
-            /// <param name="value">The data to write.</param>
-            /// <typeparam name="T">The type of value.</typeparam>
+            /// <summary> Write data. </summary>
+            /// <param name="value"> The data to write. </param>
+            /// <typeparam name="T"> The type of value. </typeparam>
             public void Write<T>(T value)
                 where T : struct
             {
@@ -193,9 +193,9 @@ namespace BovineLabs.Event.Containers
                 dst = value;
             }
 
-            /// <summary>Allocate space for data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// <returns>Reference for the allocated space.</returns>
+            /// <summary> Allocate space for data. </summary>
+            /// <typeparam name="T"> The type of value. </typeparam>
+            /// <returns> Reference for the allocated space. </returns>
             public ref T Allocate<T>()
                 where T : struct
             {
@@ -204,9 +204,9 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
             }
 
-            /// <summary>Allocate space for data.</summary>
-            /// <param name="size">Size in bytes.</param>
-            /// <returns>Pointer for the allocated space.</returns>
+            /// <summary> Allocate space for data. </summary>
+            /// <param name="size"> Size in bytes. </param>
+            /// <returns> Pointer for the allocated space. </returns>
             public byte* Allocate(int size)
             {
                 this.AllocateChecks(size);
@@ -242,8 +242,8 @@ namespace BovineLabs.Event.Containers
             private AtomicSafetyHandle m_Safety;
 #endif
 
-            /// <summary>Initializes a new instance of the <see cref="Reader"/> struct.</summary>
-            /// <param name="stream">The stream reference.</param>
+            /// <summary> Initializes a new instance of the <see cref="Reader"/> struct. </summary>
+            /// <param name="stream"> The stream reference. </param>
             internal Reader(ref NativeThreadStream stream)
             {
                 this.reader = stream.stream.AsReader();
@@ -260,9 +260,9 @@ namespace BovineLabs.Event.Containers
             /// <summary> Gets the number of streams the container can use. </summary>
             public int ForEachCount => UnsafeThreadStream.ForEachCount;
 
-            /// <summary>Begin reading data at the iteration index.</summary>
-            /// <param name="foreachIndex">The index to start reading.</param>
-            /// <returns>The number of elements at this index.</returns>
+            /// <summary> Begin reading data at the iteration index. </summary>
+            /// <param name="foreachIndex"> The index to start reading. </param>
+            /// <returns> The number of elements at this index. </returns>
             public int BeginForEachIndex(int foreachIndex)
             {
                 this.BeginForEachIndexChecks(foreachIndex);
@@ -280,15 +280,15 @@ namespace BovineLabs.Event.Containers
                 return remainingItemCount;
             }
 
-            /// <summary>Ensures that all data has been read for the active iteration index.</summary>
+            /// <summary> Ensures that all data has been read for the active iteration index. </summary>
             public void EndForEachIndex()
             {
                 this.EndForEachIndexChecks();
             }
 
-            /// <summary>Returns pointer to data.</summary>
-            /// <param name="size">The size of data.</param>
-            /// <returns>Pointer to data.</returns>
+            /// <summary> Returns pointer to data. </summary>
+            /// <param name="size"> The size of data. </param>
+            /// <returns> Pointer to data. </returns>
             public byte* ReadUnsafePtr(int size)
             {
                 this.ReadChecks(size);
@@ -334,9 +334,9 @@ namespace BovineLabs.Event.Containers
                 return ptr;
             }
 
-            /// <summary>Read data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// <returns>The returned data.</returns>
+            /// <summary> Read data. </summary>
+            /// <typeparam name="T"> The type of value. </typeparam>
+            /// <returns> The returned data. </returns>
             public ref T Read<T>()
                 where T : struct
             {
@@ -344,9 +344,9 @@ namespace BovineLabs.Event.Containers
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
             }
 
-            /// <summary>Peek into data.</summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// <returns>The returned data.</returns>
+            /// <summary> Peek into data. </summary>
+            /// <typeparam name="T"> The type of value. </typeparam>
+            /// <returns> The returned data. </returns>
             public ref T Peek<T>()
                 where T : struct
             {
@@ -356,8 +356,8 @@ namespace BovineLabs.Event.Containers
                 return ref this.reader.Peek<T>();
             }
 
-            /// <summary>Compute item count.</summary>
-            /// <returns>Item count.</returns>
+            /// <summary> Compute item count. </summary>
+            /// <returns> Item count. </returns>
             public int ComputeItemCount()
             {
                 this.CheckAccess();

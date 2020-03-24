@@ -43,7 +43,7 @@ namespace BovineLabs.Event.Systems
 #endif
 
         /// <summary> Initializes a new instance of the <see cref="EventContainer"/> class. </summary>
-        /// <param name="type">The event type of this container.</param>
+        /// <param name="type"> The event type of this container. </param>
         public EventContainer(Type type)
         {
             this.Type = type;
@@ -65,7 +65,7 @@ namespace BovineLabs.Event.Systems
         public List<NativeThreadStream> ExternalReaders => this.externalReaders;
 
         /// <summary> Create a new stream for the events. </summary>
-        /// <returns> The <see cref="NativeThreadStream.Writer"/>. </returns>
+        /// <returns> The <see cref="NativeThreadStream.Writer"/> . </returns>
         /// <exception cref="InvalidOperationException"> Throw if previous call not closed or if in read mode. </exception>
         public NativeThreadStream.Writer CreateEventStream()
         {
@@ -93,7 +93,7 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Add a new producer job handle. Can only be called in write mode. </summary>
-        /// <param name="handle">The handle.</param>
+        /// <param name="handle"> The handle. </param>
         public void AddJobHandleForProducer(JobHandle handle)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -109,7 +109,7 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Add a new producer job handle while skipping the producer safety check. Can only be called in write mode. </summary>
-        /// <param name="handle">The handle.</param>
+        /// <param name="handle"> The handle. </param>
         public void AddJobHandleForProducerUnsafe(JobHandle handle)
         {
             if (this.isReadMode)
@@ -123,7 +123,7 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Add a new producer job handle. Can only be called in write mode. </summary>
-        /// <param name="handle">The handle.</param>
+        /// <param name="handle"> The handle. </param>
         public void AddJobHandleForConsumer(JobHandle handle)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS

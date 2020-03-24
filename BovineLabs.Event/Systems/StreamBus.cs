@@ -32,8 +32,8 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Get an instance of StreamBus linked to a key.
         /// </summary>
-        /// <param name="key">The bus key.</param>
-        /// <returns>A shared instance of StreamBus.</returns>
+        /// <param name="key"> The bus key. </param>
+        /// <returns> A shared instance of StreamBus. </returns>
         internal static StreamBus GetInstance(string key)
         {
             if (!Instances.TryGetValue(key, out var streamShare))
@@ -47,7 +47,7 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Subscribe an EventSystem to get reader updates.
         /// </summary>
-        /// <param name="eventSystem">The event system.</param>
+        /// <param name="eventSystem"> The event system. </param>
         internal void Subscribe(EventSystem eventSystem)
         {
             Assert.IsFalse(this.subscribers.Contains(eventSystem));
@@ -57,7 +57,7 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Unsubscribe an EventSystem to stop getting reader updates.
         /// </summary>
-        /// <param name="eventSystem">The event system.</param>
+        /// <param name="eventSystem"> The event system. </param>
         internal void Unsubscribe(EventSystem eventSystem)
         {
             Assert.IsTrue(this.subscribers.Contains(eventSystem));
@@ -73,12 +73,12 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Add a set of event streams to be shared with other systems. </summary>
-        /// <param name="owner">The system that owns the streams.</param>
-        /// <param name="type">The type of the event.</param>
-        /// <param name="newStreams">The streams.</param>
-        /// <param name="consumerHandle">The dependency handle for these streams.</param>
-        /// <returns>The new dependency handle.</returns>
-        /// <exception cref="ArgumentException">Thrown  if this owner is not subscribed.</exception>
+        /// <param name="owner"> The system that owns the streams. </param>
+        /// <param name="type"> The type of the event. </param>
+        /// <param name="newStreams"> The streams. </param>
+        /// <param name="consumerHandle"> The dependency handle for these streams. </param>
+        /// <returns> The new dependency handle. </returns>
+        /// <exception cref="ArgumentException"> Thrown  if this owner is not subscribed. </exception>
         internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<NativeThreadStream> newStreams, JobHandle consumerHandle)
         {
             if (!this.subscribers.Contains(owner))
@@ -143,10 +143,10 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Return a set of streams that the system has finished reading.
         /// </summary>
-        /// <param name="owner">The system the streams are coming from.</param>
-        /// <param name="streamsToRelease">The collection of streams to be released.</param>
-        /// <param name="inputHandle">The dependency handle.</param>
-        /// <returns>New dependency handle.</returns>
+        /// <param name="owner"> The system the streams are coming from. </param>
+        /// <param name="streamsToRelease"> The collection of streams to be released. </param>
+        /// <param name="inputHandle"> The dependency handle. </param>
+        /// <returns> New dependency handle. </returns>
         internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<NativeThreadStream> streamsToRelease, JobHandle inputHandle)
         {
             JobHandle outputHandle = inputHandle;

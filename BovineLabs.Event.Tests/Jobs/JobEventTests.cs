@@ -13,7 +13,7 @@ namespace BovineLabs.Event.Tests.Jobs
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="JobEvent"/>. </summary>
+    /// <summary> Tests for <see cref="JobEvent"/> . </summary>
     public class JobEventTests : ECSTestsFixture
     {
         /// <summary> Tests that <see cref="JobEvent.ScheduleParallel{TJob, T}"/> schedules the job correctly. </summary>

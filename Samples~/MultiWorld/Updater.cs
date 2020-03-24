@@ -4,7 +4,6 @@
 
 namespace BovineLabs.Event.Samples.MultiWorld
 {
-    using System.Collections.Generic;
     using Unity.Entities;
     using UnityEngine;
 

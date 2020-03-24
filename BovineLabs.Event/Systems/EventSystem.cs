@@ -41,14 +41,14 @@ namespace BovineLabs.Event.Systems
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual WorldMode Mode => WorldMode.WorldName;
 
-        /// <summary> Gets the world when using <see cref="WorldMode.Custom"/>. </summary>
+        /// <summary> Gets the world when using <see cref="WorldMode.Custom"/> . </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual string CustomKey => throw new NotImplementedException("CustomKey must be implemented if Mode equals WorldMode.Custom");
 
         /// <summary> Create a new NativeThreadStream for writing events to. </summary>
-        /// <typeparam name="T">The type of event.</typeparam>
-        /// <returns>A <see cref="NativeThreadStream.Writer"/> you can write events to.</returns>
-        /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
+        /// <typeparam name="T"> The type of event. </typeparam>
+        /// <returns> A <see cref="NativeThreadStream.Writer"/> you can write events to. </returns>
+        /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public NativeThreadStream.Writer CreateEventWriter<T>()
             where T : unmanaged
         {
@@ -57,9 +57,9 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Adds the specified JobHandle to the events list of producer dependency handles. </summary>
-        /// <param name="handle">The job handle to add.</param>
-        /// <typeparam name="T">The type of event to associate the handle to.</typeparam>
-        /// <exception cref="InvalidOperationException">Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls.</exception>
+        /// <param name="handle"> The job handle to add. </param>
+        /// <typeparam name="T"> The type of event to associate the handle to. </typeparam>
+        /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public void AddJobHandleForProducer<T>(JobHandle handle)
             where T : unmanaged
         {
@@ -67,8 +67,8 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Checks if an event has any readers. </summary>
-        /// <typeparam name="T">The event type to check.</typeparam>
-        /// <returns>True if there are readers for the event.</returns>
+        /// <typeparam name="T"> The event type to check. </typeparam>
+        /// <returns> True if there are readers for the event. </returns>
         public bool HasEventReaders<T>()
             where T : unmanaged
         {
@@ -76,8 +76,8 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Checks if an event has any readers. </summary>
-        /// <typeparam name="T">The event type to check.</typeparam>
-        /// <returns>True if there are readers for the event.</returns>
+        /// <typeparam name="T"> The event type to check. </typeparam>
+        /// <returns> True if there are readers for the event. </returns>
         public int GetEventReadersCount<T>()
             where T : unmanaged
         {
@@ -86,10 +86,10 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Get the NativeThreadStream for reading events from. </summary>
-        /// <param name="handle">Existing dependencies for this event.</param>
-        /// <param name="readers">A collection of <see cref="NativeThreadStream.Reader"/> you can read events from.</param>
-        /// <typeparam name="T">The type of event.</typeparam>
-        /// <returns>The updated dependency handle.</returns>
+        /// <param name="handle"> Existing dependencies for this event. </param>
+        /// <param name="readers"> A collection of <see cref="NativeThreadStream.Reader"/> you can read events from. </param>
+        /// <typeparam name="T"> The type of event. </typeparam>
+        /// <returns> The updated dependency handle. </returns>
         public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<NativeThreadStream.Reader> readers)
             where T : unmanaged
         {
@@ -99,8 +99,8 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Adds the specified JobHandle to the events list of consumer dependency handles. </summary>
-        /// <param name="handle">The job handle to add.</param>
-        /// <typeparam name="T">The type of event to associate the handle to.</typeparam>
+        /// <param name="handle"> The job handle to add. </param>
+        /// <typeparam name="T"> The type of event to associate the handle to. </typeparam>
         public void AddJobHandleForConsumer<T>(JobHandle handle)
             where T : unmanaged
         {
@@ -117,9 +117,9 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Adds readers from other event systems. </summary>
-        /// <param name="type">The type of event.</param>
-        /// <param name="externalStreams">Collection of event streams.</param>
-        /// <param name="handle">The dependency for the streams.</param>
+        /// <param name="type"> The type of event. </param>
+        /// <param name="externalStreams"> Collection of event streams. </param>
+        /// <param name="handle"> The dependency for the streams. </param>
         internal void AddExternalReaders(Type type, IReadOnlyList<NativeThreadStream> externalStreams, JobHandle handle)
         {
             var container = this.GetOrCreateEventContainer(type);

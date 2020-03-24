@@ -4,12 +4,10 @@
 
 namespace BovineLabs.Event.Samples.MultiWorld
 {
-    using BovineLabs.Event;
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Systems;
     using BovineLabs.Events.Samples.Events;
     using Unity.Burst;
-    using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
 

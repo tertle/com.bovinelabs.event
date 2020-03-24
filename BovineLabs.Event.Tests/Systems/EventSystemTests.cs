@@ -15,7 +15,7 @@ namespace BovineLabs.Event.Tests.Systems
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="EventSystem"/>. </summary>
+    /// <summary> Tests for <see cref="EventSystem"/> . </summary>
     public class EventSystemTests : ECSTestsFixture
     {
         /// <summary> Testing CreateEventWriter calls must be paired with a AddJobHandleForProducer call. </summary>

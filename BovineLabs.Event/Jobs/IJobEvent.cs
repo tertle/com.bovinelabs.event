@@ -12,7 +12,6 @@ namespace BovineLabs.Event.Jobs
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
-    using UnityEngine;
 
     /// <summary> Job that visits each event. </summary>
     /// <typeparam name="T"> Type of event. </typeparam>
@@ -26,13 +25,13 @@ namespace BovineLabs.Event.Jobs
         void Execute(T e);
     }
 
-    /// <summary> Extension methods for <see cref="IJobEvent{T}"/>. </summary>
+    /// <summary> Extension methods for <see cref="IJobEvent{T}"/> . </summary>
     public static class JobEvent
     {
         /// <summary> Schedule a <see cref="IJobEvent{T}"/> job. </summary>
         /// <param name="jobData"> The job. </param>
         /// <param name="eventSystem"> The event system. </param>
-        /// <param name="dependsOn">T he job handle dependency. </param>
+        /// <param name="dependsOn"> T he job handle dependency. </param>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
@@ -81,7 +80,7 @@ namespace BovineLabs.Event.Jobs
             where TJob : struct, IJobEvent<T>
             where T : unmanaged
         {
-            /// <summary> The <see cref="NativeThreadStream.Reader"/>. </summary>
+            /// <summary> The <see cref="NativeThreadStream.Reader"/> . </summary>
             [ReadOnly]
             public NativeThreadStream.Reader Reader;
 
