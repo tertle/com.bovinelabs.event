@@ -141,6 +141,7 @@ namespace BovineLabs.Event.Containers
         }
 
         /// <inheritdoc/>
+        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode", Justification = "Only changes in dispose.")]
         public override int GetHashCode()
         {
             return this.stream.GetHashCode();

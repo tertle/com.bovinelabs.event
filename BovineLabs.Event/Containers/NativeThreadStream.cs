@@ -136,6 +136,19 @@ namespace BovineLabs.Event.Containers
             return array;
         }
 
+        /// <inheritdoc/>
+        public bool Equals(NativeThreadStream other)
+        {
+            return this.stream.Equals(other.stream);
+        }
+
+        /// <inheritdoc/>
+        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode", Justification = "Only changes in dispose.")]
+        public override int GetHashCode()
+        {
+            return this.stream.GetHashCode();
+        }
+
         private static void Allocate(out NativeThreadStream stream, Allocator allocator)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -413,18 +426,6 @@ namespace BovineLabs.Event.Containers
                     throw new System.ArgumentException("Not all data (Data Size) has been read. If this is intentional, simply skip calling EndForEachIndex();");
                 }
             }
-        }
-
-        /// <inheritdoc/>
-        public bool Equals(NativeThreadStream other)
-        {
-            return this.stream.Equals(other.stream);
-        }
-
-        /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            return this.stream.GetHashCode();
         }
     }
 }

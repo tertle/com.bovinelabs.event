@@ -22,7 +22,7 @@ namespace BovineLabs.Event.Containers
         {
             Assert.IsTrue(threadIndex < this.BlockCount && threadIndex >= 0);
 
-            var block = (UnsafeThreadStreamBlock*)UnsafeUtility.Malloc(AllocationSize, 16, Allocator);
+            var block = (UnsafeThreadStreamBlock*)UnsafeUtility.Malloc(AllocationSize, 16, this.Allocator);
             block->Next = null;
 
             if (oldBlock == null)
