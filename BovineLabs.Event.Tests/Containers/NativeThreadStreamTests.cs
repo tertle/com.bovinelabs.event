@@ -155,6 +155,7 @@ namespace BovineLabs.Event.Tests.Containers
         [BurstCompile(CompileSynchronously = true)]
         private struct ReadIntsJob : IJobParallelFor
         {
+            [ReadOnly]
             public NativeThreadStream<int>.Reader Reader;
 
             public void Execute(int index)
