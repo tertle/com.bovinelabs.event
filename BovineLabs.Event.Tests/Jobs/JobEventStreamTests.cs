@@ -19,7 +19,7 @@ namespace BovineLabs.Event.Tests.Jobs
     /// <summary> Tests for <see cref="JobEventStream"/> . </summary>
     public class JobEventStreamTests : ECSTestsFixture
     {
-        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob, T}"/> with parallel false. </summary>
+        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel false. </summary>
         [Test]
         public void SeriesTest()
         {
@@ -30,7 +30,7 @@ namespace BovineLabs.Event.Tests.Jobs
                 .Schedule<TestJob, TestEvent>(es));
         }
 
-        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob, T}"/> with parallel true. </summary>
+        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel true. </summary>
         [Test]
         public void ParallelTest()
         {
@@ -38,7 +38,7 @@ namespace BovineLabs.Event.Tests.Jobs
                 {
                     Counter = counter.AsParallelWriter(),
                 }
-                .Schedule<TestJob, TestEvent>(es, default, true));
+                .ScheduleParallel<TestJob, TestEvent>(es));
         }
 
         private void ScheduleTest(Func<EventSystem, NativeQueue<int>, JobHandle> job)

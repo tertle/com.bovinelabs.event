@@ -34,12 +34,11 @@ namespace BovineLabs.Event.Jobs
         /// <param name="jobData"> The job. </param>
         /// <param name="eventSystem"> The event system. </param>
         /// <param name="dependsOn"> The job handle dependency. </param>
-        /// <param name="parallel"> Should the jobs run in paralle. </param>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
         public static unsafe JobHandle Schedule<TJob, T>(
-            this TJob jobData, EventSystem eventSystem, JobHandle dependsOn = default, bool parallel = false)
+            this TJob jobData, EventSystem eventSystem, JobHandle dependsOn = default)
             where TJob : struct, IJobEventStream<T>
             where T : unmanaged
         {
@@ -60,8 +59,47 @@ namespace BovineLabs.Event.Jobs
                     dependsOn,
                     ScheduleMode.Batched);
 
+                dependsOn = JobsUtility.Schedule(ref scheduleParams);
+            }
+
+            eventSystem.AddJobHandleForConsumer<T>(dependsOn);
+
+            return dependsOn;
+        }
+
+        /// <summary> Schedule a <see cref="IJobEventStream{T}"/> job. </summary>
+        /// <param name="jobData"> The job. </param>
+        /// <param name="eventSystem"> The event system. </param>
+        /// <param name="dependsOn"> The job handle dependency. </param>
+        /// <typeparam name="TJob"> The type of the job. </typeparam>
+        /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
+        /// <returns> The handle to job. </returns>
+        public static unsafe JobHandle ScheduleParallel<TJob, T>(
+            this TJob jobData, EventSystem eventSystem, JobHandle dependsOn = default)
+            where TJob : struct, IJobEventStream<T>
+            where T : unmanaged
+        {
+            dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
+
+            var input = dependsOn;
+
+            for (var i = 0; i < events.Count; i++)
+            {
+                var fullData = new EventJobStreamStruct<TJob, T>
+                               {
+                                   Readers = events[i],
+                                   JobData = jobData,
+                                   Index = i,
+                               };
+
+                var scheduleParams = new JobsUtility.JobScheduleParameters(
+                                                                           UnsafeUtility.AddressOf(ref fullData),
+                                                                           EventJobStreamStruct<TJob, T>.Initialize(),
+                                                                           input,
+                                                                           ScheduleMode.Batched);
+
                 var handle = JobsUtility.Schedule(ref scheduleParams);
-                dependsOn = parallel ? JobHandle.CombineDependencies(dependsOn, handle) : handle;
+                dependsOn = JobHandle.CombineDependencies(dependsOn, handle);
             }
 
             eventSystem.AddJobHandleForConsumer<T>(dependsOn);

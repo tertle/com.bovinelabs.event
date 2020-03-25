@@ -55,7 +55,7 @@ namespace BovineLabs.Event.Systems
                         {
                             Counter = counter,
                         }
-                        .Schedule<CountJob, T>(this.eventSystem, handle, true);
+                        .ScheduleParallel<CountJob, T>(this.eventSystem, handle);
 
                     handle = new EnsureHashMapCapacityJob<TK, TV>
                         {
