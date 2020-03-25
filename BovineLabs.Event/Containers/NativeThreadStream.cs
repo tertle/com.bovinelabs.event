@@ -177,13 +177,13 @@ namespace BovineLabs.Event.Containers
         [NativeContainerIsAtomicWriteOnly]
         public struct Writer
         {
-            private UnsafeThreadStream.Writer writer;
-
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             [SuppressMessage("ReSharper", "SA1308", Justification = "Required by safety injection.")]
             [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Required by safety injection.")]
-            private AtomicSafetyHandle m_Safety;
+            private readonly AtomicSafetyHandle m_Safety;
 #endif
+
+            private UnsafeThreadStream.Writer writer;
 
             /// <summary> Initializes a new instance of the <see cref="Writer"/> struct. </summary>
             /// <param name="stream"> The stream reference. </param>
