@@ -298,9 +298,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
         [BurstCompile(CompileSynchronously = true)]
         public struct ReadNativeQueueJob : IJob
         {
-            [ReadOnly]
             public NativeQueue<int> Reader;
-
             public NativeQueue<int>.ParallelWriter Output;
 
             /// <inheritdoc/>
