@@ -1,4 +1,4 @@
-﻿// <copyright file="JobEventTests.cs" company="BovineLabs">
+﻿// <copyright file="JobEventStreamTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -7,6 +7,7 @@
 namespace BovineLabs.Event.Tests.Jobs
 {
     using System;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
     using NUnit.Framework;
@@ -15,10 +16,10 @@ namespace BovineLabs.Event.Tests.Jobs
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="JobEventStream"/>. </summary>
+    /// <summary> Tests for <see cref="JobEventStream"/> . </summary>
     public class JobEventStreamTests : ECSTestsFixture
     {
-        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob, T}"/> with parallel false. </summary>
+        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel false. </summary>
         [Test]
         public void SeriesTest()
         {
@@ -29,7 +30,7 @@ namespace BovineLabs.Event.Tests.Jobs
                 .Schedule<TestJob, TestEvent>(es));
         }
 
-        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob, T}"/> with parallel true. </summary>
+        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel true. </summary>
         [Test]
         public void ParallelTest()
         {
@@ -37,7 +38,7 @@ namespace BovineLabs.Event.Tests.Jobs
                 {
                     Counter = counter.AsParallelWriter(),
                 }
-                .Schedule<TestJob, TestEvent>(es, default, true));
+                .ScheduleParallel<TestJob, TestEvent>(es));
         }
 
         private void ScheduleTest(Func<EventSystem, NativeQueue<int>, JobHandle> job)
@@ -50,7 +51,7 @@ namespace BovineLabs.Event.Tests.Jobs
 
             for (var i = 0; i < producers; i++)
             {
-                var writer = es.CreateEventWriter<TestEvent>(foreachCount);
+                var writer = es.CreateEventWriter<TestEvent>();
 
                 var handle = new ProducerJob
                     {
@@ -77,7 +78,7 @@ namespace BovineLabs.Event.Tests.Jobs
         {
             public NativeQueue<int>.ParallelWriter Counter;
 
-            public void Execute(NativeStream.Reader stream, int index)
+            public void Execute(NativeThreadStream.Reader stream, int index)
             {
                 this.Counter.Enqueue(stream.ForEachCount);
             }

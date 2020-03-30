@@ -33,28 +33,24 @@ namespace BovineLabs.Event.Tests.Utility
 
                 var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-                var events1 = es.CreateEventWriter<TestEvent>(10);
+                var events1 = es.CreateEventWriter<TestEvent>();
 
                 // Write some event data
-                events1.BeginForEachIndex(0);
                 for (var i = 0; i < firstEventCount; i++)
                 {
                     events1.Write(i);
                 }
 
-                events1.EndForEachIndex();
                 es.AddJobHandleForProducer<TestEvent>(default);
 
-                var events2 = es.CreateEventWriter<TestEvent>(5);
+                var events2 = es.CreateEventWriter<TestEvent>();
 
                 // Write some event data
-                events2.BeginForEachIndex(4);
                 for (var i = 0; i < secondEventCount; i++)
                 {
                     events2.Write(i);
                 }
 
-                events2.EndForEachIndex();
                 es.AddJobHandleForProducer<TestEvent>(default);
 
                 var handle = es.Ex<TestEvent>().EnsureHashMapCapacity(default, hashmap);

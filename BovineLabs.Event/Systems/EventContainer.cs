@@ -6,7 +6,7 @@ namespace BovineLabs.Event.Systems
 {
     using System;
     using System.Collections.Generic;
-    using BovineLabs.Event.Utility;
+    using BovineLabs.Event.Containers;
     using Unity.Collections;
     using Unity.Jobs;
 
@@ -24,14 +24,14 @@ namespace BovineLabs.Event.Systems
         private const string WriteModeRequired = "Can not be called in read mode.";
 #endif
 
-        private readonly List<NativeTuple<NativeStream, int>> externalReaders =
-            new List<NativeTuple<NativeStream, int>>();
+        private readonly List<NativeThreadStream> externalReaders =
+            new List<NativeThreadStream>();
 
-        private readonly List<NativeTuple<NativeStream.Reader, int>> readers =
-            new List<NativeTuple<NativeStream.Reader, int>>();
+        private readonly List<NativeThreadStream.Reader> readers =
+            new List<NativeThreadStream.Reader>();
 
-        private readonly List<NativeTuple<NativeStream, int>> deferredStreams =
-            new List<NativeTuple<NativeStream, int>>();
+        private readonly List<NativeThreadStream> deferredStreams =
+            new List<NativeThreadStream>();
 
         private JobHandle deferredProducerHandle;
 
@@ -43,7 +43,7 @@ namespace BovineLabs.Event.Systems
 #endif
 
         /// <summary> Initializes a new instance of the <see cref="EventContainer"/> class. </summary>
-        /// <param name="type">The event type of this container.</param>
+        /// <param name="type"> The event type of this container. </param>
         public EventContainer(Type type)
         {
             this.Type = type;
@@ -59,16 +59,15 @@ namespace BovineLabs.Event.Systems
         public Type Type { get; }
 
         /// <summary> Gets the list of streams. </summary>
-        public List<NativeTuple<NativeStream, int>> Streams { get; } = new List<NativeTuple<NativeStream, int>>();
+        public List<NativeThreadStream> Streams { get; } = new List<NativeThreadStream>();
 
         /// <summary> Gets the list of external readers. </summary>
-        public List<NativeTuple<NativeStream, int>> ExternalReaders => this.externalReaders;
+        public List<NativeThreadStream> ExternalReaders => this.externalReaders;
 
         /// <summary> Create a new stream for the events. </summary>
-        /// <param name="foreachCount"> The foreachCount of the <see cref="NativeStream"/>.</param>
-        /// <returns> The <see cref="NativeStream.Writer"/>. </returns>
+        /// <returns> The <see cref="NativeThreadStream.Writer"/> . </returns>
         /// <exception cref="InvalidOperationException"> Throw if previous call not closed or if in read mode. </exception>
-        public NativeStream.Writer CreateEventStream(int foreachCount)
+        public NativeThreadStream.Writer CreateEventStream()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.producerSafety)
@@ -79,23 +78,22 @@ namespace BovineLabs.Event.Systems
             this.producerSafety = true;
 #endif
 
-            var stream = new NativeStream(foreachCount, Allocator.TempJob);
-            var tuple = new NativeTuple<NativeStream, int>(stream, foreachCount);
+            var stream = new NativeThreadStream(Allocator.TempJob);
 
             if (this.isReadMode)
             {
-                this.deferredStreams.Add(tuple);
+                this.deferredStreams.Add(stream);
             }
             else
             {
-                this.Streams.Add(new NativeTuple<NativeStream, int>(stream, foreachCount));
+                this.Streams.Add(stream);
             }
 
             return stream.AsWriter();
         }
 
         /// <summary> Add a new producer job handle. Can only be called in write mode. </summary>
-        /// <param name="handle">The handle.</param>
+        /// <param name="handle"> The handle. </param>
         public void AddJobHandleForProducer(JobHandle handle)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -111,7 +109,7 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Add a new producer job handle while skipping the producer safety check. Can only be called in write mode. </summary>
-        /// <param name="handle">The handle.</param>
+        /// <param name="handle"> The handle. </param>
         public void AddJobHandleForProducerUnsafe(JobHandle handle)
         {
             if (this.isReadMode)
@@ -125,7 +123,7 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Add a new producer job handle. Can only be called in write mode. </summary>
-        /// <param name="handle">The handle.</param>
+        /// <param name="handle"> The handle. </param>
         public void AddJobHandleForConsumer(JobHandle handle)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -146,8 +144,8 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Gets the collection of readers. </summary>
-        /// <returns> Returns a tuple where Item1 is the reader, Item2 is the foreachCount. </returns>
-        public IReadOnlyList<NativeTuple<NativeStream.Reader, int>> GetReaders()
+        /// <returns> Returns the reader. </returns>
+        public IReadOnlyList<NativeThreadStream.Reader> GetReaders()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.consumerSafety)
@@ -182,7 +180,7 @@ namespace BovineLabs.Event.Systems
         /// <summary> Add readers to the container. Requires read mode.  </summary>
         /// <param name="externalStreams"> The readers to be added. </param>
         /// <exception cref="InvalidOperationException"> Throw if not in read mode. </exception>
-        public void AddReaders(IEnumerable<NativeTuple<NativeStream, int>> externalStreams)
+        public void AddReaders(IEnumerable<NativeThreadStream> externalStreams)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.isReadMode)
@@ -218,12 +216,12 @@ namespace BovineLabs.Event.Systems
         {
             for (var index = 0; index < this.Streams.Count; index++)
             {
-                this.Streams[index].Item1.Dispose();
+                this.Streams[index].Dispose();
             }
 
             for (var index = 0; index < this.deferredStreams.Count; index++)
             {
-                this.deferredStreams[index].Item1.Dispose();
+                this.deferredStreams[index].Dispose();
             }
         }
 
@@ -240,13 +238,13 @@ namespace BovineLabs.Event.Systems
             for (var index = 0; index < this.Streams.Count; index++)
             {
                 var stream = this.Streams[index];
-                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(stream.Item1.AsReader(), stream.Item2));
+                this.readers.Add(stream.AsReader());
             }
 
             for (var index = 0; index < this.externalReaders.Count; index++)
             {
                 var stream = this.externalReaders[index];
-                this.readers.Add(new NativeTuple<NativeStream.Reader, int>(stream.Item1.AsReader(), stream.Item2));
+                this.readers.Add(stream.AsReader());
             }
         }
     }

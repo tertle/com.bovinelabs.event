@@ -4,11 +4,10 @@
 
 namespace BovineLabs.Event.Samples.MultiWorld
 {
-    using BovineLabs.Event;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Systems;
     using BovineLabs.Events.Samples.Events;
     using Unity.Burst;
-    using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
 
@@ -35,14 +34,14 @@ namespace BovineLabs.Event.Samples.MultiWorld
             {
                 var reader = readers[index];
 
-                var eventCount = this.eventSystem.CreateEventWriter<FixedUpdateCountEvent>(reader.Item2);
+                var eventCount = this.eventSystem.CreateEventWriter<FixedUpdateCountEvent>();
 
                 handle = new CountJob
                     {
-                        Stream = reader.Item1,
+                        Stream = reader,
                         EventCount = eventCount,
                     }
-                    .Schedule(reader.Item2, 8, handle);
+                    .Schedule(reader.ForEachCount, 8, handle);
 
                 this.eventSystem.AddJobHandleForProducer<FixedUpdateCountEvent>(handle);
             }
@@ -56,18 +55,13 @@ namespace BovineLabs.Event.Samples.MultiWorld
         [BurstCompile]
         public struct CountJob : IJobParallelFor
         {
-            public NativeStream.Writer EventCount;
-            public NativeStream.Reader Stream;
+            public NativeThreadStream.Writer EventCount;
+            public NativeThreadStream.Reader Stream;
 
             public void Execute(int index)
             {
                 var count = this.Stream.BeginForEachIndex(index);
-
-                this.EventCount.BeginForEachIndex(index);
                 this.EventCount.Write(count); // will remap to a FixedUpdateCountEvent
-                this.EventCount.EndForEachIndex();
-
-                // this.Stream.EndForEachIndex();
             }
         }
     }

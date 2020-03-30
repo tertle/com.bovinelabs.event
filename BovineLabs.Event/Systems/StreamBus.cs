@@ -7,9 +7,8 @@ namespace BovineLabs.Event.Systems
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
-    using BovineLabs.Event.Data;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Utility;
-    using Unity.Collections;
     using Unity.Jobs;
     using UnityEngine;
     using UnityEngine.Assertions;
@@ -23,7 +22,7 @@ namespace BovineLabs.Event.Systems
         private static readonly Dictionary<string, StreamBus> Instances = new Dictionary<string, StreamBus>();
 
         private readonly List<EventSystem> subscribers = new List<EventSystem>();
-        private readonly Dictionary<NativeStream, StreamHandles> streams = new Dictionary<NativeStream, StreamHandles>(new NativeStreamCompare());
+        private readonly Dictionary<NativeThreadStream, StreamHandles> streams = new Dictionary<NativeThreadStream, StreamHandles>();
         private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
         private StreamBus()
@@ -33,8 +32,8 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Get an instance of StreamBus linked to a key.
         /// </summary>
-        /// <param name="key">The bus key.</param>
-        /// <returns>A shared instance of StreamBus.</returns>
+        /// <param name="key"> The bus key. </param>
+        /// <returns> A shared instance of StreamBus. </returns>
         internal static StreamBus GetInstance(string key)
         {
             if (!Instances.TryGetValue(key, out var streamShare))
@@ -48,7 +47,7 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Subscribe an EventSystem to get reader updates.
         /// </summary>
-        /// <param name="eventSystem">The event system.</param>
+        /// <param name="eventSystem"> The event system. </param>
         internal void Subscribe(EventSystem eventSystem)
         {
             Assert.IsFalse(this.subscribers.Contains(eventSystem));
@@ -58,7 +57,7 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Unsubscribe an EventSystem to stop getting reader updates.
         /// </summary>
-        /// <param name="eventSystem">The event system.</param>
+        /// <param name="eventSystem"> The event system. </param>
         internal void Unsubscribe(EventSystem eventSystem)
         {
             Assert.IsTrue(this.subscribers.Contains(eventSystem));
@@ -74,13 +73,13 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Add a set of event streams to be shared with other systems. </summary>
-        /// <param name="owner">The system that owns the streams.</param>
-        /// <param name="type">The type of the event.</param>
-        /// <param name="newStreams">The streams.</param>
-        /// <param name="consumerHandle">The dependency handle for these streams.</param>
-        /// <returns>The new dependency handle.</returns>
-        /// <exception cref="ArgumentException">Thrown  if this owner is not subscribed.</exception>
-        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<NativeTuple<NativeStream, int>> newStreams, JobHandle consumerHandle)
+        /// <param name="owner"> The system that owns the streams. </param>
+        /// <param name="type"> The type of the event. </param>
+        /// <param name="newStreams"> The streams. </param>
+        /// <param name="consumerHandle"> The dependency handle for these streams. </param>
+        /// <returns> The new dependency handle. </returns>
+        /// <exception cref="ArgumentException"> Thrown  if this owner is not subscribed. </exception>
+        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<NativeThreadStream> newStreams, JobHandle consumerHandle)
         {
             if (!this.subscribers.Contains(owner))
             {
@@ -99,7 +98,7 @@ namespace BovineLabs.Event.Systems
 
                 for (var index = 0; index < newStreams.Count; index++)
                 {
-                    var stream = newStreams[index].Item1;
+                    var stream = newStreams[index];
                     handle = JobHandle.CombineDependencies(handle, stream.Dispose(consumerHandle));
                 }
 
@@ -112,7 +111,7 @@ namespace BovineLabs.Event.Systems
                 var handles = this.pool.Get();
                 handles.Handle = consumerHandle;
 
-                this.streams.Add(stream.Item1, handles);
+                this.streams.Add(stream, handles);
 
                 for (var i = 0; i < this.subscribers.Count; i++)
                 {
@@ -144,17 +143,17 @@ namespace BovineLabs.Event.Systems
         /// <summary>
         /// Return a set of streams that the system has finished reading.
         /// </summary>
-        /// <param name="owner">The system the streams are coming from.</param>
-        /// <param name="streamsToRelease">The collection of streams to be released.</param>
-        /// <param name="inputHandle">The dependency handle.</param>
-        /// <returns>New dependency handle.</returns>
-        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<NativeTuple<NativeStream, int>> streamsToRelease, JobHandle inputHandle)
+        /// <param name="owner"> The system the streams are coming from. </param>
+        /// <param name="streamsToRelease"> The collection of streams to be released. </param>
+        /// <param name="inputHandle"> The dependency handle. </param>
+        /// <returns> New dependency handle. </returns>
+        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<NativeThreadStream> streamsToRelease, JobHandle inputHandle)
         {
             JobHandle outputHandle = inputHandle;
 
             for (var index = 0; index < streamsToRelease.Count; index++)
             {
-                var stream = streamsToRelease[index].Item1;
+                var stream = streamsToRelease[index];
 
                 Assert.IsTrue(this.streams.ContainsKey(stream));
 
@@ -196,26 +195,6 @@ namespace BovineLabs.Event.Systems
             public HashSet<EventSystem> Systems { get; } = new HashSet<EventSystem>();
 
             public JobHandle Handle { get; set; }
-        }
-
-        /// <summary>
-        /// Allocation free NativeStream comparer.
-        /// </summary>
-        private class NativeStreamCompare : IEqualityComparer<NativeStream>
-        {
-            public bool Equals(NativeStream x, NativeStream y)
-            {
-                var xi = (NativeStreamImposter)x;
-                var yi = (NativeStreamImposter)y;
-
-                return xi.Equals(yi);
-            }
-
-            public int GetHashCode(NativeStream stream)
-            {
-                var imposter = (NativeStreamImposter)stream;
-                return imposter.GetHashCode();
-            }
         }
     }
 }

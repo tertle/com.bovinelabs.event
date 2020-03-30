@@ -4,10 +4,9 @@
 
 namespace BovineLabs.Event.Samples
 {
-    using BovineLabs.Event;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Systems;
     using Unity.Burst;
-    using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
     using Unity.Mathematics;
@@ -27,7 +26,7 @@ namespace BovineLabs.Event.Samples
         {
             const int count = 10240;
 
-            var writer = this.eventSystem.CreateEventWriter<TestEventEmpty>(count);
+            var writer = this.eventSystem.CreateEventWriter<TestEventEmpty>();
 
             this.Dependency = new ProduceJob
                 {
@@ -42,7 +41,7 @@ namespace BovineLabs.Event.Samples
         [BurstCompile]
         private struct ProduceJob : IJobParallelFor
         {
-            public NativeStream.Writer Events;
+            public NativeThreadStream.Writer Events;
 
             public Random Random;
 
@@ -50,15 +49,12 @@ namespace BovineLabs.Event.Samples
             {
                 this.Random.state = (uint)(this.Random.state + index);
 
-                var eventCount = this.Random.NextInt(1, 1024);
+                var eventCount = this.Random.NextInt(1, 4096);
 
-                this.Events.BeginForEachIndex(index);
                 for (var i = 0; i < eventCount; i++)
                 {
                     this.Events.Write(default(TestEventEmpty));
                 }
-
-                this.Events.EndForEachIndex();
             }
         }
     }
