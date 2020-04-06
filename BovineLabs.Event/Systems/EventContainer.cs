@@ -27,6 +27,9 @@ namespace BovineLabs.Event.Systems
         private readonly List<NativeThreadStream> externalReaders =
             new List<NativeThreadStream>();
 
+        private readonly List<NativeThreadStream> deferredExternalReaders =
+            new List<NativeThreadStream>();
+
         private readonly List<NativeThreadStream.Reader> readers =
             new List<NativeThreadStream.Reader>();
 
@@ -180,16 +183,16 @@ namespace BovineLabs.Event.Systems
         /// <summary> Add readers to the container. Requires read mode.  </summary>
         /// <param name="externalStreams"> The readers to be added. </param>
         /// <exception cref="InvalidOperationException"> Throw if not in read mode. </exception>
-        public void AddReaders(IEnumerable<NativeThreadStream> externalStreams)
+        internal void AddReaders(IEnumerable<NativeThreadStream> externalStreams)
         {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.isReadMode)
             {
-                throw new InvalidOperationException(WriteModeRequired);
+                this.deferredExternalReaders.AddRange(externalStreams);
             }
-#endif
-
-            this.externalReaders.AddRange(externalStreams);
+            else
+            {
+                this.externalReaders.AddRange(externalStreams);
+            }
         }
 
         /// <summary> Update for the next frame. </summary>
@@ -206,6 +209,9 @@ namespace BovineLabs.Event.Systems
             this.Streams.AddRange(this.deferredStreams);
             this.deferredStreams.Clear();
 
+            this.deferredStreams.AddRange(this.deferredExternalReaders);
+            this.deferredExternalReaders.Clear();
+
             // Reset handles
             this.ConsumerHandle = default;
             this.ProducerHandle = default;
@@ -219,10 +225,11 @@ namespace BovineLabs.Event.Systems
                 this.Streams[index].Dispose();
             }
 
-            for (var index = 0; index < this.deferredStreams.Count; index++)
-            {
-                this.deferredStreams[index].Dispose();
-            }
+            // // TODO?
+            // for (var index = 0; index < this.deferredStreams.Count; index++)
+            // {
+            //     this.deferredStreams[index].Dispose();
+            // }
         }
 
         /// <summary> Set the event to read mode. </summary>

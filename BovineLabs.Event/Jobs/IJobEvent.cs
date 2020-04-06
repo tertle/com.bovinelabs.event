@@ -15,7 +15,7 @@ namespace BovineLabs.Event.Jobs
 
     /// <summary> Job that visits each event. </summary>
     /// <typeparam name="T"> Type of event. </typeparam>
-    [JobProducerType(typeof(JobEvent.EventJobStructParallelChain<,>))]
+    [JobProducerType(typeof(JobEvent.JobEventStructParallelChain<,>))]
     [SuppressMessage("ReSharper", "TypeParameterCanBeVariant", Justification = "Strict requirements for compiler")]
     public interface IJobEvent<T>
         where T : unmanaged
@@ -48,7 +48,7 @@ namespace BovineLabs.Event.Jobs
             {
                 var reader = events[i];
 
-                var fullData = new EventJobStructParallelChain<TJob, T>
+                var fullData = new JobEventStructParallelChain<TJob, T>
                 {
                     Reader = reader,
                     JobData = jobData,
@@ -56,7 +56,7 @@ namespace BovineLabs.Event.Jobs
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
-                    EventJobStructParallelChain<TJob, T>.Initialize(),
+                    JobEventStructParallelChain<TJob, T>.Initialize(),
                     dependsOn,
                     ScheduleMode.Batched);
 
@@ -74,7 +74,7 @@ namespace BovineLabs.Event.Jobs
         /// <summary> The job execution struct. </summary>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the event. </typeparam>
-        internal struct EventJobStructParallelChain<TJob, T>
+        internal struct JobEventStructParallelChain<TJob, T>
             where TJob : struct, IJobEvent<T>
             where T : unmanaged
         {
@@ -89,7 +89,7 @@ namespace BovineLabs.Event.Jobs
             private static IntPtr jobReflectionData;
 
             private delegate void ExecuteJobFunction(
-                ref EventJobStructParallelChain<TJob, T> fullData,
+                ref JobEventStructParallelChain<TJob, T> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
@@ -102,7 +102,7 @@ namespace BovineLabs.Event.Jobs
                 if (jobReflectionData == IntPtr.Zero)
                 {
                     jobReflectionData = JobsUtility.CreateJobReflectionData(
-                        typeof(EventJobStructParallelChain<TJob, T>),
+                        typeof(JobEventStructParallelChain<TJob, T>),
                         typeof(TJob),
                         JobType.ParallelFor,
                         (ExecuteJobFunction)Execute);
@@ -119,7 +119,7 @@ namespace BovineLabs.Event.Jobs
             /// <param name="jobIndex"> The job index. </param>
             [SuppressMessage("ReSharper", "MemberCanBePrivate.Global", Justification = "Required by burst.")]
             public static void Execute(
-                ref EventJobStructParallelChain<TJob, T> fullData,
+                ref JobEventStructParallelChain<TJob, T> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
