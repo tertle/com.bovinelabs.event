@@ -13,6 +13,7 @@ namespace BovineLabs.Event.Tests.Jobs
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
@@ -21,7 +22,7 @@ namespace BovineLabs.Event.Tests.Jobs
     {
         /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel false. </summary>
         [Test]
-        public void SeriesTest()
+        public void Series()
         {
             this.ScheduleTest((es, counter) => new TestJob
                 {
@@ -32,13 +33,13 @@ namespace BovineLabs.Event.Tests.Jobs
 
         /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel true. </summary>
         [Test]
-        public void ParallelTest()
+        public void Simultaneous()
         {
             this.ScheduleTest((es, counter) => new TestJob
                 {
                     Counter = counter.AsParallelWriter(),
                 }
-                .ScheduleParallel<TestJob, TestEvent>(es));
+                .ScheduleSimultaneous<TestJob, TestEvent>(es));
         }
 
         private void ScheduleTest(Func<EventSystem, NativeQueue<int>, JobHandle> job)
@@ -76,6 +77,7 @@ namespace BovineLabs.Event.Tests.Jobs
         [BurstCompile]
         private struct TestJob : IJobEventStream<TestEvent>
         {
+            [NativeDisableContainerSafetyRestriction]
             public NativeQueue<int>.ParallelWriter Counter;
 
             public void Execute(NativeThreadStream.Reader stream, int index)
