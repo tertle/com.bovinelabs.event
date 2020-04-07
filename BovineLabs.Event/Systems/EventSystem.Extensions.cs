@@ -36,14 +36,14 @@ namespace BovineLabs.Event.Systems
             /// <summary> Ensure a <see cref="NativeHashMap{TKey,TValue}" /> has the capacity to be filled with all events of a specific type. </summary>
             /// <param name="handle"> Input dependencies. </param>
             /// <param name="hashMap"> The <see cref="NativeHashMap{TKey,TValue}"/> to ensure capacity of. </param>
-            /// <typeparam name="TK"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
-            /// <typeparam name="TV"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
+            /// <typeparam name="TKey"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
+            /// <typeparam name="TValue"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
             /// <returns> The dependency handle. </returns>
-            public JobHandle EnsureHashMapCapacity<TK, TV>(
+            public JobHandle EnsureHashMapCapacity<TKey, TValue>(
                 JobHandle handle,
-                NativeHashMap<TK, TV> hashMap)
-                where TK : struct, IEquatable<TK>
-                where TV : struct
+                NativeHashMap<TKey, TValue> hashMap)
+                where TKey : struct, IEquatable<TKey>
+                where TValue : struct
             {
                 var count = this.eventSystem.GetEventReadersCount<T>();
 
@@ -57,7 +57,7 @@ namespace BovineLabs.Event.Systems
                         }
                         .ScheduleSimultaneous<CountJob, T>(this.eventSystem, handle);
 
-                    handle = new EnsureHashMapCapacityJob<TK, TV>
+                    handle = new EnsureHashMapCapacityJob<TKey, TValue>
                         {
                             Counter = counter,
                             HashMap = hashMap,
@@ -83,14 +83,14 @@ namespace BovineLabs.Event.Systems
             }
 
             [BurstCompile] // does not work
-            private struct EnsureHashMapCapacityJob<TK, TV> : IJob
-                where TK : struct, IEquatable<TK>
-                where TV : struct
+            private struct EnsureHashMapCapacityJob<TKey, TValue> : IJob
+                where TKey : struct, IEquatable<TKey>
+                where TValue : struct
             {
                 [ReadOnly]
                 public NativeArray<int> Counter;
 
-                public NativeHashMap<TK, TV> HashMap;
+                public NativeHashMap<TKey, TValue> HashMap;
 
                 public void Execute()
                 {

@@ -21,7 +21,6 @@ namespace BovineLabs.Event.Systems
             "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
 
         private const string ReadModeRequired = "Can only be called in read mode.";
-        private const string WriteModeRequired = "Can not be called in read mode.";
 #endif
 
         private readonly List<NativeThreadStream> externalReaders =
@@ -183,7 +182,7 @@ namespace BovineLabs.Event.Systems
         /// <summary> Add readers to the container. Requires read mode.  </summary>
         /// <param name="externalStreams"> The readers to be added. </param>
         /// <exception cref="InvalidOperationException"> Throw if not in read mode. </exception>
-        internal void AddReaders(IEnumerable<NativeThreadStream> externalStreams)
+        public void AddReaders(IEnumerable<NativeThreadStream> externalStreams)
         {
             if (this.isReadMode)
             {

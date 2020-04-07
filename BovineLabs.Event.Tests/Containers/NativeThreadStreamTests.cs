@@ -48,7 +48,9 @@ namespace BovineLabs.Event.Tests.Containers
             disposeJob.Complete();
         }
 
-        /// <summary> Tests that the dispose job works. </summary>
+        /// <summary> Tests that ComputeItemCount() works. </summary>
+        /// <param name="count"> <see cref="WriteIntsJob"/> count. </param>
+        /// <param name="batchSize"> <see cref="WriteIntsJob"/> batch size. </param>
         [Test]
         public void ItemCount(
             [Values(1, 10, UnsafeThreadStream.ForEachCount + 1, 1024)] int count,
@@ -63,9 +65,11 @@ namespace BovineLabs.Event.Tests.Containers
             stream.Dispose();
         }
 
-
+        /// <summary> Tests that writing from job then reading in multiple jobs works. </summary>
+        /// <param name="count"> <see cref="WriteIntsJob"/> count. </param>
+        /// <param name="batchSize"> <see cref="WriteIntsJob"/> batch size. </param>
         [Test]
-        public void PopulateInts(
+        public void WriteRead(
             [Values(1, 10, UnsafeThreadStream.ForEachCount + 1)] int count,
             [Values(1, 3, 10)] int batchSize)
         {
@@ -83,7 +87,8 @@ namespace BovineLabs.Event.Tests.Containers
             stream.Dispose();
         }
 
-
+        /// <summary> Tests the container working in an Entities.ForEach in SystemBase. </summary>
+        /// <param name="count"> The number of entities to test. </param>
         [Test]
         public void SystemBaseEntitiesForeach([Values(1, UnsafeThreadStream.ForEachCount + 1, 100000)] int count)
         {
@@ -92,6 +97,7 @@ namespace BovineLabs.Event.Tests.Containers
         }
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
+        /// <summary> Ensures that reading with begin throws an exception. </summary>
         [Test]
         public void ReadWithoutBeginThrows()
         {
@@ -104,6 +110,7 @@ namespace BovineLabs.Event.Tests.Containers
             stream.Dispose();
         }
 
+        /// <summary> Ensures that begin reading out of range throws an exception. </summary>
         [Test]
         public void BeginOutOfRangeThrows()
         {
@@ -117,6 +124,7 @@ namespace BovineLabs.Event.Tests.Containers
             stream.Dispose();
         }
 
+        /// <summary> Ensures reading past the end throws an exception. </summary>
         [Test]
         public void TooManyReadsThrows()
         {
@@ -144,7 +152,6 @@ namespace BovineLabs.Event.Tests.Containers
 
             public void Execute(int index)
             {
-                // this.Writer.BeginForEachIndex(index);
                 for (int i = 0; i != index; i++)
                 {
                     this.Writer.Write(this.threadIndex);
@@ -161,11 +168,9 @@ namespace BovineLabs.Event.Tests.Containers
             public void Execute(int index)
             {
                 int count = this.Reader.BeginForEachIndex(index);
-                // Assert.AreEqual(this.Index, count);
 
                 for (int i = 0; i != count; i++)
                 {
-                    // Assert.AreEqual(index - i, this.Reader.RemainingItemCount);
                     var peekedValue = this.Reader.Peek();
                     var value = this.Reader.Read();
 
