@@ -21,7 +21,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
             NativeThreadStream<int> stream = default;
 
             Measure.Method(() => system.NativeThreadStreamTest(stream))
@@ -36,7 +36,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
             NativeStream stream = default;
 
             Measure.Method(() => system.NativeStreamTest(stream))
@@ -51,7 +51,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
             NativeQueue<int> queue = default;
 
             Measure.Method(() => system.NativeQueueTest(queue))
@@ -66,7 +66,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
             NativeThreadStream<int> stream = default;
             NativeQueue<int> output = default;
 
@@ -102,7 +102,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
             NativeStream stream = default;
             NativeQueue<int> output = default;
 
@@ -138,7 +138,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
-            var system = this.World.CreateSystem<EntitiesForEachTest>(entities, archetypes);
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
             NativeQueue<int> queue = default;
             NativeQueue<int> output = default;
 
