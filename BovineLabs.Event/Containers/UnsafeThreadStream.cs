@@ -5,6 +5,7 @@
 namespace BovineLabs.Event.Containers
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using JetBrains.Annotations;
     using Unity.Burst;
     using Unity.Collections;
@@ -96,6 +97,19 @@ namespace BovineLabs.Event.Containers
             }
 
             return itemCount;
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(UnsafeThreadStream other)
+        {
+            return this.block == other.block;
+        }
+
+        /// <inheritdoc/>
+        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode", Justification = "Only changed when disposed.")]
+        public override int GetHashCode()
+        {
+            return unchecked((int)(long)this.block);
         }
 
         /// <summary> Allocate the stream block for data. </summary>
@@ -243,6 +257,7 @@ namespace BovineLabs.Event.Containers
         }
 
         /// <summary> The reader instance. </summary>
+        [SuppressMessage("ReSharper", "SA1600", Justification = "Private.")]
         public struct Reader
         {
             [NativeDisableUnsafePtrRestriction]
@@ -291,6 +306,8 @@ namespace BovineLabs.Event.Containers
             }
 
             /// <summary> Returns pointer to data. </summary>
+            /// <param name="size"> The size of the data to read. </param>
+            /// <returns> The pointer to the data. </returns>
             public byte* ReadUnsafePtr(int size)
             {
                 this.RemainingCount--;
@@ -362,18 +379,6 @@ namespace BovineLabs.Event.Containers
             {
                 this.Container.Deallocate();
             }
-        }
-
-        /// <inheritdoc/>
-        public bool Equals(UnsafeThreadStream other)
-        {
-            return this.block == other.block;
-        }
-
-        /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            return unchecked((int)(long)this.block);
         }
     }
 }

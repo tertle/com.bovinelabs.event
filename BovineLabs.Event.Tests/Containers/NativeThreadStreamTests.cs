@@ -92,7 +92,7 @@ namespace BovineLabs.Event.Tests.Containers
         [Test]
         public void SystemBaseEntitiesForeach([Values(1, UnsafeThreadStream.ForEachCount + 1, 100000)] int count)
         {
-            var system = this.World.CreateSystem<CodeGenTestSystem>(count);
+            var system = this.World.AddSystem(new CodeGenTestSystem(count));
             system.Update();
         }
 

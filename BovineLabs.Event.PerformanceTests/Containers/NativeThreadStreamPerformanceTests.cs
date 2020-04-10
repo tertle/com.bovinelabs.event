@@ -5,6 +5,7 @@
 namespace BovineLabs.Event.PerformanceTests.Containers
 {
     using BovineLabs.Event.Containers;
+    using JetBrains.Annotations;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
@@ -13,8 +14,13 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using Unity.Jobs;
     using Unity.PerformanceTesting;
 
+    /// <summary> Performance tests for <see cref="NativeThreadStream"/>. </summary>
+    /// <remarks><para> Includes comparison tests for <see cref="NativeQueue{T}"/> and <see cref="NativeStream"/>. </para></remarks>
     internal class NativeThreadStreamPerformanceTests : ECSTestsFixture
     {
+        /// <summary> Tests performance of writing entities in a <see cref="NativeThreadStream"/> in an Entities.ForEach. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
         public void WriteEntitiesForEachNativeThreadStream(
@@ -30,6 +36,9 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .Run();
         }
 
+        /// <summary> Tests performance of writing entities in a <see cref="NativeStream"/> in an Entities.ForEach. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
         public void WriteEntitiesForEachNativeStream(
@@ -45,6 +54,9 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                    .Run();
         }
 
+        /// <summary> Tests performance of writing entities in a <see cref="NativeQueue{T}"/> in an Entities.ForEach. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
         public void WriteEntitiesForEachNativeQueue(
@@ -60,6 +72,9 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                    .Run();
         }
 
+        /// <summary> Tests performance of reading entities parallel in a <see cref="NativeThreadStream"/>. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
         public void ReadParallelNativeThreadStream(
@@ -96,6 +111,9 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .Run();
         }
 
+        /// <summary> Tests performance of reading entities parallel in a <see cref="NativeStream"/>. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
         public void ReadParallelNativeStream(
@@ -132,6 +150,9 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .Run();
         }
 
+        /// <summary> Tests performance of reading entities in a <see cref="NativeQueue{T}"/>. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
         public void ReadNativeQueue(
@@ -168,7 +189,66 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .Run();
         }
 
-        [DisableAutoCreation]
+        [BurstCompile(CompileSynchronously = true)]
+        private struct ReadNativeThreadStreamJob : IJobParallelFor
+        {
+            [ReadOnly]
+            public NativeThreadStream<int>.Reader Reader;
+
+            public NativeQueue<int>.ParallelWriter Output;
+
+            /// <inheritdoc/>
+            public void Execute(int index)
+            {
+                var foreachCount = this.Reader.BeginForEachIndex(index);
+
+                for (var i = 0; i < foreachCount; i++)
+                {
+                    this.Output.Enqueue(this.Reader.Read());
+                }
+
+                this.Reader.EndForEachIndex();
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true)]
+        private struct ReadNativeStreamJob : IJobParallelFor
+        {
+            [ReadOnly]
+            public NativeStream.Reader Reader;
+
+            public NativeQueue<int>.ParallelWriter Output;
+
+            /// <inheritdoc/>
+            public void Execute(int index)
+            {
+                var foreachCount = this.Reader.BeginForEachIndex(index);
+
+                for (var i = 0; i < foreachCount; i++)
+                {
+                    this.Output.Enqueue(this.Reader.Read<int>());
+                }
+
+                this.Reader.EndForEachIndex();
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true)]
+        private struct ReadNativeQueueJob : IJob
+        {
+            public NativeQueue<int> Reader;
+            public NativeQueue<int>.ParallelWriter Output;
+
+            /// <inheritdoc/>
+            public void Execute()
+            {
+                while (this.Reader.TryDequeue(out var item))
+                {
+                    this.Output.Enqueue(item);
+                }
+            }
+        }
+
         private class EntitiesForEachTest : SystemBase
         {
             private readonly int count;
@@ -247,67 +327,8 @@ namespace BovineLabs.Event.PerformanceTests.Containers
 
             private struct TestComponent : ISharedComponentData
             {
+                [UsedImplicitly]
                 public int Chunk;
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true)]
-        public struct ReadNativeThreadStreamJob : IJobParallelFor
-        {
-            [ReadOnly]
-            public NativeThreadStream<int>.Reader Reader;
-
-            public NativeQueue<int>.ParallelWriter Output;
-
-            /// <inheritdoc/>
-            public void Execute(int index)
-            {
-                var foreachCount = this.Reader.BeginForEachIndex(index);
-
-                for (var i = 0; i < foreachCount; i++)
-                {
-                    this.Output.Enqueue(this.Reader.Read());
-                }
-
-                this.Reader.EndForEachIndex();
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true)]
-        public struct ReadNativeStreamJob : IJobParallelFor
-        {
-            [ReadOnly]
-            public NativeStream.Reader Reader;
-
-            public NativeQueue<int>.ParallelWriter Output;
-
-            /// <inheritdoc/>
-            public void Execute(int index)
-            {
-                var foreachCount = this.Reader.BeginForEachIndex(index);
-
-                for (var i = 0; i < foreachCount; i++)
-                {
-                    this.Output.Enqueue(this.Reader.Read<int>());
-                }
-
-                this.Reader.EndForEachIndex();
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true)]
-        public struct ReadNativeQueueJob : IJob
-        {
-            public NativeQueue<int> Reader;
-            public NativeQueue<int>.ParallelWriter Output;
-
-            /// <inheritdoc/>
-            public void Execute()
-            {
-                while (this.Reader.TryDequeue(out var item))
-                {
-                    this.Output.Enqueue(item);
-                }
             }
         }
     }

@@ -4,10 +4,12 @@
 
 namespace BovineLabs.Event.Containers
 {
+    using System.Diagnostics.CodeAnalysis;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using UnityEngine.Assertions;
 
+    [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamBlockData.")]
     internal unsafe struct UnsafeThreadStreamBlockData
     {
         internal const int AllocationSize = 4 * 1024;
@@ -53,12 +55,16 @@ namespace BovineLabs.Event.Containers
         }
     }
 
+    [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamBlock.")]
     internal struct UnsafeThreadStreamBlock
     {
         internal unsafe UnsafeThreadStreamBlock* Next;
+#pragma warning disable 649
         internal unsafe fixed byte Data[1];
+#pragma warning restore 649
     }
 
+    [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamRange.")]
     internal unsafe struct UnsafeThreadStreamRange
     {
         internal UnsafeThreadStreamBlock* Block;
