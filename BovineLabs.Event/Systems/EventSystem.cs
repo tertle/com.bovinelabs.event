@@ -147,7 +147,7 @@ namespace BovineLabs.Event.Systems
                 var container = this.containers[i];
 
                 // Need both handles because might have no writers or readers in this specific systems
-                handles[i] = JobHandle.CombineDependencies(container.ConsumerHandle, container.ProducerHandle);
+                handles[i] = JobHandle.CombineDependencies(container.ConsumerHandle, container.ProducerHandle, container.DeferredProducerHandle);
                 handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
 
                 container.Dispose();

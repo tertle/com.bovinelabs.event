@@ -6,6 +6,7 @@
 namespace BovineLabs.Event.Tests
 {
     using BovineLabs.Event.Containers;
+    using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
     using Unity.Jobs;
 
@@ -45,6 +46,15 @@ namespace BovineLabs.Event.Tests
             }
 
             this.Reader.EndForEachIndex();
+        }
+    }
+
+    /// <summary> Test job for consuming events. </summary>
+    public struct ConsumerEventJob : IJobEvent<TestEvent>
+    {
+        public void Execute(TestEvent e)
+        {
+
         }
     }
 

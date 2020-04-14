@@ -10,8 +10,10 @@ namespace BovineLabs.Event.Tests.Systems
     using System.Collections.Generic;
     using System.Linq;
     using BovineLabs.Event.Containers;
+    using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
     using NUnit.Framework;
+    using Unity.Burst;
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
@@ -303,6 +305,73 @@ namespace BovineLabs.Event.Tests.Systems
 
             Assert.IsTrue(es.HasEventReaders<TestEvent>());
         }
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        [Test]
+        public void OrderSafetyTest()
+        {
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+            var writer1 = es.CreateEventWriter<TestEvent>();
+
+            var producer1 = new ProducerJob
+                {
+                    EventCount = 10,
+                    Events = writer1,
+                }
+                .Schedule(64, 1);
+
+            es.AddJobHandleForProducer<TestEvent>(producer1);
+            var writer2 = es.CreateEventWriter<TestEvent>();
+
+            var producer2 = new ProducerJob
+                {
+                    EventCount = 10,
+                    Events = writer2,
+                }
+                .Schedule(64, 1);
+
+            es.AddJobHandleForProducer<TestEvent>(producer2);
+
+            var consumer1 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+            var consumer2 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+
+            var writer3 = es.CreateEventWriter<TestEvent>();
+
+            var producer3 = new ProducerJob
+                {
+                    EventCount = 10,
+                    Events = writer3,
+                }
+                .Schedule(64, 1);
+
+            es.AddJobHandleForProducer<TestEvent>(producer3);
+
+            var consumer3 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+
+            es.Update();
+
+            var consumer4 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+
+            var writer4 = es.CreateEventWriter<TestEvent>();
+            var producer4 = new ProducerJob
+                {
+                    EventCount = 10,
+                    Events = writer4,
+                }
+                .Schedule(64, 1);
+
+            es.AddJobHandleForProducer<TestEvent>(producer4);
+
+            var consumer5 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+
+            consumer5.Complete();
+            consumer4.Complete();
+            consumer1.Complete();
+            consumer2.Complete();
+            consumer3.Complete();
+        }
+#endif
 
         private class CustomErrorTestEventSystem : EventSystem
         {

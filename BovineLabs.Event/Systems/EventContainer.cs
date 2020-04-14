@@ -35,7 +35,7 @@ namespace BovineLabs.Event.Systems
         private readonly List<NativeThreadStream> deferredStreams =
             new List<NativeThreadStream>();
 
-        private JobHandle deferredProducerHandle;
+
 
         private bool isReadMode;
 
@@ -56,6 +56,9 @@ namespace BovineLabs.Event.Systems
 
         /// <summary> Gets the producer handle. </summary>
         public JobHandle ConsumerHandle { get; private set; }
+
+        /// <summary> Gets the producer handle. </summary>
+        public JobHandle DeferredProducerHandle { get; private set; }
 
         /// <summary> Gets the type of event this container holds. </summary>
         public Type Type { get; }
@@ -116,7 +119,7 @@ namespace BovineLabs.Event.Systems
         {
             if (this.isReadMode)
             {
-                this.deferredProducerHandle = JobHandle.CombineDependencies(this.deferredProducerHandle, handle);
+                this.DeferredProducerHandle = JobHandle.CombineDependencies(this.DeferredProducerHandle, handle);
             }
             else
             {
@@ -213,7 +216,8 @@ namespace BovineLabs.Event.Systems
 
             // Reset handles
             this.ConsumerHandle = default;
-            this.ProducerHandle = default;
+            this.ProducerHandle = this.DeferredProducerHandle;
+            this.DeferredProducerHandle = default;
         }
 
         /// <inheritdoc/>
