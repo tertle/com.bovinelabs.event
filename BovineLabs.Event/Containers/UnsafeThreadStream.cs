@@ -242,8 +242,8 @@ namespace BovineLabs.Event.Containers
                         this.blockStream->Ranges[this.threadIndex].NumberOfBlocks++;
                     }
 
-                    this.blockStream->Ranges[this.threadIndex].CurrentBlockEnd =
-                        (byte*)this.blockStream->Ranges[this.threadIndex].CurrentBlock + UnsafeThreadStreamBlockData.AllocationSize;
+                    this.blockStream->Ranges[this.threadIndex].CurrentBlockEnd = (byte*)this.blockStream->Ranges[this.threadIndex].CurrentBlock
+                                                                                 + UnsafeThreadStreamBlockData.AllocationSize;
                     ptr = this.blockStream->Ranges[this.threadIndex].CurrentPtr;
                     this.blockStream->Ranges[this.threadIndex].CurrentPtr += size;
                 }

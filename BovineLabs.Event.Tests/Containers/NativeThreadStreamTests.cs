@@ -217,6 +217,12 @@ namespace BovineLabs.Event.Tests.Containers
 
             protected override void OnUpdate()
             {
+                this.EntitiesForEach();
+                this.JobWithCode();
+            }
+
+            private void EntitiesForEach()
+            {
                 var stream = new NativeThreadStream<int>(Allocator.TempJob);
                 var writer = stream.AsWriter();
 
@@ -239,6 +245,43 @@ namespace BovineLabs.Event.Tests.Containers
                 {
                     Assert.IsTrue(this.hashmap.TryGetValue(i, out _));
                 }
+
+                this.hashmap.Clear();
+            }
+
+            private void JobWithCode()
+            {
+                var stream = new NativeThreadStream<int>(Allocator.TempJob);
+                var writer = stream.AsWriter();
+
+                var c = this.count;
+
+                this.Job.WithCode(() =>
+                    {
+                        for (var i = 0; i < c; i++)
+                        {
+                            writer.Write(i);
+                        }
+                    })
+                    .Schedule();
+
+                this.Dependency = new ReadJob
+                    {
+                        Reader = stream.AsReader(),
+                        HashMap = this.hashmap.AsParallelWriter(),
+                    }
+                    .Schedule(stream.ForEachCount, 1, this.Dependency);
+
+                this.Dependency = stream.Dispose(this.Dependency);
+                this.Dependency.Complete();
+
+                // Assert correct values were added
+                for (var i = 0; i < this.count; i++)
+                {
+                    Assert.IsTrue(this.hashmap.TryGetValue(i, out _));
+                }
+
+                this.hashmap.Clear();
             }
 
             [BurstCompile(CompileSynchronously = true)]

@@ -13,7 +13,6 @@ namespace BovineLabs.Event.Tests.Systems
     using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
     using NUnit.Framework;
-    using Unity.Burst;
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
