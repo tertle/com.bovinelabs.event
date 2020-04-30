@@ -174,8 +174,8 @@ namespace BovineLabs.Event.Tests.Containers
                     var peekedValue = this.Reader.Peek();
                     var value = this.Reader.Read();
 
-                    Assert.AreEqual(index, value);
-                    Assert.AreEqual(index, peekedValue);
+                    UnityEngine.Assertions.Assert.AreEqual(index, value);
+                    UnityEngine.Assertions.Assert.AreEqual(index, peekedValue);
                 }
             }
         }
@@ -237,7 +237,7 @@ namespace BovineLabs.Event.Tests.Containers
                 // Assert correct values were added
                 for (var i = 0; i < this.count; i++)
                 {
-                    Assert.IsTrue(this.hashmap.Remove(i));
+                    Assert.IsTrue(this.hashmap.TryGetValue(i, out _));
                 }
             }
 
@@ -256,9 +256,7 @@ namespace BovineLabs.Event.Tests.Containers
                     for (int i = 0; i != count; i++)
                     {
                         var value = this.Reader.Read();
-
-                        // Assert all values are unique as expected
-                        Assert.AreEqual(true, this.HashMap.TryAdd(value, 0));
+                        this.HashMap.TryAdd(value, 0);
                     }
                 }
             }

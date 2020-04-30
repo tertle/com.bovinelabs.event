@@ -35,8 +35,6 @@ namespace BovineLabs.Event.Systems
         private readonly List<NativeThreadStream> deferredStreams =
             new List<NativeThreadStream>();
 
-
-
         private bool isReadMode;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -223,16 +221,17 @@ namespace BovineLabs.Event.Systems
         /// <inheritdoc/>
         public void Dispose()
         {
+            this.ProducerHandle.Complete();
             for (var index = 0; index < this.Streams.Count; index++)
             {
                 this.Streams[index].Dispose();
             }
 
-            // // TODO?
-            // for (var index = 0; index < this.deferredStreams.Count; index++)
-            // {
-            //     this.deferredStreams[index].Dispose();
-            // }
+            this.DeferredProducerHandle.Complete();
+            for (var index = 0; index < this.deferredStreams.Count; index++)
+            {
+                this.deferredStreams[index].Dispose();
+            }
         }
 
         /// <summary> Set the event to read mode. </summary>
