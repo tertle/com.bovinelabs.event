@@ -309,5 +309,71 @@ namespace BovineLabs.Event.Tests.Containers
                 public int Value;
             }
         }
+
+        [DisableAutoCreation]
+        private class StressTestSystem : SystemBase
+        {
+            private const int Iterations = 100;
+            private const int Count = 10000;
+
+            private NativeHashMap<int, int> hashmap;
+
+            private int writeCount;
+
+            protected override void OnCreate()
+            {
+                var arch = this.EntityManager.CreateArchetype(typeof(TestComponent));
+
+                using (var entities = new NativeArray<Entity>(Count, Allocator.TempJob))
+                {
+                    this.EntityManager.CreateEntity(arch, entities);
+
+                    for (var index = 0; index < entities.Length; index++)
+                    {
+                        var entity = entities[index];
+
+                        this.EntityManager.SetComponentData(entity, new TestComponent { Value = index });
+                    }
+                }
+
+                this.hashmap = new NativeHashMap<int, int>(Count, Allocator.Persistent);
+            }
+
+            protected override void OnUpdate()
+            {
+                var r = UnityEngine.Random.Range(0, 9);
+                if (r <= 3)
+                {
+                    EntitiesForEach();
+                }
+
+                if (r <= 8)
+                {
+                    this.JobWithCode();
+                }
+
+                this.Read();
+            }
+
+            private void EntitiesForEach()
+            {
+                this.writeCount++;
+            }
+
+            private void JobWithCode()
+            {
+                this.writeCount++;
+            }
+
+            private void Read()
+            {
+
+            }
+
+            private struct TestComponent : IComponentData
+            {
+                public int Value;
+            }
+        }
     }
 }
