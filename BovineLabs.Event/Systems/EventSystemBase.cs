@@ -1,4 +1,8 @@
-﻿namespace BovineLabs.Event.Systems
+﻿// <copyright file="EventSystemBase.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+namespace BovineLabs.Event.Systems
 {
     using System.Collections.Generic;
     using BovineLabs.Event.Containers;
@@ -11,8 +15,6 @@
     {
         private EndSimulationEventSystem eventSystem;
 
-        protected abstract int ElementsPerEvent { get; }
-
         /// <inheritdoc />
         protected sealed override void OnCreate()
         {
@@ -21,9 +23,9 @@
             this.Create();
         }
 
+        /// <summary> <see cref="OnCreate"/>. </summary>
         protected virtual void Create()
         {
-
         }
 
         /// <inheritdoc />
@@ -32,16 +34,15 @@
             this.Destroy();
         }
 
+        /// <summary> <see cref="OnDestroy"/>. </summary>
         protected virtual void Destroy()
         {
-
         }
 
         /// <inheritdoc />
         protected sealed override void OnUpdate()
         {
-
-            this.BeforeEvents();
+            this.BeforeEvent();
 
             if (!this.eventSystem.HasEventReaders<T>())
             {
@@ -53,18 +54,14 @@
 
             try
             {
-                for (var i = 0; i < readers.Count; i++)
+                foreach (var t in readers)
                 {
-                    var reader = readers[i];
+                    var reader = t;
 
                     for (var foreachIndex = 0; foreachIndex < reader.ForEachCount; foreachIndex++)
                     {
                         var events = reader.BeginForEachIndex(foreachIndex);
-                        for (var j = 0; j < events; j += this.ElementsPerEvent)
-                        {
-                            this.HandleEvent(ref reader);
-                        }
-
+                        this.OnEventStream(ref reader, events);
                         reader.EndForEachIndex();
                     }
                 }
@@ -75,10 +72,14 @@
             }
         }
 
-        protected virtual void BeforeEvents()
+        /// <summary> Optional update that can occur before event reading. </summary>
+        protected virtual void BeforeEvent()
         {
         }
 
-        protected abstract void HandleEvent(ref NativeThreadStream.Reader reader);
+        /// <summary> A stream of events. </summary>
+        /// <param name="reader"> The event stream reader. </param>
+        /// <param name="eventCount"> The number of iterations in the stream. </param>
+        protected abstract void OnEventStream(ref NativeThreadStream.Reader reader, int eventCount);
     }
 }

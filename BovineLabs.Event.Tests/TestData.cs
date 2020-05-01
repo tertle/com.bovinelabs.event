@@ -8,6 +8,7 @@ namespace BovineLabs.Event.Tests
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
+    using Unity.Entities;
     using Unity.Jobs;
 
     /// <summary> Test job for producing events. </summary>
@@ -52,9 +53,9 @@ namespace BovineLabs.Event.Tests
     /// <summary> Test job for consuming events. </summary>
     public struct ConsumerEventJob : IJobEvent<TestEvent>
     {
+        /// <inheritdoc/>
         public void Execute(TestEvent e)
         {
-
         }
     }
 
@@ -62,6 +63,13 @@ namespace BovineLabs.Event.Tests
     public struct TestEvent
     {
         /// <summary> The event value. </summary>
+        public int Value;
+    }
+
+    /// <summary> A test component with a value. </summary>
+    public struct TestComponent : IComponentData
+    {
+        /// <summary> Gets or sets a test value. </summary>
         public int Value;
     }
 

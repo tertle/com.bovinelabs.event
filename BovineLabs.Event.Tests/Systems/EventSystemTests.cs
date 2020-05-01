@@ -306,6 +306,7 @@ namespace BovineLabs.Event.Tests.Systems
         }
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
+        /// <summary> Tests no safety is throw from different ordering. </summary>
         [Test]
         public void OrderSafetyTest()
         {

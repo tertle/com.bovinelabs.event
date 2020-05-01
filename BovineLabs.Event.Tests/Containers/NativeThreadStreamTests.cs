@@ -367,12 +367,6 @@ namespace BovineLabs.Event.Tests.Containers
 
             private void Read()
             {
-
-            }
-
-            private struct TestComponent : IComponentData
-            {
-                public int Value;
             }
         }
     }

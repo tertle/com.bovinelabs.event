@@ -1,4 +1,8 @@
-﻿namespace BovineLabs.Event.Systems
+﻿// <copyright file="SingleEventSystemBase.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+namespace BovineLabs.Event.Systems
 {
     using BovineLabs.Event.Containers;
 
@@ -7,16 +11,18 @@
     public abstract class SingleEventSystemBase<T> : EventSystemBase<T>
         where T : unmanaged
     {
-        protected abstract void HandleEvent(T e);
+        /// <summary> Called when an event is read. </summary>
+        /// <param name="e"> The event. </param>
+        protected abstract void OnEvent(T e);
 
         /// <inheritdoc/>
-        protected sealed override int ElementsPerEvent => 1;
-
-        /// <inheritdoc/>
-        protected sealed override void HandleEvent(ref NativeThreadStream.Reader reader)
+        protected sealed override void OnEventStream(ref NativeThreadStream.Reader reader, int eventCount)
         {
-            var e = reader.Read<T>();
-            this.HandleEvent(e);
+            for (var j = 0; j < eventCount; j++)
+            {
+                var e = reader.Read<T>();
+                this.OnEvent(e);
+            }
         }
     }
 }
