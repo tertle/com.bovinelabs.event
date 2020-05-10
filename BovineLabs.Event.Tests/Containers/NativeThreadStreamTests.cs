@@ -310,7 +310,6 @@ namespace BovineLabs.Event.Tests.Containers
             }
         }
 
-        [DisableAutoCreation]
         private class StressTestSystem : SystemBase
         {
             private const int Iterations = 100;
