@@ -12,7 +12,7 @@ namespace BovineLabs.Event.Tests
     using Unity.Jobs;
 
     /// <summary> Test job for producing events. </summary>
-    public struct ProducerJob : IJobParallelFor
+    public struct ProducerJob : IJobFor
     {
         /// <summary> The event stream writer. </summary>
         public NativeThreadStream.Writer Events;
@@ -31,7 +31,7 @@ namespace BovineLabs.Event.Tests
     }
 
     /// <summary> Test job for consuming events. </summary>
-    public struct ConsumerJob : IJobParallelFor
+    public struct ConsumerJob : IJobFor
     {
         /// <summary> The event stream reader. </summary>
         public NativeThreadStream.Reader Reader;

@@ -92,7 +92,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                             Reader = stream.AsReader(),
                             Output = output.AsParallelWriter(),
                         }
-                        .Schedule(stream.ForEachCount, 1).Complete();
+                        .ScheduleParallel(stream.ForEachCount, 1, default).Complete();
 
                     Assert.AreEqual(entities, output.Count);
                 })
@@ -131,7 +131,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                             Reader = stream.AsReader(),
                             Output = output.AsParallelWriter(),
                         }
-                        .Schedule(entities, 256).Complete();
+                        .ScheduleParallel(entities, 256, default).Complete();
 
                     Assert.AreEqual(entities, output.Count);
                 })
@@ -190,7 +190,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
         }
 
         [BurstCompile(CompileSynchronously = true)]
-        private struct ReadNativeThreadStreamJob : IJobParallelFor
+        private struct ReadNativeThreadStreamJob : IJobFor
         {
             [ReadOnly]
             public NativeThreadStream<int>.Reader Reader;
@@ -212,7 +212,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
         }
 
         [BurstCompile(CompileSynchronously = true)]
-        private struct ReadNativeStreamJob : IJobParallelFor
+        private struct ReadNativeStreamJob : IJobFor
         {
             [ReadOnly]
             public NativeStream.Reader Reader;

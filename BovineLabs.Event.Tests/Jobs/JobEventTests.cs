@@ -37,7 +37,7 @@ namespace BovineLabs.Event.Tests.Jobs
                         Events = writer,
                         EventCount = eventCount,
                     }
-                    .Schedule(foreachCount, 8);
+                    .ScheduleParallel(foreachCount, 8, default);
 
                 es.AddJobHandleForProducer<TestEvent>(handle);
                 handle = JobHandle.CombineDependencies(handle, defaultHandle);

@@ -40,7 +40,7 @@ namespace BovineLabs.Event.Tests.Containers
             Assert.IsTrue(stream.IsCreated);
 
             var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
-            var writerJob = fillInts.Schedule(JobsUtility.MaxJobThreadCount, 16);
+            var writerJob = fillInts.ScheduleParallel(JobsUtility.MaxJobThreadCount, 16, default);
 
             var disposeJob = stream.Dispose(writerJob);
             Assert.IsFalse(stream.IsCreated);
@@ -58,7 +58,7 @@ namespace BovineLabs.Event.Tests.Containers
         {
             var stream = new NativeThreadStream<int>(Allocator.TempJob);
             var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
-            fillInts.Schedule(count, batchSize).Complete();
+            fillInts.ScheduleParallel(count, batchSize, default).Complete();
 
             Assert.AreEqual(count * (count - 1) / 2, stream.ComputeItemCount());
 
@@ -75,11 +75,11 @@ namespace BovineLabs.Event.Tests.Containers
         {
             var stream = new NativeThreadStream<int>(Allocator.TempJob);
             var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
-            var jobHandle = fillInts.Schedule(count, batchSize);
+            var jobHandle = fillInts.ScheduleParallel(count, batchSize, default);
 
             var compareInts = new ReadIntsJob { Reader = stream.AsReader() };
-            var res0 = compareInts.Schedule(stream.ForEachCount, batchSize, jobHandle);
-            var res1 = compareInts.Schedule(stream.ForEachCount, batchSize, jobHandle);
+            var res0 = compareInts.ScheduleParallel(stream.ForEachCount, batchSize, jobHandle);
+            var res1 = compareInts.ScheduleParallel(stream.ForEachCount, batchSize, jobHandle);
 
             res0.Complete();
             res1.Complete();
@@ -141,7 +141,7 @@ namespace BovineLabs.Event.Tests.Containers
 #endif
 
         [BurstCompile(CompileSynchronously = true)]
-        private struct WriteIntsJob : IJobParallelFor
+        private struct WriteIntsJob : IJobFor
         {
             public NativeThreadStream<int>.Writer Writer;
 
@@ -160,7 +160,7 @@ namespace BovineLabs.Event.Tests.Containers
         }
 
         [BurstCompile(CompileSynchronously = true)]
-        private struct ReadIntsJob : IJobParallelFor
+        private struct ReadIntsJob : IJobFor
         {
             [ReadOnly]
             public NativeThreadStream<int>.Reader Reader;
@@ -235,7 +235,7 @@ namespace BovineLabs.Event.Tests.Containers
                         Reader = stream.AsReader(),
                         HashMap = this.hashmap.AsParallelWriter(),
                     }
-                    .Schedule(stream.ForEachCount, 1, this.Dependency);
+                    .ScheduleParallel(stream.ForEachCount, 1, this.Dependency);
 
                 this.Dependency = stream.Dispose(this.Dependency);
                 this.Dependency.Complete();
@@ -270,7 +270,7 @@ namespace BovineLabs.Event.Tests.Containers
                         Reader = stream.AsReader(),
                         HashMap = this.hashmap.AsParallelWriter(),
                     }
-                    .Schedule(stream.ForEachCount, 1, this.Dependency);
+                    .ScheduleParallel(stream.ForEachCount, 1, this.Dependency);
 
                 this.Dependency = stream.Dispose(this.Dependency);
                 this.Dependency.Complete();
@@ -285,7 +285,7 @@ namespace BovineLabs.Event.Tests.Containers
             }
 
             [BurstCompile(CompileSynchronously = true)]
-            private struct ReadJob : IJobParallelFor
+            private struct ReadJob : IJobFor
             {
                 [ReadOnly]
                 public NativeThreadStream<int>.Reader Reader;

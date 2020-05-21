@@ -188,7 +188,7 @@ namespace BovineLabs.Event.Tests.Systems
                         Events = writer,
                         EventCount = eventCount,
                     }
-                    .Schedule(foreachCount, 8);
+                    .ScheduleParallel(foreachCount, 8, default);
 
                 es.AddJobHandleForProducer<TestEvent>(handle);
             }
@@ -205,7 +205,7 @@ namespace BovineLabs.Event.Tests.Systems
                         {
                             Reader = reader,
                         }
-                        .Schedule(reader.ForEachCount, 8, handle);
+                        .ScheduleParallel(reader.ForEachCount, 8, handle);
                 }
 
                 es.AddJobHandleForConsumer<TestEvent>(handle);
@@ -319,7 +319,7 @@ namespace BovineLabs.Event.Tests.Systems
                     EventCount = 10,
                     Events = writer1,
                 }
-                .Schedule(64, 1);
+                .ScheduleParallel(64, 1, default);
 
             es.AddJobHandleForProducer<TestEvent>(producer1);
             var writer2 = es.CreateEventWriter<TestEvent>();
@@ -329,7 +329,7 @@ namespace BovineLabs.Event.Tests.Systems
                     EventCount = 10,
                     Events = writer2,
                 }
-                .Schedule(64, 1);
+                .ScheduleParallel(64, 1, default);
 
             es.AddJobHandleForProducer<TestEvent>(producer2);
 
@@ -343,7 +343,7 @@ namespace BovineLabs.Event.Tests.Systems
                     EventCount = 10,
                     Events = writer3,
                 }
-                .Schedule(64, 1);
+                .ScheduleParallel(64, 1, default);
 
             es.AddJobHandleForProducer<TestEvent>(producer3);
 
@@ -359,7 +359,7 @@ namespace BovineLabs.Event.Tests.Systems
                     EventCount = 10,
                     Events = writer4,
                 }
-                .Schedule(64, 1);
+                .ScheduleParallel(64, 1, default);
 
             es.AddJobHandleForProducer<TestEvent>(producer4);
 
