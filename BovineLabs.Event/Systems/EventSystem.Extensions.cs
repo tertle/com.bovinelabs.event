@@ -1,4 +1,4 @@
-﻿// <copyright file="EventSystem.Extensions.cs" company="BovineLabs">
+﻿// <copyright file="EventSystemBase.Extensions.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -12,8 +12,8 @@ namespace BovineLabs.Event.Systems
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
 
-    /// <content> Extensions methods for the EventSystem. </content>
-    public partial class EventSystem
+    /// <content> Extensions methods for the EventSystemBase. </content>
+    public partial class EventSystemBase
     {
         /// <summary> The container for common extension methods for events. </summary>
         /// <remarks>
@@ -24,11 +24,11 @@ namespace BovineLabs.Event.Systems
         public struct Extensions<T>
             where T : unmanaged
         {
-            private readonly EventSystem eventSystem;
+            private readonly EventSystemBase eventSystem;
 
             /// <summary> Initializes a new instance of the <see cref="Extensions{T}"/> struct. </summary>
             /// <param name="eventSystem"> Event system parent. </param>
-            internal Extensions(EventSystem eventSystem)
+            internal Extensions(EventSystemBase eventSystem)
             {
                 this.eventSystem = eventSystem;
             }

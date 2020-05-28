@@ -16,7 +16,7 @@ namespace BovineLabs.Event.Tests.Systems
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="EventSystem"/> . </summary>
+    /// <summary> Tests for <see cref="EventSystemBase"/> . </summary>
     public class EventSystemTests : ECSTestsFixture
     {
         /// <summary> Testing CreateEventWriter calls must be paired with a AddJobHandleForProducer call. </summary>
@@ -51,7 +51,7 @@ namespace BovineLabs.Event.Tests.Systems
             Assert.DoesNotThrow(() => es.GetEventReaders<TestEvent>(default, out _));
         }
 
-        /// <summary> Ensures that <see cref="EventSystem.WorldMode.Custom"/> requires CustomWorld to be implemented. </summary>
+        /// <summary> Ensures that <see cref="EventSystemBase.WorldMode.Custom"/> requires CustomWorld to be implemented. </summary>
         [Test]
         public void WorldModeCustomRequiresCustomWorldImplementation()
         {
@@ -59,7 +59,7 @@ namespace BovineLabs.Event.Tests.Systems
             Assert.DoesNotThrow(() => this.World.GetOrCreateSystem<CustomTestEventSystem>());
         }
 
-        /// <summary> Checks that <see cref="EventSystem.WorldMode"/> unknown throws an ArgumentOutOfRangeException. </summary>
+        /// <summary> Checks that <see cref="EventSystemBase.WorldMode"/> unknown throws an ArgumentOutOfRangeException. </summary>
         [Test]
         public void WorldModeUnknownThrowsArgumentOutOfRangeException()
         {
@@ -67,7 +67,7 @@ namespace BovineLabs.Event.Tests.Systems
                 this.World.GetOrCreateSystem<WorldModeUnknownTestEventSystem>());
         }
 
-        /// <summary> Checks that <see cref="EventSystem.WorldMode.DefaultWorldName"/> does not throw an exception. </summary>
+        /// <summary> Checks that <see cref="EventSystemBase.WorldMode.DefaultWorldName"/> does not throw an exception. </summary>
         /// <remarks> Need a way to actually test this better. </remarks>
         [Test]
         public void WorldModeActiveNoException()
@@ -373,24 +373,24 @@ namespace BovineLabs.Event.Tests.Systems
         }
 #endif
 
-        private class CustomErrorTestEventSystem : EventSystem
+        private class CustomErrorTestEventSystem : EventSystemBase
         {
             protected override WorldMode Mode => WorldMode.Custom;
         }
 
-        private class CustomTestEventSystem : EventSystem
+        private class CustomTestEventSystem : EventSystemBase
         {
             protected override WorldMode Mode => WorldMode.Custom;
 
             protected override string CustomKey => "test";
         }
 
-        private class WorldModeUnknownTestEventSystem : EventSystem
+        private class WorldModeUnknownTestEventSystem : EventSystemBase
         {
             protected override WorldMode Mode => (WorldMode)123;
         }
 
-        private class WorldModeActiveTestEventSystem : EventSystem
+        private class WorldModeActiveTestEventSystem : EventSystemBase
         {
             protected override WorldMode Mode => WorldMode.DefaultWorldName;
         }

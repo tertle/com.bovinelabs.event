@@ -42,7 +42,7 @@ namespace BovineLabs.Event.Tests.Jobs
                 .ScheduleSimultaneous<TestJob, TestEvent>(es));
         }
 
-        private void ScheduleTest(Func<EventSystem, NativeQueue<int>, JobHandle> job)
+        private void ScheduleTest(Func<EventSystemBase, NativeQueue<int>, JobHandle> job)
         {
             const int foreachCount = 100;
             const int eventCount = 100;

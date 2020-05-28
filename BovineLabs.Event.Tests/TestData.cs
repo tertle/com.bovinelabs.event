@@ -74,12 +74,12 @@ namespace BovineLabs.Event.Tests
     }
 
     /// <summary> Test event system. </summary>
-    public class TestEventSystem : EventSystem
+    public class TestEventSystem : EventSystemBase
     {
     }
 
     /// <summary> A second test event system. </summary>
-    public class TestEventSystem2 : EventSystem
+    public class TestEventSystem2 : EventSystemBase
     {
     }
 }

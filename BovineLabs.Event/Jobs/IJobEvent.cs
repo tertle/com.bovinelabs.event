@@ -37,7 +37,7 @@ namespace BovineLabs.Event.Jobs
         /// <returns> The handle to job. </returns>
         public static unsafe JobHandle ScheduleParallel<TJob, T>(
             this TJob jobData,
-            EventSystem eventSystem,
+            EventSystemBase eventSystem,
             JobHandle dependsOn = default)
             where TJob : struct, IJobEvent<T>
             where T : unmanaged

@@ -13,12 +13,12 @@ namespace BovineLabs.Event.Systems
     public abstract class EventSystemBase<T> : SystemBase
         where T : unmanaged
     {
-        private EndSimulationEventSystem eventSystem;
+        private EventSystem eventSystem;
 
         /// <inheritdoc />
         protected sealed override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<EndSimulationEventSystem>();
+            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
 
             this.Create();
         }

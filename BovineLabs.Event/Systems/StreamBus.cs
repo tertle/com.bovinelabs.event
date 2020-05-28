@@ -21,7 +21,7 @@ namespace BovineLabs.Event.Systems
     {
         private static readonly Dictionary<string, StreamBus> Instances = new Dictionary<string, StreamBus>();
 
-        private readonly List<EventSystem> subscribers = new List<EventSystem>();
+        private readonly List<EventSystemBase> subscribers = new List<EventSystemBase>();
         private readonly Dictionary<NativeThreadStream, StreamHandles> streams = new Dictionary<NativeThreadStream, StreamHandles>();
         private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
@@ -45,20 +45,20 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary>
-        /// Subscribe an EventSystem to get reader updates.
+        /// Subscribe an EventSystemBase to get reader updates.
         /// </summary>
         /// <param name="eventSystem"> The event system. </param>
-        internal void Subscribe(EventSystem eventSystem)
+        internal void Subscribe(EventSystemBase eventSystem)
         {
             Assert.IsFalse(this.subscribers.Contains(eventSystem));
             this.subscribers.Add(eventSystem);
         }
 
         /// <summary>
-        /// Unsubscribe an EventSystem to stop getting reader updates.
+        /// Unsubscribe an EventSystemBase to stop getting reader updates.
         /// </summary>
         /// <param name="eventSystem"> The event system. </param>
-        internal void Unsubscribe(EventSystem eventSystem)
+        internal void Unsubscribe(EventSystemBase eventSystem)
         {
             Assert.IsTrue(this.subscribers.Contains(eventSystem));
             this.subscribers.Remove(eventSystem);
@@ -79,7 +79,7 @@ namespace BovineLabs.Event.Systems
         /// <param name="consumerHandle"> The dependency handle for these streams. </param>
         /// <returns> The new dependency handle. </returns>
         /// <exception cref="ArgumentException"> Thrown  if this owner is not subscribed. </exception>
-        internal JobHandle AddStreams(EventSystem owner, Type type, IReadOnlyList<NativeThreadStream> newStreams, JobHandle consumerHandle)
+        internal JobHandle AddStreams(EventSystemBase owner, Type type, IReadOnlyList<NativeThreadStream> newStreams, JobHandle consumerHandle)
         {
             if (!this.subscribers.Contains(owner))
             {
@@ -147,7 +147,7 @@ namespace BovineLabs.Event.Systems
         /// <param name="streamsToRelease"> The collection of streams to be released. </param>
         /// <param name="inputHandle"> The dependency handle. </param>
         /// <returns> New dependency handle. </returns>
-        internal JobHandle ReleaseStreams(EventSystem owner, IReadOnlyList<NativeThreadStream> streamsToRelease, JobHandle inputHandle)
+        internal JobHandle ReleaseStreams(EventSystemBase owner, IReadOnlyList<NativeThreadStream> streamsToRelease, JobHandle inputHandle)
         {
             JobHandle outputHandle = inputHandle;
 
@@ -192,7 +192,7 @@ namespace BovineLabs.Event.Systems
 
         private class StreamHandles
         {
-            public HashSet<EventSystem> Systems { get; } = new HashSet<EventSystem>();
+            public HashSet<EventSystemBase> Systems { get; } = new HashSet<EventSystemBase>();
 
             public JobHandle Handle { get; set; }
         }
