@@ -21,7 +21,7 @@ namespace BovineLabs.Event.Systems
         /// For example, As{T}().Method(handle, map) instead of .Method{T, TK, TV}(handle, map). </para>
         /// </remarks>
         /// <typeparam name="T"> The event type. </typeparam>
-        public struct Extensions<T>
+        public readonly struct Extensions<T>
             where T : unmanaged
         {
             private readonly EventSystemBase eventSystem;

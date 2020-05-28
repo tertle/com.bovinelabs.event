@@ -1,4 +1,4 @@
-﻿// <copyright file="SingleEventSystemBase.cs" company="BovineLabs">
+﻿// <copyright file="ConsumeSingleEventSystemBase.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -8,7 +8,7 @@ namespace BovineLabs.Event.Systems
 
     /// <summary> A base system for working with jobs that have no extra data. </summary>
     /// <typeparam name="T"> The job type. </typeparam>
-    public abstract class SingleEventSystemBase<T> : EventSystemBase<T>
+    public abstract class ConsumeSingleEventSystemBase<T> : ConsumeEventSystemBase<T>
         where T : unmanaged
     {
         /// <summary> Called when an event is read. </summary>

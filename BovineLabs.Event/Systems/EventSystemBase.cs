@@ -1,85 +1,234 @@
-﻿// <copyright file="EventSystemBase.cs" company="BovineLabs">
-//     Copyright (c) BovineLabs. All rights reserved.
+// <copyright file="EventSystemBase.cs" company="BovineLabs">
+// Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
 namespace BovineLabs.Event.Systems
 {
+    using System;
     using System.Collections.Generic;
     using BovineLabs.Event.Containers;
+    using Unity.Collections;
     using Unity.Entities;
+    using Unity.Jobs;
+    using UnityEngine.Profiling;
 
-    /// <summary> A base system for working with jobs on the main thread. </summary>
-    /// <typeparam name="T"> The job type. </typeparam>
-    public abstract class EventSystemBase<T> : SystemBase
-        where T : unmanaged
+    /// <summary>
+    /// The base Event System class. Implement to add your own event system to a world or group.
+    /// By default LateSimulation and Presentation are implemented.
+    /// </summary>
+    public abstract partial class EventSystemBase : SystemBase
     {
-        private EventSystem eventSystem;
+        // separate to avoid allocations when iterating
+        private readonly List<EventContainer> containers = new List<EventContainer>();
+        private readonly Dictionary<Type, int> types = new Dictionary<Type, int>();
+
+        private StreamBus streamBus;
+
+        /// <summary> The world to use that the event system is linked to. </summary>
+        protected enum WorldMode
+        {
+            /// <summary> Uses the systems world, this.World </summary>
+            WorldName,
+
+            /// <summary> Uses the name "Default World" </summary>
+            DefaultWorldName,
+
+            /// <summary> Uses a custom world, this.Custom </summary>
+            Custom,
+        }
+
+        /// <summary> Gets the <see cref="WorldMode"/> of the system. </summary>
+        // ReSharper disable once VirtualMemberNeverOverridden.Global
+        protected virtual WorldMode Mode => WorldMode.WorldName;
+
+        /// <summary> Gets the world when using <see cref="WorldMode.Custom"/> . </summary>
+        // ReSharper disable once VirtualMemberNeverOverridden.Global
+        protected virtual string CustomKey => throw new NotImplementedException("CustomKey must be implemented if Mode equals WorldMode.Custom");
+
+        /// <summary> Create a new NativeThreadStream for writing events to. </summary>
+        /// <typeparam name="T"> The type of event. </typeparam>
+        /// <returns> A <see cref="NativeThreadStream.Writer"/> you can write events to. </returns>
+        /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
+        public NativeThreadStream.Writer CreateEventWriter<T>()
+            where T : unmanaged
+        {
+            var container = this.GetOrCreateEventContainer<T>();
+            return container.CreateEventStream();
+        }
+
+        /// <summary> Adds the specified JobHandle to the events list of producer dependency handles. </summary>
+        /// <param name="handle"> The job handle to add. </param>
+        /// <typeparam name="T"> The type of event to associate the handle to. </typeparam>
+        /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
+        public void AddJobHandleForProducer<T>(JobHandle handle)
+            where T : unmanaged
+        {
+            this.GetOrCreateEventContainer<T>().AddJobHandleForProducer(handle);
+        }
+
+        /// <summary> Checks if an event has any readers. </summary>
+        /// <typeparam name="T"> The event type to check. </typeparam>
+        /// <returns> True if there are readers for the event. </returns>
+        public bool HasEventReaders<T>()
+            where T : unmanaged
+        {
+            return this.GetEventReadersCount<T>() != 0;
+        }
+
+        /// <summary> Checks if an event has any readers. </summary>
+        /// <typeparam name="T"> The event type to check. </typeparam>
+        /// <returns> True if there are readers for the event. </returns>
+        public int GetEventReadersCount<T>()
+            where T : unmanaged
+        {
+            var container = this.GetEventContainer<T>();
+            return container?.GetReadersCount() ?? 0;
+        }
+
+        /// <summary> Get the NativeThreadStream for reading events from. </summary>
+        /// <param name="handle"> Existing dependencies for this event. </param>
+        /// <param name="readers"> A collection of <see cref="NativeThreadStream.Reader"/> you can read events from. </param>
+        /// <typeparam name="T"> The type of event. </typeparam>
+        /// <returns> The updated dependency handle. </returns>
+        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<NativeThreadStream.Reader> readers)
+            where T : unmanaged
+        {
+            var container = this.GetOrCreateEventContainer<T>();
+            readers = container.GetReaders();
+            return JobHandle.CombineDependencies(container.ProducerHandle, handle);
+        }
+
+        /// <summary> Adds the specified JobHandle to the events list of consumer dependency handles. </summary>
+        /// <param name="handle"> The job handle to add. </param>
+        /// <typeparam name="T"> The type of event to associate the handle to. </typeparam>
+        public void AddJobHandleForConsumer<T>(JobHandle handle)
+            where T : unmanaged
+        {
+            this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
+        }
+
+        /// <summary> A collection of extension for events that avoid having to include long generics in their calls. </summary>
+        /// <typeparam name="T"> The event type. </typeparam>
+        /// <returns> The extensions container. </returns>
+        public Extensions<T> Ex<T>()
+            where T : unmanaged
+        {
+            return new Extensions<T>(this);
+        }
+
+        /// <summary> Adds readers from other event systems. </summary>
+        /// <param name="type"> The type of event. </param>
+        /// <param name="externalStreams"> Collection of event streams. </param>
+        /// <param name="handle"> The dependency for the streams. </param>
+        internal void AddExternalReaders(Type type, IReadOnlyList<NativeThreadStream> externalStreams, JobHandle handle)
+        {
+            var container = this.GetOrCreateEventContainer(type);
+            container.AddReaders(externalStreams);
+
+            // updates producer handle because this is what consumers depend on
+            container.AddJobHandleForProducerUnsafe(handle);
+        }
+
+        /// <inheritdoc/>
+        protected override void OnCreate()
+        {
+            var world = this.GetStreamKey();
+            this.streamBus = StreamBus.GetInstance(world);
+            this.streamBus.Subscribe(this);
+        }
 
         /// <inheritdoc />
-        protected sealed override void OnCreate()
+        protected override void OnDestroy()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
+            var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
 
-            this.Create();
+            for (var i = 0; i < this.containers.Count; i++)
+            {
+                var container = this.containers[i];
+
+                // Need both handles because might have no writers or readers in this specific systems
+                handles[i] = JobHandle.CombineDependencies(container.ConsumerHandle, container.ProducerHandle, container.DeferredProducerHandle);
+                handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+
+                container.Dispose();
+            }
+
+            JobHandle.CombineDependencies(handles).Complete();
+            handles.Dispose();
+
+            this.streamBus.Unsubscribe(this);
+            this.containers.Clear();
+            this.types.Clear();
         }
 
-        /// <summary> <see cref="OnCreate"/>. </summary>
-        protected virtual void Create()
+        /// <inheritdoc/>
+        protected override void OnUpdate()
         {
-        }
-
-        /// <inheritdoc />
-        protected sealed override void OnDestroy()
-        {
-            this.Destroy();
-        }
-
-        /// <summary> <see cref="OnDestroy"/>. </summary>
-        protected virtual void Destroy()
-        {
-        }
-
-        /// <inheritdoc />
-        protected sealed override void OnUpdate()
-        {
-            this.BeforeEvent();
-
-            if (!this.eventSystem.HasEventReaders<T>())
+            if (this.containers.Count == 0)
             {
                 return;
             }
 
-            this.Dependency = this.eventSystem.GetEventReaders<T>(this.Dependency, out IReadOnlyList<NativeThreadStream.Reader> readers);
-            this.Dependency.Complete();
+            var handles = new NativeArray<JobHandle>(this.containers.Count, Allocator.TempJob);
 
-            try
+            for (var i = 0; i < this.containers.Count; i++)
             {
-                foreach (var t in readers)
-                {
-                    var reader = t;
+                var container = this.containers[i];
 
-                    for (var foreachIndex = 0; foreachIndex < reader.ForEachCount; foreachIndex++)
-                    {
-                        var events = reader.BeginForEachIndex(foreachIndex);
-                        this.OnEventStream(ref reader, events);
-                        reader.EndForEachIndex();
-                    }
-                }
+                // Need both handles because might have no writers or readers in this specific systems
+                handles[i] = JobHandle.CombineDependencies(this.Dependency, container.ConsumerHandle, container.ProducerHandle);
+
+                Profiler.BeginSample("ReleaseStreams");
+                handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+                Profiler.EndSample();
+                Profiler.BeginSample("AddStreams");
+                handles[i] = this.streamBus.AddStreams(this, container.Type, container.Streams, handles[i]);
+                Profiler.EndSample();
+
+                container.Update();
             }
-            finally
-            {
-                this.eventSystem.AddJobHandleForConsumer<T>(this.Dependency);
-            }
+
+            this.Dependency = JobHandle.CombineDependencies(handles);
+            handles.Dispose();
         }
 
-        /// <summary> Optional update that can occur before event reading. </summary>
-        protected virtual void BeforeEvent()
+        private string GetStreamKey()
         {
+            switch (this.Mode)
+            {
+                case WorldMode.WorldName:
+                    return this.World.Name;
+                case WorldMode.DefaultWorldName:
+                    return "Default World";
+                case WorldMode.Custom:
+                    return this.CustomKey;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
-        /// <summary> A stream of events. </summary>
-        /// <param name="reader"> The event stream reader. </param>
-        /// <param name="eventCount"> The number of iterations in the stream. </param>
-        protected abstract void OnEventStream(ref NativeThreadStream.Reader reader, int eventCount);
+        private EventContainer GetEventContainer<T>()
+            where T : struct
+        {
+            return this.types.TryGetValue(typeof(T), out var index) ? this.containers[index] : null;
+        }
+
+        private EventContainer GetOrCreateEventContainer<T>()
+            where T : struct
+        {
+            return this.GetOrCreateEventContainer(typeof(T));
+        }
+
+        private EventContainer GetOrCreateEventContainer(Type type)
+        {
+            if (!this.types.TryGetValue(type, out var index))
+            {
+                index = this.types[type] = this.containers.Count;
+                this.containers.Add(new EventContainer(type));
+            }
+
+            return this.containers[index];
+        }
     }
 }
