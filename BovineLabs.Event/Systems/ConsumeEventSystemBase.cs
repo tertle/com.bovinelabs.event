@@ -11,7 +11,7 @@ namespace BovineLabs.Event.Systems
     /// <summary> A base system for working with jobs on the main thread. </summary>
     /// <typeparam name="T"> The job type. </typeparam>
     public abstract class ConsumeEventSystemBase<T> : SystemBase
-        where T : unmanaged
+        where T : struct
     {
         private EventSystem eventSystem;
 

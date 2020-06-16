@@ -13,12 +13,12 @@ namespace BovineLabs.Event.Samples
 
     public class ParallelForProducerSystem : SystemBase
     {
-        private EndSimulationEventSystem eventSystem;
+        private EventSystem eventSystem;
 
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<EndSimulationEventSystem>();
+            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
         }
 
         /// <inheritdoc/>

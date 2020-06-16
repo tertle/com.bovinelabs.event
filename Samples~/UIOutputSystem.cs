@@ -13,16 +13,15 @@ namespace BovineLabs.Event.Samples
     /// The UIOutputSystem.
     /// </summary>
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    [UpdateBefore(typeof(PresentationEventSystem))]
     public class UIOutputSystem : ComponentSystem
     {
         private UIOutput uiOutput;
-        private PresentationEventSystem eventSystem;
+        private EventSystem eventSystem;
 
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<PresentationEventSystem>();
+            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
             this.uiOutput = Object.FindObjectOfType<UIOutput>();
 
             if (this.uiOutput == null)

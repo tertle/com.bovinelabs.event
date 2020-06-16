@@ -16,7 +16,7 @@ namespace BovineLabs.Event.Containers
     /// <typeparam name="T"> The type of the elements in the container. </typeparam>
     [NativeContainer]
     public unsafe struct NativeThreadStream<T> : IDisposable, IEquatable<NativeThreadStream<T>>
-        where T : unmanaged
+        where T : struct
     {
         private UnsafeThreadStream stream;
 
