@@ -4,8 +4,8 @@
 
 namespace BovineLabs.Event.Samples
 {
+    using BovineLabs.Event.Samples.Events;
     using BovineLabs.Event.Systems;
-    using BovineLabs.Events.Samples.Events;
     using Unity.Entities;
     using UnityEngine;
 
@@ -15,16 +15,16 @@ namespace BovineLabs.Event.Samples
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public class UIOutputSystem : ComponentSystem
     {
-        private UIOutput uiOutput;
+        private UISample uiSample;
         private EventSystem eventSystem;
 
         /// <inheritdoc/>
         protected override void OnCreate()
         {
             this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
-            this.uiOutput = Object.FindObjectOfType<UIOutput>();
+            this.uiSample = Object.FindObjectOfType<UISample>();
 
-            if (this.uiOutput == null)
+            if (this.uiSample == null)
             {
                 this.Disable();
             }
@@ -39,13 +39,13 @@ namespace BovineLabs.Event.Samples
 
         private void Disable()
         {
-            Debug.Log("UIOutput not found in scene. Load Scenes/SampleScene");
+            Debug.Log("UISample not found in scene. Load Scenes/SampleScene");
             this.Enabled = false;
         }
 
         private void UpdateFixedEvents()
         {
-            if (this.uiOutput == null)
+            if (this.uiSample == null)
             {
                 this.Disable();
                 return;
@@ -73,7 +73,7 @@ namespace BovineLabs.Event.Samples
                 }
             }
 
-            this.uiOutput.SetFixedUpdate(fixedEvents);
+            this.uiSample.SetFixedUpdate(fixedEvents);
         }
 
         private void UpdateUpdateEvents()
@@ -100,7 +100,7 @@ namespace BovineLabs.Event.Samples
                 }
             }
 
-            this.uiOutput.SetUpdate(events);
+            this.uiSample.SetUpdate(events);
         }
     }
 }

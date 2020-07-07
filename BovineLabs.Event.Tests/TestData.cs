@@ -15,7 +15,7 @@ namespace BovineLabs.Event.Tests
     public struct ProducerJob : IJobFor
     {
         /// <summary> The event stream writer. </summary>
-        public NativeThreadStream.Writer Events;
+        public NativeEventStream.Writer Events;
 
         /// <summary> Number of events to write. </summary>
         public int EventCount;
@@ -34,7 +34,7 @@ namespace BovineLabs.Event.Tests
     public struct ConsumerJob : IJobFor
     {
         /// <summary> The event stream reader. </summary>
-        public NativeThreadStream.Reader Reader;
+        public NativeEventStream.Reader Reader;
 
         /// <inheritdoc/>
         public void Execute(int index)

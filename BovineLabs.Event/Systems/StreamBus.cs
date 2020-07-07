@@ -22,7 +22,7 @@ namespace BovineLabs.Event.Systems
         private static readonly Dictionary<string, StreamBus> Instances = new Dictionary<string, StreamBus>();
 
         private readonly List<EventSystemBase> subscribers = new List<EventSystemBase>();
-        private readonly Dictionary<NativeThreadStream, StreamHandles> streams = new Dictionary<NativeThreadStream, StreamHandles>();
+        private readonly Dictionary<NativeEventStream, StreamHandles> streams = new Dictionary<NativeEventStream, StreamHandles>();
         private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
         private StreamBus()
@@ -79,7 +79,7 @@ namespace BovineLabs.Event.Systems
         /// <param name="consumerHandle"> The dependency handle for these streams. </param>
         /// <returns> The new dependency handle. </returns>
         /// <exception cref="ArgumentException"> Thrown  if this owner is not subscribed. </exception>
-        internal JobHandle AddStreams(EventSystemBase owner, Type type, IReadOnlyList<NativeThreadStream> newStreams, JobHandle consumerHandle)
+        internal JobHandle AddStreams(EventSystemBase owner, Type type, IReadOnlyList<NativeEventStream> newStreams, JobHandle consumerHandle)
         {
             if (!this.subscribers.Contains(owner))
             {
@@ -98,8 +98,9 @@ namespace BovineLabs.Event.Systems
 
                 for (var index = 0; index < newStreams.Count; index++)
                 {
-                    var stream = newStreams[index];
-                    handle = JobHandle.CombineDependencies(handle, stream.Dispose(consumerHandle));
+                    // var stream = newStreams[index];
+                    // handle = JobHandle.CombineDependencies(handle, stream.Dispose(consumerHandle));
+                    newStreams[index].Dispose(consumerHandle);
                 }
 
                 return handle;
@@ -147,7 +148,7 @@ namespace BovineLabs.Event.Systems
         /// <param name="streamsToRelease"> The collection of streams to be released. </param>
         /// <param name="inputHandle"> The dependency handle. </param>
         /// <returns> New dependency handle. </returns>
-        internal JobHandle ReleaseStreams(EventSystemBase owner, IReadOnlyList<NativeThreadStream> streamsToRelease, JobHandle inputHandle)
+        internal JobHandle ReleaseStreams(EventSystemBase owner, IReadOnlyList<NativeEventStream> streamsToRelease, JobHandle inputHandle)
         {
             JobHandle outputHandle = inputHandle;
 
@@ -171,7 +172,7 @@ namespace BovineLabs.Event.Systems
                     this.pool.Return(handles);
                     this.streams.Remove(stream);
 
-                    handle = stream.Dispose(handle);
+                    stream.Dispose(handle);
                 }
                 else
                 {
@@ -184,8 +185,9 @@ namespace BovineLabs.Event.Systems
             return outputHandle;
         }
 
-        [RuntimeInitializeOnLoadMethod]
-        private static void Reset()
+        /// <summary> Clears the instances when entering Play Mode without Domain Reload. </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void CleanupBeforeSceneLoad()
         {
             Instances.Clear();
         }

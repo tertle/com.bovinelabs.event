@@ -24,7 +24,7 @@ namespace BovineLabs.Event.Jobs
         /// <summary> Executes the next event. </summary>
         /// <param name="stream"> The stream. </param>
         /// <param name="index"> The stream index. </param>
-        void Execute(NativeThreadStream.Reader stream, int index);
+        void Execute(NativeEventStream.Reader stream, int index);
     }
 
     /// <summary> Extension methods for <see cref="IJobEventStream{T}"/> . </summary>
@@ -114,9 +114,9 @@ namespace BovineLabs.Event.Jobs
             where TJob : struct, IJobEventStream<T>
             where T : struct
         {
-            /// <summary> The <see cref="NativeThreadStream.Reader"/> . </summary>
+            /// <summary> The <see cref="NativeEventStream.Reader"/> . </summary>
             [ReadOnly]
-            public NativeThreadStream.Reader Readers;
+            public NativeEventStream.Reader Readers;
 
             /// <summary> The job. </summary>
             public TJob JobData;

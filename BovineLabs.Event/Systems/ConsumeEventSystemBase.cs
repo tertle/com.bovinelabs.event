@@ -49,7 +49,7 @@ namespace BovineLabs.Event.Systems
                 return;
             }
 
-            this.Dependency = this.eventSystem.GetEventReaders<T>(this.Dependency, out IReadOnlyList<NativeThreadStream.Reader> readers);
+            this.Dependency = this.eventSystem.GetEventReaders<T>(this.Dependency, out IReadOnlyList<NativeEventStream.Reader> readers);
             this.Dependency.Complete();
 
             try
@@ -80,6 +80,6 @@ namespace BovineLabs.Event.Systems
         /// <summary> A stream of events. </summary>
         /// <param name="reader"> The event stream reader. </param>
         /// <param name="eventCount"> The number of iterations in the stream. </param>
-        protected abstract void OnEventStream(ref NativeThreadStream.Reader reader, int eventCount);
+        protected abstract void OnEventStream(ref NativeEventStream.Reader reader, int eventCount);
     }
 }

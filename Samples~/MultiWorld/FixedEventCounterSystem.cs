@@ -5,8 +5,8 @@
 namespace BovineLabs.Event.Samples.MultiWorld
 {
     using BovineLabs.Event.Containers;
+    using BovineLabs.Event.Samples.Events;
     using BovineLabs.Event.Systems;
-    using BovineLabs.Events.Samples.Events;
     using Unity.Burst;
     using Unity.Entities;
     using Unity.Jobs;
@@ -15,20 +15,20 @@ namespace BovineLabs.Event.Samples.MultiWorld
     /// The FixedEventCounterSystem.
     /// </summary>
     [DisableAutoCreation]
-    public class FixedEventCounterSystem : JobComponentSystem
+    public class FixedEventCounterSystem : SystemBase
     {
         private EventSystem eventSystem;
 
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<FixedUpdateEventSystem>();
+            this.eventSystem = this.World.GetExistingSystem<FixedUpdateEventSystem>();
         }
 
         /// <inheritdoc/>
-        protected override JobHandle OnUpdate(JobHandle handle)
+        protected override void OnUpdate()
         {
-            handle = this.eventSystem.GetEventReaders<TestEventEmpty>(handle, out var readers);
+            this.Dependency = this.eventSystem.GetEventReaders<TestEventEmpty>(this.Dependency, out var readers);
 
             for (var index = 0; index < readers.Count; index++)
             {
@@ -36,27 +36,25 @@ namespace BovineLabs.Event.Samples.MultiWorld
 
                 var eventCount = this.eventSystem.CreateEventWriter<FixedUpdateCountEvent>();
 
-                handle = new CountJob
+                this.Dependency = new CountJob
                     {
                         Stream = reader,
                         EventCount = eventCount,
                     }
-                    .Schedule(reader.ForEachCount, 8, handle);
+                    .Schedule(reader.ForEachCount, 8, this.Dependency);
 
-                this.eventSystem.AddJobHandleForProducer<FixedUpdateCountEvent>(handle);
+                this.eventSystem.AddJobHandleForProducer<FixedUpdateCountEvent>(this.Dependency);
             }
 
-            this.eventSystem.AddJobHandleForConsumer<TestEventEmpty>(handle);
-
-            return handle;
+            this.eventSystem.AddJobHandleForConsumer<TestEventEmpty>(this.Dependency);
         }
 
         // Outside of generic system so it burst compiles.
         [BurstCompile]
         public struct CountJob : IJobParallelFor
         {
-            public NativeThreadStream.Writer EventCount;
-            public NativeThreadStream.Reader Stream;
+            public NativeEventStream.Writer EventCount;
+            public NativeEventStream.Reader Stream;
 
             public void Execute(int index)
             {

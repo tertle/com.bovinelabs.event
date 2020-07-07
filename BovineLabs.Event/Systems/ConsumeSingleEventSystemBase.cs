@@ -16,7 +16,7 @@ namespace BovineLabs.Event.Systems
         protected abstract void OnEvent(T e);
 
         /// <inheritdoc/>
-        protected sealed override void OnEventStream(ref NativeThreadStream.Reader reader, int eventCount)
+        protected sealed override void OnEventStream(ref NativeEventStream.Reader reader, int eventCount)
         {
             for (var j = 0; j < eventCount; j++)
             {

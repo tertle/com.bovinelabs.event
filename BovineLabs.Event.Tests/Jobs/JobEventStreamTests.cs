@@ -80,7 +80,7 @@ namespace BovineLabs.Event.Tests.Jobs
             [NativeDisableContainerSafetyRestriction]
             public NativeQueue<int>.ParallelWriter Counter;
 
-            public void Execute(NativeThreadStream.Reader stream, int index)
+            public void Execute(NativeEventStream.Reader stream, int index)
             {
                 this.Counter.Enqueue(stream.ForEachCount);
             }
