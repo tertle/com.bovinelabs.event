@@ -1,7 +1,6 @@
-﻿// <copyright file="NativeThreadStreamPerformanceTests.cs" company="BovineLabs">
+﻿// <copyright file="NativeEventStreamPerformanceTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
-#if PERFORMANCE_TESTING
 namespace BovineLabs.Event.PerformanceTests.Containers
 {
     using BovineLabs.Event.Containers;
@@ -14,24 +13,24 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using Unity.Jobs;
     using Unity.PerformanceTesting;
 
-    /// <summary> Performance tests for <see cref="NativeThreadStream"/>. </summary>
+    /// <summary> Performance tests for <see cref="NativeEventStream"/>. </summary>
     /// <remarks><para> Includes comparison tests for <see cref="NativeQueue{T}"/> and <see cref="NativeStream"/>. </para></remarks>
-    internal class NativeThreadStreamPerformanceTests : ECSTestsFixture
+    internal class NativeEventStreamPerformanceTests : ECSTestsFixture
     {
-        /// <summary> Tests performance of writing entities in a <see cref="NativeThreadStream"/> in an Entities.ForEach. </summary>
+        /// <summary> Tests performance of writing entities in a <see cref="NativeEventStream"/> in an Entities.ForEach. </summary>
         /// <param name="entities"> Number of entities to write. </param>
         /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
-        public void WriteEntitiesForEachNativeThreadStream(
+        public void WriteEntitiesForEachNativeEventStream(
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
             var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
-            NativeThreadStream<int> stream = default;
+            NativeEventStream stream = default;
 
-            Measure.Method(() => system.NativeThreadStreamTest(stream))
-                .SetUp(() => { stream = new NativeThreadStream<int>(Allocator.TempJob); })
+            Measure.Method(() => system.NativeEventStreamTest(stream))
+                .SetUp(() => { stream = new NativeEventStream(Allocator.TempJob); })
                 .CleanUp(() => stream.Dispose())
                 .Run();
         }
@@ -72,22 +71,22 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                    .Run();
         }
 
-        /// <summary> Tests performance of reading entities parallel in a <see cref="NativeThreadStream"/>. </summary>
+        /// <summary> Tests performance of reading entities parallel in a <see cref="NativeEventStream"/>. </summary>
         /// <param name="entities"> Number of entities to write. </param>
         /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
-        public void ReadParallelNativeThreadStream(
+        public void ReadParallelNativeEventStream(
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
             var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
-            NativeThreadStream<int> stream = default;
+            NativeEventStream stream = default;
             NativeQueue<int> output = default;
 
             Measure.Method(() =>
                 {
-                    new ReadNativeThreadStreamJob
+                    new ReadNativeEventStreamJob
                         {
                             Reader = stream.AsReader(),
                             Output = output.AsParallelWriter(),
@@ -98,8 +97,8 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 })
                 .SetUp(() =>
                 {
-                    stream = new NativeThreadStream<int>(Allocator.TempJob);
-                    system.NativeThreadStreamTest(stream);
+                    stream = new NativeEventStream(Allocator.TempJob);
+                    system.NativeEventStreamTest(stream);
 
                     output = new NativeQueue<int>(Allocator.TempJob);
                 })
@@ -190,10 +189,10 @@ namespace BovineLabs.Event.PerformanceTests.Containers
         }
 
         [BurstCompile(CompileSynchronously = true)]
-        private struct ReadNativeThreadStreamJob : IJobFor
+        private struct ReadNativeEventStreamJob : IJobFor
         {
             [ReadOnly]
-            public NativeThreadStream<int>.Reader Reader;
+            public NativeEventStream.Reader Reader;
 
             public NativeQueue<int>.ParallelWriter Output;
 
@@ -204,7 +203,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
 
                 for (var i = 0; i < foreachCount; i++)
                 {
-                    this.Output.Enqueue(this.Reader.Read());
+                    this.Output.Enqueue(this.Reader.Read<int>());
                 }
 
                 this.Reader.EndForEachIndex();
@@ -260,7 +259,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 this.archetypes = archetypes;
             }
 
-            public void NativeThreadStreamTest(NativeThreadStream<int> stream)
+            public void NativeEventStreamTest(NativeEventStream stream)
             {
                 var writer = stream.AsWriter();
 
@@ -333,4 +332,3 @@ namespace BovineLabs.Event.PerformanceTests.Containers
         }
     }
 }
-#endif

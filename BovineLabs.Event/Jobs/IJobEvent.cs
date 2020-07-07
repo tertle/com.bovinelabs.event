@@ -78,9 +78,9 @@ namespace BovineLabs.Event.Jobs
             where TJob : struct, IJobEvent<T>
             where T : struct
         {
-            /// <summary> The <see cref="NativeThreadStream.Reader"/> . </summary>
+            /// <summary> The <see cref="NativeEventStream.Reader"/> . </summary>
             [ReadOnly]
-            public NativeThreadStream.Reader Reader;
+            public NativeEventStream.Reader Reader;
 
             /// <summary> The job. </summary>
             public TJob JobData;

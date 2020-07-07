@@ -10,6 +10,7 @@ namespace BovineLabs.Event.Systems
     using Unity.Collections;
     using Unity.Entities;
     using Unity.Jobs;
+    using UnityEngine.Assertions;
     using UnityEngine.Profiling;
 
     /// <summary>
@@ -37,6 +38,9 @@ namespace BovineLabs.Event.Systems
             Custom,
         }
 
+        /// <summary> Gets or sets a value indicating whether the persistent allocator should be used in stead of TempJob. </summary>
+        public static bool UsePersistentAllocator { get; set; } = false;
+
         /// <summary> Gets the <see cref="WorldMode"/> of the system. </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual WorldMode Mode => WorldMode.WorldName;
@@ -45,15 +49,29 @@ namespace BovineLabs.Event.Systems
         // ReSharper disable once VirtualMemberNeverOverridden.Global
         protected virtual string CustomKey => throw new NotImplementedException("CustomKey must be implemented if Mode equals WorldMode.Custom");
 
-        /// <summary> Create a new NativeThreadStream for writing events to. </summary>
+        /// <summary> Create a new NativeEventStream in thread mode for writing events to. </summary>
         /// <typeparam name="T"> The type of event. </typeparam>
-        /// <returns> A <see cref="NativeThreadStream.Writer"/> you can write events to. </returns>
+        /// <returns> A <see cref="NativeEventStream.Writer"/> you can write events to. </returns>
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
-        public NativeThreadStream.Writer CreateEventWriter<T>()
+        public NativeEventStream.Writer CreateEventWriter<T>()
             where T : struct
         {
             var container = this.GetOrCreateEventContainer<T>();
-            return container.CreateEventStream();
+            return container.CreateEventStream(-1);
+        }
+
+        /// <summary> Create a new NativeEventStream for writing events to . </summary>
+        /// <param name="foreachCount"> The foreach count. </param>
+        /// <typeparam name="T"> The type of event. </typeparam>
+        /// <returns> A <see cref="NativeEventStream.Writer"/> you can write events to. </returns>
+        /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
+        public NativeEventStream.Writer CreateEventWriter<T>(int foreachCount)
+            where T : struct
+        {
+            Assert.IsFalse(foreachCount < 0);
+
+            var container = this.GetOrCreateEventContainer<T>();
+            return container.CreateEventStream(foreachCount);
         }
 
         /// <summary> Adds the specified JobHandle to the events list of producer dependency handles. </summary>
@@ -85,12 +103,12 @@ namespace BovineLabs.Event.Systems
             return container?.GetReadersCount() ?? 0;
         }
 
-        /// <summary> Get the NativeThreadStream for reading events from. </summary>
+        /// <summary> Get the NativeEventStream for reading events from. </summary>
         /// <param name="handle"> Existing dependencies for this event. </param>
-        /// <param name="readers"> A collection of <see cref="NativeThreadStream.Reader"/> you can read events from. </param>
+        /// <param name="readers"> A collection of <see cref="NativeEventStream.Reader"/> you can read events from. </param>
         /// <typeparam name="T"> The type of event. </typeparam>
         /// <returns> The updated dependency handle. </returns>
-        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<NativeThreadStream.Reader> readers)
+        public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<NativeEventStream.Reader> readers)
             where T : struct
         {
             var container = this.GetOrCreateEventContainer<T>();
@@ -120,7 +138,7 @@ namespace BovineLabs.Event.Systems
         /// <param name="type"> The type of event. </param>
         /// <param name="externalStreams"> Collection of event streams. </param>
         /// <param name="handle"> The dependency for the streams. </param>
-        internal void AddExternalReaders(Type type, IReadOnlyList<NativeThreadStream> externalStreams, JobHandle handle)
+        internal void AddExternalReaders(Type type, IReadOnlyList<NativeEventStream> externalStreams, JobHandle handle)
         {
             var container = this.GetOrCreateEventContainer(type);
             container.AddReaders(externalStreams);
@@ -149,6 +167,7 @@ namespace BovineLabs.Event.Systems
                 // Need both handles because might have no writers or readers in this specific systems
                 handles[i] = JobHandle.CombineDependencies(container.ConsumerHandle, container.ProducerHandle, container.DeferredProducerHandle);
                 handles[i] = this.streamBus.ReleaseStreams(this, container.ExternalReaders, handles[i]);
+                handles[i] = this.streamBus.ReleaseStreams(this, container.DeferredExternalReaders, handles[i]);
 
                 container.Dispose();
             }
@@ -225,7 +244,7 @@ namespace BovineLabs.Event.Systems
             if (!this.types.TryGetValue(type, out var index))
             {
                 index = this.types[type] = this.containers.Count;
-                this.containers.Add(new EventContainer(type));
+                this.containers.Add(new EventContainer(type, UsePersistentAllocator));
             }
 
             return this.containers[index];

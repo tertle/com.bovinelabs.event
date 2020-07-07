@@ -2,7 +2,7 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-namespace BovineLabs.Events.Samples.Events
+namespace BovineLabs.Event.Samples.Events
 {
     /// <summary>
     /// The FixedUpdateCountEvent.

@@ -76,7 +76,7 @@ namespace BovineLabs.Event.Systems
                 [NativeDisableContainerSafetyRestriction]
                 public NativeArray<int> Counter;
 
-                public void Execute(NativeThreadStream.Reader reader, int index)
+                public void Execute(NativeEventStream.Reader reader, int index)
                 {
                     this.Counter[index] = reader.ComputeItemCount();
                 }

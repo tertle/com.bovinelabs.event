@@ -1,4 +1,4 @@
-﻿// <copyright file="UnsafeThreadStreamBlockData.cs" company="BovineLabs">
+﻿// <copyright file="UnsafeEventStreamBlockData.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -10,21 +10,22 @@ namespace BovineLabs.Event.Containers
     using UnityEngine.Assertions;
 
     [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamBlockData.")]
-    internal unsafe struct UnsafeThreadStreamBlockData
+    internal unsafe struct UnsafeEventStreamBlockData
     {
         internal const int AllocationSize = 4 * 1024;
         internal Allocator Allocator;
 
-        internal UnsafeThreadStreamBlock** Blocks;
+        internal UnsafeEventStreamBlock** Blocks;
         internal int BlockCount;
 
-        internal UnsafeThreadStreamRange* Ranges;
+        internal UnsafeEventStreamRange* Ranges;
+        internal int RangeCount;
 
-        internal UnsafeThreadStreamBlock* Allocate(UnsafeThreadStreamBlock* oldBlock, int threadIndex)
+        internal UnsafeEventStreamBlock* Allocate(UnsafeEventStreamBlock* oldBlock, int threadIndex)
         {
             Assert.IsTrue(threadIndex < this.BlockCount && threadIndex >= 0);
 
-            var block = (UnsafeThreadStreamBlock*)UnsafeUtility.Malloc(AllocationSize, 16, this.Allocator);
+            var block = (UnsafeEventStreamBlock*)UnsafeUtility.Malloc(AllocationSize, 16, this.Allocator);
             block->Next = null;
 
             if (oldBlock == null)
@@ -37,7 +38,7 @@ namespace BovineLabs.Event.Containers
                 {
                     // Walk the linked list and append our new block to the end.
                     // Otherwise, we leak memory.
-                    UnsafeThreadStreamBlock* head = this.Blocks[threadIndex];
+                    UnsafeEventStreamBlock* head = this.Blocks[threadIndex];
                     while (head->Next != null)
                     {
                         head = head->Next;
@@ -56,18 +57,18 @@ namespace BovineLabs.Event.Containers
     }
 
     [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamBlock.")]
-    internal struct UnsafeThreadStreamBlock
+    internal struct UnsafeEventStreamBlock
     {
-        internal unsafe UnsafeThreadStreamBlock* Next;
+        internal unsafe UnsafeEventStreamBlock* Next;
 #pragma warning disable 649
         internal unsafe fixed byte Data[1];
 #pragma warning restore 649
     }
 
     [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamRange.")]
-    internal unsafe struct UnsafeThreadStreamRange
+    internal unsafe struct UnsafeEventStreamRange
     {
-        internal UnsafeThreadStreamBlock* Block;
+        internal UnsafeEventStreamBlock* Block;
         internal int OffsetInFirstBlock;
         internal int ElementCount;
 
@@ -75,8 +76,20 @@ namespace BovineLabs.Event.Containers
         internal int LastOffset;
         internal int NumberOfBlocks;
 
-        internal UnsafeThreadStreamBlock* CurrentBlock;
-        internal byte* CurrentPtr;
-        internal byte* CurrentBlockEnd;
+        // internal UnsafeEventStreamBlock* CurrentBlock;
+        // internal byte* CurrentPtr;
+        // internal byte* CurrentBlockEnd;
     }
+
+    // [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamRange.")]
+    // internal unsafe struct UnsafeEventThreadRange
+    // {
+    //     internal UnsafeEventStreamBlock* CurrentBlock;
+    //     internal byte* CurrentPtr;
+    //     internal byte* CurrentBlockEnd;
+    //     internal UnsafeEventStreamBlock* FirstBlock;
+    //     internal int ElementCount;
+    //     internal int FirstOffset;
+    //     internal int NumberOfBlocks;
+    // }
 }

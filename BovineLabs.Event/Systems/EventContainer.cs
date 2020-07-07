@@ -13,7 +13,7 @@ namespace BovineLabs.Event.Systems
     /// <summary> The container that holds the actual events of each type. </summary>
     internal sealed class EventContainer : IDisposable
     {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private const string ProducerException =
             "CreateEventWriter must always be balanced by a AddJobHandleForProducer call";
 
@@ -23,17 +23,19 @@ namespace BovineLabs.Event.Systems
         private const string ReadModeRequired = "Can only be called in read mode.";
 #endif
 
-        private readonly List<NativeThreadStream> externalReaders =
-            new List<NativeThreadStream>();
+        private readonly bool usePersistentAllocator;
 
-        private readonly List<NativeThreadStream> deferredExternalReaders =
-            new List<NativeThreadStream>();
+        private readonly List<NativeEventStream> externalReaders =
+            new List<NativeEventStream>();
 
-        private readonly List<NativeThreadStream.Reader> readers =
-            new List<NativeThreadStream.Reader>();
+        private readonly List<NativeEventStream> deferredExternalReaders =
+            new List<NativeEventStream>();
 
-        private readonly List<NativeThreadStream> deferredStreams =
-            new List<NativeThreadStream>();
+        private readonly List<NativeEventStream.Reader> readers =
+            new List<NativeEventStream.Reader>();
+
+        private readonly List<NativeEventStream> deferredStreams =
+            new List<NativeEventStream>();
 
         private bool isReadMode;
 
@@ -44,8 +46,10 @@ namespace BovineLabs.Event.Systems
 
         /// <summary> Initializes a new instance of the <see cref="EventContainer"/> class. </summary>
         /// <param name="type"> The event type of this container. </param>
-        public EventContainer(Type type)
+        /// <param name="usePersistentAllocator"> Should the container use a persistent container instead of TempJob. </param>
+        public EventContainer(Type type, bool usePersistentAllocator)
         {
+            this.usePersistentAllocator = usePersistentAllocator;
             this.Type = type;
         }
 
@@ -62,15 +66,19 @@ namespace BovineLabs.Event.Systems
         public Type Type { get; }
 
         /// <summary> Gets the list of streams. </summary>
-        public List<NativeThreadStream> Streams { get; } = new List<NativeThreadStream>();
+        public List<NativeEventStream> Streams { get; } = new List<NativeEventStream>();
 
         /// <summary> Gets the list of external readers. </summary>
-        public List<NativeThreadStream> ExternalReaders => this.externalReaders;
+        public List<NativeEventStream> ExternalReaders => this.externalReaders;
+
+        /// <summary> Gets the list of external readers. </summary>
+        public List<NativeEventStream> DeferredExternalReaders => this.deferredExternalReaders;
 
         /// <summary> Create a new stream for the events. </summary>
-        /// <returns> The <see cref="NativeThreadStream.Writer"/> . </returns>
+        /// <param name="foreachCount"> The foreach count. A negative value will make it a thread stream. </param>
+        /// <returns> The <see cref="NativeEventStream.Writer"/> . </returns>
         /// <exception cref="InvalidOperationException"> Throw if previous call not closed or if in read mode. </exception>
-        public NativeThreadStream.Writer CreateEventStream()
+        public NativeEventStream.Writer CreateEventStream(int foreachCount)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.producerSafety)
@@ -81,7 +89,9 @@ namespace BovineLabs.Event.Systems
             this.producerSafety = true;
 #endif
 
-            var stream = new NativeThreadStream(Allocator.TempJob);
+            var allocator = this.usePersistentAllocator ? Allocator.Persistent : Allocator.TempJob;
+
+            var stream = foreachCount < 0 ? new NativeEventStream(allocator) : new NativeEventStream(foreachCount, allocator);
 
             if (this.isReadMode)
             {
@@ -148,7 +158,7 @@ namespace BovineLabs.Event.Systems
 
         /// <summary> Gets the collection of readers. </summary>
         /// <returns> Returns the reader. </returns>
-        public IReadOnlyList<NativeThreadStream.Reader> GetReaders()
+        public IReadOnlyList<NativeEventStream.Reader> GetReaders()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.consumerSafety)
@@ -183,7 +193,7 @@ namespace BovineLabs.Event.Systems
         /// <summary> Add readers to the container. Requires read mode.  </summary>
         /// <param name="externalStreams"> The readers to be added. </param>
         /// <exception cref="InvalidOperationException"> Throw if not in read mode. </exception>
-        public void AddReaders(IEnumerable<NativeThreadStream> externalStreams)
+        public void AddReaders(IEnumerable<NativeEventStream> externalStreams)
         {
             if (this.isReadMode)
             {
@@ -209,7 +219,7 @@ namespace BovineLabs.Event.Systems
             this.Streams.AddRange(this.deferredStreams);
             this.deferredStreams.Clear();
 
-            this.deferredStreams.AddRange(this.deferredExternalReaders);
+            this.externalReaders.AddRange(this.deferredExternalReaders);
             this.deferredExternalReaders.Clear();
 
             // Reset handles
