@@ -66,7 +66,7 @@ Reader is the same regardless of writing mode
 IJobEvent is the easiest way to read back events when no extra data is being streamed.
 To create a job just implement the IJobEvent<T> interface.
 
-#### Job implementation
+** Job **
 ```csharp
 [BurstCompile]
 private struct EventJob : IJobEvent<YourEvent>
@@ -80,7 +80,7 @@ private struct EventJob : IJobEvent<YourEvent>
 }
 ```
 
-#### Scheduling
+** Scheduling **
 ```csharp
 	var eventSystem = this.World.GetOrCreateSystem<EventSystem>();
 
