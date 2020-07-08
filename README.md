@@ -66,7 +66,7 @@ Reader is the same regardless of writing mode
 IJobEvent is the easiest way to read back events when no extra data is being streamed.
 To create a job just implement the IJobEvent<T> interface.
 
-** Job **
+**Job**
 ```csharp
 [BurstCompile]
 private struct EventJob : IJobEvent<YourEvent>
@@ -80,15 +80,15 @@ private struct EventJob : IJobEvent<YourEvent>
 }
 ```
 
-** Scheduling **
+**Scheduling**
 ```csharp
-	var eventSystem = this.World.GetOrCreateSystem<EventSystem>();
+var eventSystem = this.World.GetOrCreateSystem<EventSystem>();
 
-	this.Dependency = new EventJob
-	{
-		// assign job fields
-	}
-	.Schedule<EventJob, YourEvent>(eventSystem);
+this.Dependency = new EventJob
+{
+	// assign job fields
+}
+.Schedule<EventJob, YourEvent>(eventSystem);
 ```
 
 Each reader will be schedule to be read one after the other. The reading process itself is done in parallel.
