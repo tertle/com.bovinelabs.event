@@ -155,7 +155,7 @@ public class MyEventSystem : ConsumeEventSystemBase<MyEvent>
 // TODO
 
 ```csharp
-this.Dependency = this.eventSystem.GetEventReaders<T>(this.Dependency, out IReadOnlyList<NativeEventStream.Reader> readers);`
+this.Dependency = this.eventSystem.GetEventReaders<T>(this.Dependency, out IReadOnlyList<NativeEventStream.Reader> readers);
 
 this.eventSystem.AddJobHandleForConsumer<T>(this.Dependency);
 ```
