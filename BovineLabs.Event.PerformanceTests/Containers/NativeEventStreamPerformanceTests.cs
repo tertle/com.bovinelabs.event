@@ -12,6 +12,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.PerformanceTesting;
+    using UnityEngine;
 
     /// <summary> Performance tests for <see cref="NativeEventStream"/>. </summary>
     /// <remarks><para> Includes comparison tests for <see cref="NativeQueue{T}"/> and <see cref="NativeStream"/>. </para></remarks>
@@ -97,10 +98,10 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 })
                 .SetUp(() =>
                 {
-                    stream = new NativeEventStream(Allocator.TempJob);
+                    stream = new NativeEventStream(Allocator.Persistent);
                     system.NativeEventStreamTest(stream);
 
-                    output = new NativeQueue<int>(Allocator.TempJob);
+                    output = new NativeQueue<int>(Allocator.Persistent);
                 })
                 .CleanUp(() =>
                 {
@@ -259,6 +260,8 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 this.archetypes = archetypes;
             }
 
+            private EntityQuery query;
+
             public void NativeEventStreamTest(NativeEventStream stream)
             {
                 var writer = stream.AsWriter();
@@ -267,9 +270,12 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                     .WithAll<TestComponent>()
                     .ForEach((int entityInQueryIndex) => writer.Write(entityInQueryIndex))
                     .WithBurst(synchronousCompilation: true)
+                    .WithStoreEntityQueryInField(ref this.query)
                     .ScheduleParallel();
 
                 this.Dependency.Complete();
+
+                Assert.AreEqual(this.query.CalculateEntityCount(), stream.ComputeItemCount());
             }
 
             public void NativeStreamTest(NativeStream stream)

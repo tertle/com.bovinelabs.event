@@ -19,6 +19,7 @@ namespace BovineLabs.Event.Containers
         internal int BlockCount;
 
         internal UnsafeEventStreamRange* Ranges;
+        internal UnsafeEventThreadRange* ThreadRanges;
         internal int RangeCount;
 
         internal UnsafeEventStreamBlock* Allocate(UnsafeEventStreamBlock* oldBlock, int threadIndex)
@@ -81,15 +82,15 @@ namespace BovineLabs.Event.Containers
         // internal byte* CurrentBlockEnd;
     }
 
-    // [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamRange.")]
-    // internal unsafe struct UnsafeEventThreadRange
-    // {
-    //     internal UnsafeEventStreamBlock* CurrentBlock;
-    //     internal byte* CurrentPtr;
-    //     internal byte* CurrentBlockEnd;
-    //     internal UnsafeEventStreamBlock* FirstBlock;
-    //     internal int ElementCount;
-    //     internal int FirstOffset;
-    //     internal int NumberOfBlocks;
-    // }
+    [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamRange.")]
+    internal unsafe struct UnsafeEventThreadRange
+    {
+        internal UnsafeEventStreamBlock* CurrentBlock;
+        internal byte* CurrentPtr;
+        internal byte* CurrentBlockEnd;
+        internal int ElementCount;
+        internal UnsafeEventStreamBlock* FirstBlock;
+        internal int FirstOffset;
+        internal int NumberOfBlocks;
+    }
 }
