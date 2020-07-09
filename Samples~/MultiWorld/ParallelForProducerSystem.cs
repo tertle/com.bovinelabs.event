@@ -5,7 +5,6 @@
 namespace BovineLabs.Event.Samples
 {
     using BovineLabs.Event.Containers;
-    using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Samples.Events;
     using BovineLabs.Event.Systems;
     using Unity.Burst;
@@ -18,7 +17,9 @@ namespace BovineLabs.Event.Samples
         private EventSystem eventSystem;
 
         public static int Threads { get; set; } = 128;
+
         public static int Writers { get; set; } = 1;
+
         public static int EventsPerThread { get; set; } = 100000;
 
         /// <inheritdoc/>

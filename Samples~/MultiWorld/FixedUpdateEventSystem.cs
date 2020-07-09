@@ -14,6 +14,9 @@ namespace BovineLabs.Event.Samples.MultiWorld
     public class FixedUpdateEventSystem : EventSystem
     {
         /// <inheritdoc/>
+        public override bool UsePersistentAllocator => true;
+
+        /// <inheritdoc/>
         protected override WorldMode Mode => WorldMode.DefaultWorldName;
     }
 }

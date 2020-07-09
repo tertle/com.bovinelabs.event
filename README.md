@@ -3,7 +3,7 @@
 A high performance solution for safely creating events between systems in Unity ECS.
 
 ## Features
-- High performance, negligible overhead
+- High performance
 - Same frame producing then consuming
 - Share events across worlds
 - Any system order
@@ -16,7 +16,7 @@ A high performance solution for safely creating events between systems in Unity 
 - Safety checks
 - Support streams of data
 
-## Writing
+## Producer (Writing)
 ### Nondetermistic Mode
 Provides convenience and performance at the cost of being nondeterministic 
 
@@ -26,19 +26,16 @@ var writer = this.eventSystem.CreateEventWriter<YourEvent>();
 
 this.Entities.ForEach((Entity entity) =>
 	{
-		writer.Write(new YourEvent());
+		writer.Write(new YourEvent { Entity = entity });
 	})
 	.ScheduleParallel();
 
 this.eventSystem.AddJobHandleForProducer<YourEvent>(this.Dependency);
 ```
 
-**IJobChunk**
-// TODO
-
 ### Deterministic Mode
 Provides determinism by manually handling indexing.
-At high entity count this is quite a bit slower using Entities.ForEach and it is recommended you use IJobChunk for performance.
+At high entity count this is quite a bit slower using Entities.ForEach and it is recommended you use IJobChunk for performance as it allows you to split by ChunkIndex instead of EntityIndex.
 
 **Entities.ForEach**
 ```csharp
@@ -47,7 +44,7 @@ var writer = this.eventSystem.CreateEventWriter<YourEvent>(this.query.CalculateE
 this.Entities.ForEach((Entity entity, int entityInQueryIndex) =>
 	{
 		writer.BeginForEachIndex(entityInQueryIndex);
-		writer.Write(new YourEvent());
+		writer.Write(new YourEvent { Entity = entity });
 	})
 	.WithStoreEntityQueryInField(ref this.query)
 	.ScheduleParallel();
@@ -56,9 +53,43 @@ this.eventSystem.AddJobHandleForProducer<YourEvent>(this.Dependency);
 ```
 
 **IJobChunk**
-// TODO
+```csharp
+[BurstCompile]
+private struct ProducerJob : IJobChunk
+{
+	[ReadOnly]
+	public ArchetypeChunkEntityType EntityTypes;
 
-## Reading
+	public NativeEventStream.Writer Writer;
+
+	public void Execute(ArchetypeChunk chunk, int chunkIndex, int firstEntityIndex)
+	{
+		var entities = chunk.GetNativeArray(this.EntityTypes);
+		this.Writer.BeginForEachIndex(chunkIndex); // chunkIndex
+
+		for (var i = 0; i < chunk.Count; i++)
+		{
+			var entity = entities[i];
+			this.Writer.Write(new YourEvent { Entity = entity });
+		}
+	}
+}
+```
+
+```csharp
+var writer = this.eventSystem.CreateEventWriter<YourEvent>(this.query.CalculateChunkCount()); // ChunkCount
+
+this.Dependency = new ProducerJob
+	{
+		Writer = writer,
+		EntityTypes = this.GetArchetypeChunkEntityType(),
+	}
+	.ScheduleParallel(this.query, this.Dependency);
+
+this.eventSystem.AddJobHandleForProducer<YourEvent>(this.Dependency);
+```
+
+## Consumer (Reading)
 Reader is the same regardless of writing mode
 
 ### IJobEvent
@@ -161,7 +192,24 @@ this.eventSystem.AddJobHandleForConsumer<T>(this.Dependency);
 ```
 
 ### Extensions
+For convenience, a number of common functions and patterns have been included.
+
+To access, use `var extensions = this.World.GetOrCreateSystem<TestEventSystem>().Ex<YourEvent>();`
+
+```csharp
+/// <summary> 
+/// Ensure a NativeHashMap{TKey,TValue} has the capacity to be filled with all events of a specific type. 
+/// </summary>
+public JobHandle EnsureHashMapCapacity<TKey, TValue>(JobHandle handle,NativeHashMap<TKey, TValue> hashMap)
+
+/// <summary> Get the total number of events of a specific type. </summary>
+public JobHandle GetEventCount(JobHandle handle, NativeArray<int> count)
+```
+
+### Other Features
 // TODO
+- **Custom Event Systems**
+- **Cross world events**
 
 ### Benchmarks
 // TODO

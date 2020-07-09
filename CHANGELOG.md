@@ -1,4 +1,11 @@
 # Changelog
+## [1.1.2] - 2020-07-10
+### Added
+- New extension, GetEventCount.
+
+### Changed
+- UsePersistentAllocator is now a instance property.
+
 ## [1.1.1] - 2020-07-09
 ### Fixed
 - Allocation issue causing writes to be lost on rare occasions.
