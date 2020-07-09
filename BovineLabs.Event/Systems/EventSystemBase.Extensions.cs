@@ -45,16 +45,13 @@ namespace BovineLabs.Event.Systems
                 where TKey : struct, IEquatable<TKey>
                 where TValue : struct
             {
-                var count = this.eventSystem.GetEventReadersCount<T>();
+                var readerCount = this.eventSystem.GetEventReadersCount<T>();
 
-                if (count != 0)
+                if (readerCount != 0)
                 {
-                    var counter = new NativeArray<int>(count, Allocator.TempJob);
+                    var counter = new NativeArray<int>(readerCount, Allocator.TempJob);
 
-                    handle = new CountJob
-                        {
-                            Counter = counter,
-                        }
+                    handle = new CountJob { Counter = counter }
                         .ScheduleSimultaneous<CountJob, T>(this.eventSystem, handle);
 
                     handle = new EnsureHashMapCapacityJob<TKey, TValue>
@@ -70,6 +67,29 @@ namespace BovineLabs.Event.Systems
                 return handle;
             }
 
+            /// <summary> Get the total number of events of a specific type. </summary>
+            /// <param name="handle"> Input dependencies. </param>
+            /// <param name="count"> The output array. This must be length of at least 1 and the result will be stored in the index of 0. </param>
+            /// <returns> The dependency handle. </returns>
+            public JobHandle GetEventCount(JobHandle handle, NativeArray<int> count)
+            {
+                var readerCount = this.eventSystem.GetEventReadersCount<T>();
+
+                if (readerCount != 0)
+                {
+                    var counter = new NativeArray<int>(readerCount, Allocator.TempJob);
+
+                    handle = new CountJob { Counter = counter }
+                        .ScheduleSimultaneous<CountJob, T>(this.eventSystem, handle);
+
+                    handle = new SumJob { Counter = counter, Count = count }.Schedule(handle);
+
+                    counter.Dispose(handle);
+                }
+
+                return handle;
+            }
+
             [BurstCompile]
             private struct CountJob : IJobEventStream<T>
             {
@@ -79,6 +99,28 @@ namespace BovineLabs.Event.Systems
                 public void Execute(NativeEventStream.Reader reader, int index)
                 {
                     this.Counter[index] = reader.ComputeItemCount();
+                }
+            }
+
+            [BurstCompile]
+            private struct SumJob : IJob
+            {
+                [ReadOnly]
+                public NativeArray<int> Counter;
+
+                [WriteOnly]
+                public NativeArray<int> Count;
+
+                public void Execute()
+                {
+                    var count = 0;
+
+                    for (var i = 0; i < this.Counter.Length; i++)
+                    {
+                        count += this.Counter[i];
+                    }
+
+                    this.Count[0] = count;
                 }
             }
 

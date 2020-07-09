@@ -3,6 +3,8 @@
 // </copyright>
 // ReSharper disable SA1600
 
+#if BOVINELABS_TESTING_ENABLED
+
 namespace BovineLabs.Event.Tests
 {
     using BovineLabs.Event.Containers;
@@ -83,3 +85,5 @@ namespace BovineLabs.Event.Tests
     {
     }
 }
+
+#endif

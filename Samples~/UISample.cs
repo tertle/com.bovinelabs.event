@@ -83,7 +83,7 @@ namespace BovineLabs.Event.Samples
             fixedGroup.AddSystemToUpdateList(fixedWorld.GetOrCreateSystem<FixedUpdateEventSystem>());
             fixedGroup.AddSystemToUpdateList(fixedWorld.GetOrCreateSystem<FixedEventCounterSystem>());
 
-            EventSystemBase.UsePersistentAllocator = true;
+            World.DefaultGameObjectInjectionWorld.GetOrCreateSystem<EventSystem>().UsePersistentAllocator = true;
         }
 
         private void Update()

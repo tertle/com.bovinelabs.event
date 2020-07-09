@@ -39,7 +39,7 @@ namespace BovineLabs.Event.Systems
         }
 
         /// <summary> Gets or sets a value indicating whether the persistent allocator should be used in stead of TempJob. </summary>
-        public static bool UsePersistentAllocator { get; set; } = false;
+        public virtual bool UsePersistentAllocator { get; set; } = false;
 
         /// <summary> Gets the <see cref="WorldMode"/> of the system. </summary>
         // ReSharper disable once VirtualMemberNeverOverridden.Global
@@ -244,7 +244,7 @@ namespace BovineLabs.Event.Systems
             if (!this.types.TryGetValue(type, out var index))
             {
                 index = this.types[type] = this.containers.Count;
-                this.containers.Add(new EventContainer(type, UsePersistentAllocator));
+                this.containers.Add(new EventContainer(type, this.UsePersistentAllocator));
             }
 
             return this.containers[index];
