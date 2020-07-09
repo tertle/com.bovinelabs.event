@@ -16,6 +16,7 @@
 - Added a persistent allocator option which is useful for when you are using worlds with different update rates to avoid leaks.
 
 ### Changed
+- NativeThreadStream renamed NativeEventStream.
 - Updated stress test sample. New options to tweak the stress test. Will now only run if you load the scene.
 - Writer now needs to be passed by ref to other methods. There is a safety check on here in case you forget.
 
