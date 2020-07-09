@@ -1,5 +1,9 @@
 # Changelog
-## [1.1.0] - 2017-06-20
+## [1.1.1] - 2020-07-09
+### Fixed
+- Allocation issue causing writes to be lost on rare occasions.
+
+## [1.1.0] - 2020-07-07
 ### Added
 - Added deterministic mode. Use CreateEventWriter<T>(forEachCount). Must prefix writes with stream.BeginForEachIndex(index) just like NativeStream (there is no EndForEachIndex though).
 - Added a persistent allocator option which is useful for when you are using worlds with different update rates to avoid leaks.
