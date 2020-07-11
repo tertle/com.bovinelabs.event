@@ -181,7 +181,7 @@ namespace BovineLabs.Event.Tests.Systems
 
             for (var i = 0; i < producers; i++)
             {
-                var writer = es.CreateEventWriter<TestEvent>();
+                var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
                 var handle = new ProducerJob
                     {
@@ -312,7 +312,7 @@ namespace BovineLabs.Event.Tests.Systems
         {
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-            var writer1 = es.CreateEventWriter<TestEvent>();
+            var writer1 = es.CreateEventWriter<TestEvent>(64);
 
             var producer1 = new ProducerJob
                 {
@@ -322,7 +322,7 @@ namespace BovineLabs.Event.Tests.Systems
                 .ScheduleParallel(64, 1, default);
 
             es.AddJobHandleForProducer<TestEvent>(producer1);
-            var writer2 = es.CreateEventWriter<TestEvent>();
+            var writer2 = es.CreateEventWriter<TestEvent>(64);
 
             var producer2 = new ProducerJob
                 {
@@ -336,7 +336,7 @@ namespace BovineLabs.Event.Tests.Systems
             var consumer1 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
             var consumer2 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
 
-            var writer3 = es.CreateEventWriter<TestEvent>();
+            var writer3 = es.CreateEventWriter<TestEvent>(64);
 
             var producer3 = new ProducerJob
                 {
@@ -353,7 +353,7 @@ namespace BovineLabs.Event.Tests.Systems
 
             var consumer4 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
 
-            var writer4 = es.CreateEventWriter<TestEvent>();
+            var writer4 = es.CreateEventWriter<TestEvent>(64);
             var producer4 = new ProducerJob
                 {
                     EventCount = 10,

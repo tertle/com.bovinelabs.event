@@ -119,20 +119,18 @@ this.Dependency = new EventJob
 .Schedule<EventJob, YourEvent>(eventSystem);
 ```
 
-Each reader will be schedule to be read one after the other. The reading process itself is done in parallel.
-If you want each reader to be read in parallel to each other, you can use ScheduleSimultaneous instead.
-`.ScheduleSimultaneous<EventJob, YourEvent>(eventSystem));`
+Each reader will be schedule to be read one after the other. Each foreach index is read in parallel.
 
-### IJobEventStream
+### IJobEventReader
 Sometimes you need a bit more control over reading as the event system allows streaming of any type of data in your events.
-IJobEventStream gives you direct access to the reader allowing you to read it back in whatever format you desire.
+IJobEventReaderForEach gives you direct access to the reader allowing you to read it back in whatever format you desire.
 ```csharp
 [BurstCompile]
-private struct EventStreamJob : IJobEventStream<YourEvent>
+private struct EventStreamJob : IJobEventReaderForEach<YourEvent>
 {
-	public void Execute(NativeEventStream.Reader stream, int index)
+	public void Execute(NativeEventStream.Reader stream, int foreachIndex)
 	{
-		var count = stream.BeginForEachIndex(index);
+		var count = stream.BeginForEachIndex(foreachIndex);
 		
 		for (var i = 0; i < count; i += 4)
 		{
@@ -152,11 +150,38 @@ this.Dependency = new EventStreamJob
 {
 	// assign job fields
 }
-.Schedule<EventStreamJob, YourEvent>(eventSystem);
+.ScheduleParallel<EventStreamJob, YourEvent>(eventSystem);
 ```
 
-It is scheduled the same way and has the same ScheduleSimultaneous option.
-`.ScheduleSimultaneous<EventStreamJob, YourEvent>(eventSystem));`
+### IJobEventReader
+If you need single thread access to the entire reader, you can instead use IJobEventReader.
+```csharp
+[BurstCompile]
+private struct EventStreamJob : IJobEventReader<YourEvent>
+{
+	public void Execute(NativeEventStream.Reader stream, int readerIndex)
+	{
+		for (var foreachIndex = 0; foreachIndex < reader.ForEachCount; foreachIndex++)
+		{
+			var count = reader.BeginForEachIndex(foreachIndex);
+			for (var i = 0; i < count; i++)
+			{
+				var e = reader.Read<YourEvent>();
+			}
+		}
+	}
+}
+```
+
+```csharp
+var eventSystem = this.World.GetOrCreateSystem<EventSystem>();
+
+this.Dependency = new EventStreamJob
+{
+	// assign job fields
+}
+.Schedule<EventStreamJob, YourEvent>(eventSystem);
+```
 
 ### ConsumeSingleEventSystemBase
 If you need to read your events on the main thread you can use ConsumeSingleEventSystemBase.

@@ -25,6 +25,8 @@ namespace BovineLabs.Event.Tests
         /// <inheritdoc/>
         public void Execute(int index)
         {
+            this.Events.BeginForEachIndex(index);
+
             for (var i = 0; i != this.EventCount; i++)
             {
                 this.Events.Write(new TestEvent { Value = i });

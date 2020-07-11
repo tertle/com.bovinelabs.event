@@ -1,10 +1,18 @@
 # Changelog
+## [1.1.3] - 2020-07-11
+### Added
+- New job, IJobEventReaderForEach. This is a parallel job that allows reading of a foreach index per thread.
+
+### Changed
+- IJobEventStream renamed to IJobEventReader.
+- Made ScheduleSimultaneous internal.
+
 ## [1.1.2] - 2020-07-10
 ### Added
 - New extension, GetEventCount.
 
 ### Changed
-- UsePersistentAllocator is now a instance property.
+- UsePersistentAllocator is now an instance property.
 
 ## [1.1.1] - 2020-07-09
 ### Fixed

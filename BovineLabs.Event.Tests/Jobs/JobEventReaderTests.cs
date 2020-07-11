@@ -1,4 +1,4 @@
-﻿// <copyright file="JobEventStreamTests.cs" company="BovineLabs">
+﻿// <copyright file="JobEventReaderTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -17,12 +17,12 @@ namespace BovineLabs.Event.Tests.Jobs
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="JobEventStream"/> . </summary>
-    public class JobEventStreamTests : ECSTestsFixture
+    /// <summary> Tests for <see cref="JobEventReader"/> . </summary>
+    public class JobEventReaderTests : ECSTestsFixture
     {
-        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel false. </summary>
+        /// <summary> Tests scheduling <see cref="JobEventReader.Schedule{TJob,T}"/>. </summary>
         [Test]
-        public void Series()
+        public void Schedule()
         {
             this.ScheduleTest((es, counter) => new TestJob
                 {
@@ -31,9 +31,9 @@ namespace BovineLabs.Event.Tests.Jobs
                 .Schedule<TestJob, TestEvent>(es));
         }
 
-        /// <summary> Tests scheduling <see cref="JobEventStream.Schedule{TJob,T}"/> with parallel true. </summary>
+        /// <summary> Tests scheduling <see cref="JobEventReader.ScheduleSimultaneous{TJob,T}"/>. </summary>
         [Test]
-        public void Simultaneous()
+        public void ScheduleSimultaneous()
         {
             this.ScheduleTest((es, counter) => new TestJob
                 {
@@ -52,7 +52,7 @@ namespace BovineLabs.Event.Tests.Jobs
 
             for (var i = 0; i < producers; i++)
             {
-                var writer = es.CreateEventWriter<TestEvent>();
+                var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
                 var handle = new ProducerJob
                     {
@@ -75,14 +75,14 @@ namespace BovineLabs.Event.Tests.Jobs
         }
 
         [BurstCompile]
-        private struct TestJob : IJobEventStream<TestEvent>
+        private struct TestJob : IJobEventReader<TestEvent>
         {
             [NativeDisableContainerSafetyRestriction]
             public NativeQueue<int>.ParallelWriter Counter;
 
-            public void Execute(NativeEventStream.Reader stream, int index)
+            public void Execute(NativeEventStream.Reader reader, int readerIndex)
             {
-                this.Counter.Enqueue(stream.ForEachCount);
+                this.Counter.Enqueue(reader.ForEachCount);
             }
         }
     }
