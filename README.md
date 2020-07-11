@@ -121,7 +121,7 @@ this.Dependency = new EventJob
 
 Each reader will be schedule to be read one after the other. Each foreach index is read in parallel.
 
-### IJobEventReader
+### IJobEventReaderForEach
 Sometimes you need a bit more control over reading as the event system allows streaming of any type of data in your events.
 IJobEventReaderForEach gives you direct access to the reader allowing you to read it back in whatever format you desire.
 ```csharp
