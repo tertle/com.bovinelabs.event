@@ -1,4 +1,4 @@
-﻿// <copyright file="JobEventTests.cs" company="BovineLabs">
+// <copyright file="JobEventReaderForEachTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -6,19 +6,32 @@
 
 namespace BovineLabs.Event.Tests.Jobs
 {
+    using System;
+    using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
+    using BovineLabs.Event.Systems;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities.Tests;
     using Unity.Jobs;
 
-    /// <summary> Tests for <see cref="JobEvent"/> . </summary>
-    public class JobEventTests : ECSTestsFixture
+    /// <summary> Tests for <see cref="JobEventReader"/> . </summary>
+    public class JobEventReaderForEachTests : ECSTestsFixture
     {
-        /// <summary> Tests that <see cref="JobEvent.ScheduleParallel{TJob, T}"/> schedules the job correctly. </summary>
+        /// <summary> Tests scheduling <see cref="JobEventReaderForEach.ScheduleParallel{TJob,T}"/>. </summary>
         [Test]
         public void ScheduleParallel()
+        {
+            this.ScheduleTest((es, counter) => new TestJob
+                {
+                    Counter = counter.AsParallelWriter(),
+                }
+                .ScheduleParallel<TestJob, TestEvent>(es));
+        }
+
+        private void ScheduleTest(Func<EventSystemBase, NativeQueue<int>, JobHandle> job)
         {
             const int foreachCount = 100;
             const int eventCount = 100;
@@ -26,13 +39,11 @@ namespace BovineLabs.Event.Tests.Jobs
 
             var es = this.World.GetOrCreateSystem<TestEventSystem>();
 
-            JobHandle handle = default;
-
             for (var i = 0; i < producers; i++)
             {
                 var writer = es.CreateEventWriter<TestEvent>(foreachCount);
 
-                var defaultHandle = new ProducerJob
+                var handle = new ProducerJob
                     {
                         Events = writer,
                         EventCount = eventCount,
@@ -40,31 +51,28 @@ namespace BovineLabs.Event.Tests.Jobs
                     .ScheduleParallel(foreachCount, 8, default);
 
                 es.AddJobHandleForProducer<TestEvent>(handle);
-                handle = JobHandle.CombineDependencies(handle, defaultHandle);
             }
 
             using (var counter = new NativeQueue<int>(Allocator.TempJob))
             {
-                var finalHandle = new TestJob
-                    {
-                        Counter = counter.AsParallelWriter(),
-                    }
-                    .ScheduleParallel<TestJob, TestEvent>(es, handle);
+                var finalHandle = job.Invoke(es, counter);
 
                 finalHandle.Complete();
 
-                Assert.AreEqual(foreachCount * eventCount * producers, counter.Count);
+                Assert.AreEqual(foreachCount * producers, counter.Count);
             }
         }
 
         [BurstCompile]
-        private struct TestJob : IJobEvent<TestEvent>
+        private struct TestJob : IJobEventReaderForEach<TestEvent>
         {
+            [NativeDisableContainerSafetyRestriction]
             public NativeQueue<int>.ParallelWriter Counter;
 
-            public void Execute(TestEvent e)
+            public void Execute(NativeEventStream.Reader reader, int foreachIndex)
             {
-                this.Counter.Enqueue(e.Value);
+                var count = reader.BeginForEachIndex(foreachIndex);
+                this.Counter.Enqueue(count);
             }
         }
     }

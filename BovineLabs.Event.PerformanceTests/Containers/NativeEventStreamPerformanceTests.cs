@@ -12,7 +12,6 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.PerformanceTesting;
-    using UnityEngine;
 
     /// <summary> Performance tests for <see cref="NativeEventStream"/>. </summary>
     /// <remarks><para> Includes comparison tests for <see cref="NativeQueue{T}"/> and <see cref="NativeStream"/>. </para></remarks>
@@ -254,13 +253,13 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             private readonly int count;
             private readonly int archetypes;
 
+            private EntityQuery query;
+
             public EntitiesForEachTest(int count, int archetypes)
             {
                 this.count = count;
                 this.archetypes = archetypes;
             }
-
-            private EntityQuery query;
 
             public void NativeEventStreamTest(NativeEventStream stream)
             {

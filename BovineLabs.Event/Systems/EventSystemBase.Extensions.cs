@@ -91,14 +91,36 @@ namespace BovineLabs.Event.Systems
             }
 
             [BurstCompile]
-            private struct CountJob : IJobEventStream<T>
+            private struct CountJob : IJobEventReader<T>
             {
                 [NativeDisableContainerSafetyRestriction]
                 public NativeArray<int> Counter;
 
-                public void Execute(NativeEventStream.Reader reader, int index)
+                public void Execute(NativeEventStream.Reader reader, int readerIndex)
                 {
-                    this.Counter[index] = reader.ComputeItemCount();
+                    this.Counter[readerIndex] = reader.ComputeItemCount();
+                }
+            }
+
+            [BurstCompile]
+            private struct SumJob : IJob
+            {
+                [ReadOnly]
+                public NativeArray<int> Counter;
+
+                [WriteOnly]
+                public NativeArray<int> Count;
+
+                public void Execute()
+                {
+                    var count = 0;
+
+                    for (var i = 0; i < this.Counter.Length; i++)
+                    {
+                        count += this.Counter[i];
+                    }
+
+                    this.Count[0] = count;
                 }
             }
 

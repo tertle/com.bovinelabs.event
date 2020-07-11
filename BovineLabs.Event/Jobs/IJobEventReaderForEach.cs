@@ -1,4 +1,4 @@
-﻿// <copyright file="IJobEventStream.cs" company="BovineLabs">
+// <copyright file="IJobEventReaderForEach.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -15,91 +15,56 @@ namespace BovineLabs.Event.Jobs
 
     /// <summary> Job that visits each event stream. </summary>
     /// <typeparam name="T"> Type of event. </typeparam>
-    [JobProducerType(typeof(JobEventStream.EventJobStreamStruct<,>))]
+    [JobProducerType(typeof(JobEventReaderForEach.JobEventReaderForEachStructParallel<,>))]
     [SuppressMessage("ReSharper", "TypeParameterCanBeVariant", Justification = "Strict requirements for compiler")]
     [SuppressMessage("ReSharper", "UnusedTypeParameter", Justification = "Required by scheduler")]
-    public interface IJobEventStream<T>
+    public interface IJobEventReaderForEach<T>
         where T : struct
     {
         /// <summary> Executes the next event. </summary>
         /// <param name="stream"> The stream. </param>
-        /// <param name="index"> The stream index. </param>
-        void Execute(NativeEventStream.Reader stream, int index);
+        /// <param name="foreachIndex"> The foreach index. </param>
+        void Execute(NativeEventStream.Reader stream, int foreachIndex);
     }
 
-    /// <summary> Extension methods for <see cref="IJobEventStream{T}"/> . </summary>
-    public static class JobEventStream
+    /// <summary> Extension methods for <see cref="IJobEventReaderForEach{T}"/> . </summary>
+    public static class JobEventReaderForEach
     {
-        /// <summary> Schedule a <see cref="IJobEventStream{T}"/> job. </summary>
+        /// <summary> Schedule a <see cref="IJobEventReaderForEach{T}"/> job. </summary>
         /// <param name="jobData"> The job. </param>
         /// <param name="eventSystem"> The event system. </param>
         /// <param name="dependsOn"> The job handle dependency. </param>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
-        public static unsafe JobHandle Schedule<TJob, T>(
+        public static unsafe JobHandle ScheduleParallel<TJob, T>(
             this TJob jobData, EventSystemBase eventSystem, JobHandle dependsOn = default)
-            where TJob : struct, IJobEventStream<T>
+            where TJob : struct, IJobEventReaderForEach<T>
             where T : struct
         {
             dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
 
             for (var i = 0; i < events.Count; i++)
             {
-                var fullData = new EventJobStreamStruct<TJob, T>
+                var reader = events[i];
+
+                var fullData = new JobEventReaderForEachStructParallel<TJob, T>
                 {
-                    Readers = events[i],
+                    Reader = reader,
                     JobData = jobData,
                     Index = i,
                 };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
-                    EventJobStreamStruct<TJob, T>.Initialize(),
+                    JobEventReaderForEachStructParallel<TJob, T>.Initialize(),
                     dependsOn,
                     ScheduleMode.Batched);
 
-                dependsOn = JobsUtility.Schedule(ref scheduleParams);
-            }
-
-            eventSystem.AddJobHandleForConsumer<T>(dependsOn);
-
-            return dependsOn;
-        }
-
-        /// <summary> Schedule a <see cref="IJobEventStream{T}"/> job. </summary>
-        /// <param name="jobData"> The job. </param>
-        /// <param name="eventSystem"> The event system. </param>
-        /// <param name="dependsOn"> The job handle dependency. </param>
-        /// <typeparam name="TJob"> The type of the job. </typeparam>
-        /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
-        /// <returns> The handle to job. </returns>
-        public static unsafe JobHandle ScheduleSimultaneous<TJob, T>(
-            this TJob jobData, EventSystemBase eventSystem, JobHandle dependsOn = default)
-            where TJob : struct, IJobEventStream<T>
-            where T : struct
-        {
-            dependsOn = eventSystem.GetEventReaders<T>(dependsOn, out var events);
-
-            var input = dependsOn;
-
-            for (var i = 0; i < events.Count; i++)
-            {
-                var fullData = new EventJobStreamStruct<TJob, T>
-                               {
-                                   Readers = events[i],
-                                   JobData = jobData,
-                                   Index = i,
-                               };
-
-                var scheduleParams = new JobsUtility.JobScheduleParameters(
-                                                                           UnsafeUtility.AddressOf(ref fullData),
-                                                                           EventJobStreamStruct<TJob, T>.Initialize(),
-                                                                           input,
-                                                                           ScheduleMode.Batched);
-
-                var handle = JobsUtility.Schedule(ref scheduleParams);
-                dependsOn = JobHandle.CombineDependencies(dependsOn, handle);
+                dependsOn = JobsUtility.ScheduleParallelFor(
+                    ref scheduleParams,
+                    reader.ForEachCount,
+                    1);
             }
 
             eventSystem.AddJobHandleForConsumer<T>(dependsOn);
@@ -110,13 +75,13 @@ namespace BovineLabs.Event.Jobs
         /// <summary> The job execution struct. </summary>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the event. </typeparam>
-        internal struct EventJobStreamStruct<TJob, T>
-            where TJob : struct, IJobEventStream<T>
+        internal struct JobEventReaderForEachStructParallel<TJob, T>
+            where TJob : struct, IJobEventReaderForEach<T>
             where T : struct
         {
             /// <summary> The <see cref="NativeEventStream.Reader"/> . </summary>
             [ReadOnly]
-            public NativeEventStream.Reader Readers;
+            public NativeEventStream.Reader Reader;
 
             /// <summary> The job. </summary>
             public TJob JobData;
@@ -128,7 +93,7 @@ namespace BovineLabs.Event.Jobs
             private static IntPtr jobReflectionData;
 
             private delegate void ExecuteJobFunction(
-                ref EventJobStreamStruct<TJob, T> fullData,
+                ref JobEventReaderForEachStructParallel<TJob, T> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
@@ -141,9 +106,9 @@ namespace BovineLabs.Event.Jobs
                 if (jobReflectionData == IntPtr.Zero)
                 {
                     jobReflectionData = JobsUtility.CreateJobReflectionData(
-                        typeof(EventJobStreamStruct<TJob, T>),
+                        typeof(JobEventReaderForEachStructParallel<TJob, T>),
                         typeof(TJob),
-                        JobType.Single,
+                        JobType.ParallelFor,
                         (ExecuteJobFunction)Execute);
                 }
 
@@ -158,13 +123,24 @@ namespace BovineLabs.Event.Jobs
             /// <param name="jobIndex"> The job index. </param>
             [SuppressMessage("ReSharper", "MemberCanBePrivate.Global", Justification = "Required by burst.")]
             public static void Execute(
-                ref EventJobStreamStruct<TJob, T> fullData,
+                ref JobEventReaderForEachStructParallel<TJob, T> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
                 int jobIndex)
             {
-                fullData.JobData.Execute(fullData.Readers, fullData.Index);
+                while (true)
+                {
+                    if (!JobsUtility.GetWorkStealingRange(ref ranges, jobIndex, out var begin, out var end))
+                    {
+                        return;
+                    }
+
+                    for (int i = begin; i < end; i++)
+                    {
+                        fullData.JobData.Execute(fullData.Reader, i);
+                    }
+                }
             }
         }
     }
