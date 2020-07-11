@@ -35,42 +35,6 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .Run();
         }
 
-        /// <summary> Tests performance of writing entities in a <see cref="NativeStream"/> in an Entities.ForEach. </summary>
-        /// <param name="entities"> Number of entities to write. </param>
-        /// <param name="archetypes"> Number of archetypes to use. </param>
-        [Test]
-        [Performance]
-        public void WriteEntitiesForEachNativeStream(
-            [Values(10000, 1000000)] int entities,
-            [Values(8, 256)] int archetypes)
-        {
-            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
-            NativeStream stream = default;
-
-            Measure.Method(() => system.NativeStreamTest(stream))
-                   .SetUp(() => { stream = new NativeStream(entities, Allocator.TempJob); })
-                   .CleanUp(() => stream.Dispose())
-                   .Run();
-        }
-
-        /// <summary> Tests performance of writing entities in a <see cref="NativeQueue{T}"/> in an Entities.ForEach. </summary>
-        /// <param name="entities"> Number of entities to write. </param>
-        /// <param name="archetypes"> Number of archetypes to use. </param>
-        [Test]
-        [Performance]
-        public void WriteEntitiesForEachNativeQueue(
-            [Values(10000, 1000000)] int entities,
-            [Values(8, 256)] int archetypes)
-        {
-            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
-            NativeQueue<int> queue = default;
-
-            Measure.Method(() => system.NativeQueueTest(queue))
-                   .SetUp(() => { queue = new NativeQueue<int>(Allocator.TempJob); })
-                   .CleanUp(() => queue.Dispose())
-                   .Run();
-        }
-
         /// <summary> Tests performance of reading entities parallel in a <see cref="NativeEventStream"/>. </summary>
         /// <param name="entities"> Number of entities to write. </param>
         /// <param name="archetypes"> Number of archetypes to use. </param>
@@ -108,6 +72,43 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                     output.Dispose();
                 })
                 .Run();
+        }
+
+#if BS_EVENTSYSTEM_BENCHMARK
+        /// <summary> Tests performance of writing entities in a <see cref="NativeStream"/> in an Entities.ForEach. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
+        [Test]
+        [Performance]
+        public void WriteEntitiesForEachNativeStream(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
+        {
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
+            NativeStream stream = default;
+
+            Measure.Method(() => system.NativeStreamTest(stream))
+                   .SetUp(() => { stream = new NativeStream(entities, Allocator.TempJob); })
+                   .CleanUp(() => stream.Dispose())
+                   .Run();
+        }
+
+        /// <summary> Tests performance of writing entities in a <see cref="NativeQueue{T}"/> in an Entities.ForEach. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
+        [Test]
+        [Performance]
+        public void WriteEntitiesForEachNativeQueue(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
+        {
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
+            NativeQueue<int> queue = default;
+
+            Measure.Method(() => system.NativeQueueTest(queue))
+                   .SetUp(() => { queue = new NativeQueue<int>(Allocator.TempJob); })
+                   .CleanUp(() => queue.Dispose())
+                   .Run();
         }
 
         /// <summary> Tests performance of reading entities parallel in a <see cref="NativeStream"/>. </summary>
@@ -187,6 +188,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 })
                 .Run();
         }
+#endif
 
         [BurstCompile(CompileSynchronously = true)]
         private struct ReadNativeEventStreamJob : IJobFor
@@ -210,6 +212,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             }
         }
 
+#if BS_EVENTSYSTEM_BENCHMARK
         [BurstCompile(CompileSynchronously = true)]
         private struct ReadNativeStreamJob : IJobFor
         {
@@ -247,6 +250,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 }
             }
         }
+#endif
 
         private class EntitiesForEachTest : SystemBase
         {
@@ -277,6 +281,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 Assert.AreEqual(this.query.CalculateEntityCount(), stream.ComputeItemCount());
             }
 
+#if BS_EVENTSYSTEM_BENCHMARK
             public void NativeStreamTest(NativeStream stream)
             {
                 var writer = stream.AsWriter();
@@ -307,21 +312,20 @@ namespace BovineLabs.Event.PerformanceTests.Containers
 
                 this.Dependency.Complete();
             }
+#endif
 
             protected override void OnCreate()
             {
                 var arch = this.EntityManager.CreateArchetype(typeof(TestComponent));
 
-                using (var entities = new NativeArray<Entity>(this.count, Allocator.TempJob))
+                using var entities = new NativeArray<Entity>(this.count, Allocator.TempJob);
+                this.EntityManager.CreateEntity(arch, entities);
+
+                for (var index = 0; index < entities.Length; index++)
                 {
-                    this.EntityManager.CreateEntity(arch, entities);
+                    var entity = entities[index];
 
-                    for (var index = 0; index < entities.Length; index++)
-                    {
-                        var entity = entities[index];
-
-                        this.EntityManager.SetSharedComponentData(entity, new TestComponent { Chunk = index % this.archetypes });
-                    }
+                    this.EntityManager.SetSharedComponentData(entity, new TestComponent { Chunk = index % this.archetypes });
                 }
             }
 

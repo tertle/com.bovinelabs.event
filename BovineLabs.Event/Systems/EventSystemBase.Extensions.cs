@@ -124,28 +124,6 @@ namespace BovineLabs.Event.Systems
                 }
             }
 
-            [BurstCompile]
-            private struct SumJob : IJob
-            {
-                [ReadOnly]
-                public NativeArray<int> Counter;
-
-                [WriteOnly]
-                public NativeArray<int> Count;
-
-                public void Execute()
-                {
-                    var count = 0;
-
-                    for (var i = 0; i < this.Counter.Length; i++)
-                    {
-                        count += this.Counter[i];
-                    }
-
-                    this.Count[0] = count;
-                }
-            }
-
             [BurstCompile] // does not work
             private struct EnsureHashMapCapacityJob<TKey, TValue> : IJob
                 where TKey : struct, IEquatable<TKey>
