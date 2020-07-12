@@ -1,6 +1,7 @@
 ﻿// <copyright file="NativeEventStreamPerformanceTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
+#if BL_PERFORMANCE
 namespace BovineLabs.Event.PerformanceTests.Containers
 {
     using BovineLabs.Event.Containers;
@@ -74,7 +75,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .Run();
         }
 
-#if BS_EVENTSYSTEM_BENCHMARK
+#if BL_EVENTSYSTEM_BENCHMARK
         /// <summary> Tests performance of writing entities in a <see cref="NativeStream"/> in an Entities.ForEach. </summary>
         /// <param name="entities"> Number of entities to write. </param>
         /// <param name="archetypes"> Number of archetypes to use. </param>
@@ -212,7 +213,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             }
         }
 
-#if BS_EVENTSYSTEM_BENCHMARK
+#if BL_EVENTSYSTEM_BENCHMARK
         [BurstCompile(CompileSynchronously = true)]
         private struct ReadNativeStreamJob : IJobFor
         {
@@ -281,7 +282,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 Assert.AreEqual(this.query.CalculateEntityCount(), stream.ComputeItemCount());
             }
 
-#if BS_EVENTSYSTEM_BENCHMARK
+#if BL_EVENTSYSTEM_BENCHMARK
             public void NativeStreamTest(NativeStream stream)
             {
                 var writer = stream.AsWriter();
@@ -341,3 +342,4 @@ namespace BovineLabs.Event.PerformanceTests.Containers
         }
     }
 }
+#endif
