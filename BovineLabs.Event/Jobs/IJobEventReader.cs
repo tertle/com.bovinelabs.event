@@ -74,7 +74,7 @@ namespace BovineLabs.Event.Jobs
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
-        internal static unsafe JobHandle ScheduleSimultaneous<TJob, T>(
+        public static unsafe JobHandle ScheduleSimultaneous<TJob, T>(
             this TJob jobData, EventSystemBase eventSystem, JobHandle dependsOn = default)
             where TJob : struct, IJobEventReader<T>
             where T : struct
