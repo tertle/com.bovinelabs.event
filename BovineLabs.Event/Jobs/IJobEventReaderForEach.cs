@@ -59,7 +59,7 @@ namespace BovineLabs.Event.Jobs
                     UnsafeUtility.AddressOf(ref fullData),
                     JobEventReaderForEachStructParallel<TJob, T>.Initialize(),
                     dependsOn,
-                    ScheduleMode.Batched);
+                    ScheduleMode.Parallel);
 
                 dependsOn = JobsUtility.ScheduleParallelFor(
                     ref scheduleParams,
@@ -108,7 +108,6 @@ namespace BovineLabs.Event.Jobs
                     jobReflectionData = JobsUtility.CreateJobReflectionData(
                         typeof(JobEventReaderForEachStructParallel<TJob, T>),
                         typeof(TJob),
-                        JobType.ParallelFor,
                         (ExecuteJobFunction)Execute);
                 }
 

@@ -4,7 +4,7 @@
 
 #if BOVINELABS_TESTING_ENABLED
 
-namespace BovineLabs.Event.Tests.Utility
+namespace BovineLabs.Event.Tests.Systems
 {
     using NUnit.Framework;
     using Unity.Collections;
@@ -98,6 +98,48 @@ namespace BovineLabs.Event.Tests.Utility
                 handle.Complete();
 
                 Assert.AreEqual(firstEventCount + secondEventCount, count[0]);
+
+                // Make sure it doesn't block getting readers
+                es.GetEventReaders<TestEvent>(default, out _).Complete();
+            }
+        }
+
+        [Test]
+        public void ToNativeList()
+        {
+            const int firstEventCount = 5;
+            const int secondEventCount = 3;
+
+            using (var count = new NativeArray<int>(1, Allocator.TempJob))
+            {
+                var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+                var events1 = es.CreateEventWriter<TestEvent>();
+
+                // Write some event data
+                for (var i = 0; i < firstEventCount; i++)
+                {
+                    events1.Write(i);
+                }
+
+                es.AddJobHandleForProducer<TestEvent>(default);
+
+                var events2 = es.CreateEventWriter<TestEvent>();
+
+                // Write some event data
+                for (var i = 0; i < secondEventCount; i++)
+                {
+                    events2.Write(i);
+                }
+
+                es.AddJobHandleForProducer<TestEvent>(default);
+
+                var handle = es.Ex<TestEvent>().ToNativeList(default, out var list);
+                handle.Complete();
+
+                Assert.AreEqual(firstEventCount + secondEventCount, list.Length);
+
+                list.Dispose();
 
                 // Make sure it doesn't block getting readers
                 es.GetEventReaders<TestEvent>(default, out _).Complete();

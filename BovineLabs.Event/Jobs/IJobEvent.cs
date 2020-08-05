@@ -15,7 +15,7 @@ namespace BovineLabs.Event.Jobs
 
     /// <summary> Job that visits each event. </summary>
     /// <typeparam name="T"> Type of event. </typeparam>
-    [JobProducerType(typeof(JobEvent.JobEventStructParallel<,>))]
+    [JobProducerType(typeof(JobEvent.JobEventProducer<,>))]
     [SuppressMessage("ReSharper", "TypeParameterCanBeVariant", Justification = "Strict requirements for compiler")]
     public interface IJobEvent<T>
         where T : struct
@@ -35,10 +35,38 @@ namespace BovineLabs.Event.Jobs
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
-        public static unsafe JobHandle ScheduleParallel<TJob, T>(
+        public static JobHandle Schedule<TJob, T>(
             this TJob jobData,
             EventSystemBase eventSystem,
             JobHandle dependsOn = default)
+            where TJob : struct, IJobEvent<T>
+            where T : struct
+        {
+            return ScheduleInternal<TJob, T>(jobData, eventSystem, dependsOn, false);
+        }
+
+        /// <summary> Schedule a <see cref="IJobEvent{T}"/> job. </summary>
+        /// <param name="jobData"> The job. </param>
+        /// <param name="eventSystem"> The event system. </param>
+        /// <param name="dependsOn"> T he job handle dependency. </param>
+        /// <typeparam name="TJob"> The type of the job. </typeparam>
+        /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
+        /// <returns> The handle to job. </returns>
+        public static JobHandle ScheduleParallel<TJob, T>(
+            this TJob jobData,
+            EventSystemBase eventSystem,
+            JobHandle dependsOn = default)
+            where TJob : struct, IJobEvent<T>
+            where T : struct
+        {
+            return ScheduleInternal<TJob, T>(jobData, eventSystem, dependsOn, true);
+        }
+
+        private static unsafe JobHandle ScheduleInternal<TJob, T>(
+            this TJob jobData,
+            EventSystemBase eventSystem,
+            JobHandle dependsOn,
+            bool isParallel)
             where TJob : struct, IJobEvent<T>
             where T : struct
         {
@@ -48,22 +76,22 @@ namespace BovineLabs.Event.Jobs
             {
                 var reader = events[i];
 
-                var fullData = new JobEventStructParallel<TJob, T>
+                var fullData = new JobEventProducer<TJob, T>
                 {
                     Reader = reader,
                     JobData = jobData,
+                    IsParallel = isParallel,
                 };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
-                    JobEventStructParallel<TJob, T>.Initialize(),
+                    isParallel ? JobEventProducer<TJob, T>.InitializeParallel() : JobEventProducer<TJob, T>.InitializeSingle(),
                     dependsOn,
-                    ScheduleMode.Batched);
+                    ScheduleMode.Parallel);
 
-                dependsOn = JobsUtility.ScheduleParallelFor(
-                    ref scheduleParams,
-                    reader.ForEachCount,
-                    1);
+                dependsOn = isParallel
+                    ? JobsUtility.ScheduleParallelFor(ref scheduleParams, reader.ForEachCount, 1)
+                    : JobsUtility.Schedule(ref scheduleParams);
             }
 
             eventSystem.AddJobHandleForConsumer<T>(dependsOn);
@@ -71,10 +99,10 @@ namespace BovineLabs.Event.Jobs
             return dependsOn;
         }
 
-        /// <summary> The job execution struct. </summary>
+        /// <summary> The parallel job execution struct. </summary>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
         /// <typeparam name="T"> The type of the event. </typeparam>
-        internal struct JobEventStructParallel<TJob, T>
+        internal struct JobEventProducer<TJob, T>
             where TJob : struct, IJobEvent<T>
             where T : struct
         {
@@ -85,11 +113,16 @@ namespace BovineLabs.Event.Jobs
             /// <summary> The job. </summary>
             public TJob JobData;
 
+            public bool IsParallel;
+
             // ReSharper disable once StaticMemberInGenericType
-            private static IntPtr jobReflectionData;
+            private static IntPtr jobReflectionDataSingle;
+
+            // ReSharper disable once StaticMemberInGenericType
+            private static IntPtr jobReflectionDataParallel;
 
             private delegate void ExecuteJobFunction(
-                ref JobEventStructParallel<TJob, T> fullData,
+                ref JobEventProducer<TJob, T> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
@@ -97,18 +130,32 @@ namespace BovineLabs.Event.Jobs
 
             /// <summary> Initializes the job. </summary>
             /// <returns> The job pointer. </returns>
-            public static IntPtr Initialize()
+            public static IntPtr InitializeSingle()
             {
-                if (jobReflectionData == IntPtr.Zero)
+                if (jobReflectionDataSingle == IntPtr.Zero)
                 {
-                    jobReflectionData = JobsUtility.CreateJobReflectionData(
-                        typeof(JobEventStructParallel<TJob, T>),
+                    jobReflectionDataSingle = JobsUtility.CreateJobReflectionData(
+                        typeof(JobEventProducer<TJob, T>),
                         typeof(TJob),
-                        JobType.ParallelFor,
                         (ExecuteJobFunction)Execute);
                 }
 
-                return jobReflectionData;
+                return jobReflectionDataSingle;
+            }
+
+            /// <summary> Initializes the job. </summary>
+            /// <returns> The job pointer. </returns>
+            public static IntPtr InitializeParallel()
+            {
+                if (jobReflectionDataParallel == IntPtr.Zero)
+                {
+                    jobReflectionDataParallel = JobsUtility.CreateJobReflectionData(
+                        typeof(JobEventProducer<TJob, T>),
+                        typeof(TJob),
+                        (ExecuteJobFunction)Execute);
+                }
+
+                return jobReflectionDataParallel;
             }
 
             /// <summary> Executes the job. </summary>
@@ -119,7 +166,7 @@ namespace BovineLabs.Event.Jobs
             /// <param name="jobIndex"> The job index. </param>
             [SuppressMessage("ReSharper", "MemberCanBePrivate.Global", Justification = "Required by burst.")]
             public static void Execute(
-                ref JobEventStructParallel<TJob, T> fullData,
+                ref JobEventProducer<TJob, T> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
@@ -127,14 +174,21 @@ namespace BovineLabs.Event.Jobs
             {
                 while (true)
                 {
-                    if (!JobsUtility.GetWorkStealingRange(ref ranges, jobIndex, out var begin, out var end))
+                    int begin = 0;
+                    int end = fullData.Reader.ForEachCount;
+
+                    // If we are running the job in parallel, steal some work.
+                    if (fullData.IsParallel)
                     {
-                        return;
+                        if (!JobsUtility.GetWorkStealingRange(ref ranges, jobIndex, out begin, out end))
+                        {
+                            return;
+                        }
                     }
 
                     for (int i = begin; i < end; i++)
                     {
-                        var count = fullData.Reader.BeginForEachIndex(begin);
+                        var count = fullData.Reader.BeginForEachIndex(i);
 
                         for (var j = 0; j < count; j++)
                         {
@@ -143,6 +197,11 @@ namespace BovineLabs.Event.Jobs
                         }
 
                         fullData.Reader.EndForEachIndex();
+                    }
+
+                    if (!fullData.IsParallel)
+                    {
+                        break;
                     }
                 }
             }

@@ -7,6 +7,7 @@ namespace BovineLabs.Event.Systems
     using System;
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
+    using Unity.Assertions;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -90,6 +91,23 @@ namespace BovineLabs.Event.Systems
                 return handle;
             }
 
+            /// <summary> Writes all the events to a new NativeList. </summary>
+            /// <param name="handle"> Input dependencies. </param>
+            /// <param name="list"> The output list. </param>
+            /// <param name="allocator"> The allocator to use on the list. Must be either TempJob or Persistent. </param>
+            /// <returns> The dependency handle. </returns>
+            public JobHandle ToNativeList(JobHandle handle, out NativeList<T> list, Allocator allocator = Allocator.TempJob)
+            {
+                Assert.AreNotEqual(Allocator.Temp, allocator, $"Use {Allocator.TempJob} or {Allocator.Persistent}");
+
+                list = new NativeList<T>(128, allocator);
+
+                handle = new ToNativeListJob { List = list }
+                    .Schedule<ToNativeListJob, T>(this.eventSystem, handle);
+
+                return handle;
+            }
+
             [BurstCompile]
             private struct CountJob : IJobEventReader<T>
             {
@@ -149,6 +167,17 @@ namespace BovineLabs.Event.Systems
                     {
                         this.HashMap.Capacity = requiredSize;
                     }
+                }
+            }
+
+            //[BurstCompile]
+            private struct ToNativeListJob : IJobEvent<T>
+            {
+                public NativeList<T> List;
+
+                public void Execute(T e)
+                {
+                    this.List.Add(e);
                 }
             }
         }

@@ -57,7 +57,7 @@ namespace BovineLabs.Event.Jobs
                     UnsafeUtility.AddressOf(ref fullData),
                     EventJobReaderStruct<TJob, T>.Initialize(),
                     dependsOn,
-                    ScheduleMode.Batched);
+                    ScheduleMode.Parallel);
 
                 dependsOn = JobsUtility.Schedule(ref scheduleParams);
             }
@@ -96,7 +96,7 @@ namespace BovineLabs.Event.Jobs
                     UnsafeUtility.AddressOf(ref fullData),
                     EventJobReaderStruct<TJob, T>.Initialize(),
                     input,
-                    ScheduleMode.Batched);
+                    ScheduleMode.Parallel);
 
                 var handle = JobsUtility.Schedule(ref scheduleParams);
                 dependsOn = JobHandle.CombineDependencies(dependsOn, handle);
@@ -143,7 +143,6 @@ namespace BovineLabs.Event.Jobs
                     jobReflectionData = JobsUtility.CreateJobReflectionData(
                         typeof(EventJobReaderStruct<TJob, T>),
                         typeof(TJob),
-                        JobType.Single,
                         (ExecuteJobFunction)Execute);
                 }
 
