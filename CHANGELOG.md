@@ -1,5 +1,5 @@
 # Changelog
-## [1.1.4] - 2020-07-11
+## [1.1.4] - 2020-08-06
 ### Added
 - Added Schedule for IJobEvent for when you don't want parallel scheduling
 - Added new extension, ToNativeList
