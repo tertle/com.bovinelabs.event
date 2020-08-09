@@ -1,4 +1,8 @@
 # Changelog
+## [1.1.5] - 2020-08-09
+### Fixed
+- Added support back for Unity 19.4 and 20.1
+
 ## [1.1.4] - 2020-08-06
 ### Added
 - Added Schedule for IJobEvent for when you don't want parallel scheduling

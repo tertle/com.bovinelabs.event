@@ -10,6 +10,7 @@ namespace BovineLabs.Event.Jobs
     using BovineLabs.Event.Systems;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
+    using Unity.Entities;
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
 
@@ -55,11 +56,17 @@ namespace BovineLabs.Event.Jobs
                     Index = i,
                 };
 
+#if UNITY_2020_2_OR_NEWER
+                const ScheduleMode scheduleMode = ScheduleMode.Parallel;
+#else
+                const ScheduleMode scheduleMode = ScheduleMode.Batched;
+#endif
+
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
                     JobEventReaderForEachStructParallel<TJob, T>.Initialize(),
                     dependsOn,
-                    ScheduleMode.Parallel);
+                    scheduleMode);
 
                 dependsOn = JobsUtility.ScheduleParallelFor(
                     ref scheduleParams,
@@ -105,10 +112,18 @@ namespace BovineLabs.Event.Jobs
             {
                 if (jobReflectionData == IntPtr.Zero)
                 {
+#if UNITY_2020_2_OR_NEWER
                     jobReflectionData = JobsUtility.CreateJobReflectionData(
                         typeof(JobEventReaderForEachStructParallel<TJob, T>),
                         typeof(TJob),
                         (ExecuteJobFunction)Execute);
+#else
+                    jobReflectionData = JobsUtility.CreateJobReflectionData(
+                        typeof(JobEventReaderForEachStructParallel<TJob, T>),
+                        typeof(TJob),
+                        JobType.ParallelFor,
+                        (ExecuteJobFunction)Execute);
+#endif
                 }
 
                 return jobReflectionData;

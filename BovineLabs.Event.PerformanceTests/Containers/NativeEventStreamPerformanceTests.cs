@@ -319,14 +319,16 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             {
                 var arch = this.EntityManager.CreateArchetype(typeof(TestComponent));
 
-                using var entities = new NativeArray<Entity>(this.count, Allocator.TempJob);
-                this.EntityManager.CreateEntity(arch, entities);
-
-                for (var index = 0; index < entities.Length; index++)
+                using (var entities = new NativeArray<Entity>(this.count, Allocator.TempJob))
                 {
-                    var entity = entities[index];
+                    this.EntityManager.CreateEntity(arch, entities);
 
-                    this.EntityManager.SetSharedComponentData(entity, new TestComponent { Chunk = index % this.archetypes });
+                    for (var index = 0; index < entities.Length; index++)
+                    {
+                        var entity = entities[index];
+
+                        this.EntityManager.SetSharedComponentData(entity, new TestComponent { Chunk = index % this.archetypes });
+                    }
                 }
             }
 

@@ -53,11 +53,17 @@ namespace BovineLabs.Event.Jobs
                     Index = i,
                 };
 
+#if UNITY_2020_2_OR_NEWER
+                const ScheduleMode scheduleMode = ScheduleMode.Parallel;
+#else
+                const ScheduleMode scheduleMode = ScheduleMode.Batched;
+#endif
+
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
                     EventJobReaderStruct<TJob, T>.Initialize(),
                     dependsOn,
-                    ScheduleMode.Parallel);
+                    scheduleMode);
 
                 dependsOn = JobsUtility.Schedule(ref scheduleParams);
             }
@@ -92,11 +98,17 @@ namespace BovineLabs.Event.Jobs
                                    Index = i,
                                };
 
+#if UNITY_2020_2_OR_NEWER
+                const ScheduleMode scheduleMode = ScheduleMode.Parallel;
+#else
+                const ScheduleMode scheduleMode = ScheduleMode.Batched;
+#endif
+
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
                     EventJobReaderStruct<TJob, T>.Initialize(),
                     input,
-                    ScheduleMode.Parallel);
+                    scheduleMode);
 
                 var handle = JobsUtility.Schedule(ref scheduleParams);
                 dependsOn = JobHandle.CombineDependencies(dependsOn, handle);
@@ -140,10 +152,18 @@ namespace BovineLabs.Event.Jobs
             {
                 if (jobReflectionData == IntPtr.Zero)
                 {
+#if UNITY_2020_2_OR_NEWER
                     jobReflectionData = JobsUtility.CreateJobReflectionData(
                         typeof(EventJobReaderStruct<TJob, T>),
                         typeof(TJob),
                         (ExecuteJobFunction)Execute);
+#else
+                    jobReflectionData = JobsUtility.CreateJobReflectionData(
+                        typeof(EventJobReaderStruct<TJob, T>),
+                        typeof(TJob),
+                        JobType.Single,
+                        (ExecuteJobFunction)Execute);
+#endif
                 }
 
                 return jobReflectionData;

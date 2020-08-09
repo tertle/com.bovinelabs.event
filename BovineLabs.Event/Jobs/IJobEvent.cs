@@ -83,11 +83,17 @@ namespace BovineLabs.Event.Jobs
                     IsParallel = isParallel,
                 };
 
+#if UNITY_2020_2_OR_NEWER
+                const ScheduleMode scheduleMode = ScheduleMode.Parallel;
+#else
+                const ScheduleMode scheduleMode = ScheduleMode.Batched;
+#endif
+
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
                     isParallel ? JobEventProducer<TJob, T>.InitializeParallel() : JobEventProducer<TJob, T>.InitializeSingle(),
                     dependsOn,
-                    ScheduleMode.Parallel);
+                    scheduleMode);
 
                 dependsOn = isParallel
                     ? JobsUtility.ScheduleParallelFor(ref scheduleParams, reader.ForEachCount, 1)
@@ -134,10 +140,18 @@ namespace BovineLabs.Event.Jobs
             {
                 if (jobReflectionDataSingle == IntPtr.Zero)
                 {
+#if UNITY_2020_2_OR_NEWER
                     jobReflectionDataSingle = JobsUtility.CreateJobReflectionData(
                         typeof(JobEventProducer<TJob, T>),
                         typeof(TJob),
                         (ExecuteJobFunction)Execute);
+#else
+                    jobReflectionDataSingle = JobsUtility.CreateJobReflectionData(
+                        typeof(JobEventProducer<TJob, T>),
+                        typeof(TJob),
+                        JobType.Single,
+                        (ExecuteJobFunction)Execute);
+#endif
                 }
 
                 return jobReflectionDataSingle;
@@ -149,10 +163,18 @@ namespace BovineLabs.Event.Jobs
             {
                 if (jobReflectionDataParallel == IntPtr.Zero)
                 {
+#if UNITY_2020_2_OR_NEWER
                     jobReflectionDataParallel = JobsUtility.CreateJobReflectionData(
                         typeof(JobEventProducer<TJob, T>),
                         typeof(TJob),
                         (ExecuteJobFunction)Execute);
+#else
+                    jobReflectionDataParallel = JobsUtility.CreateJobReflectionData(
+                        typeof(JobEventProducer<TJob, T>),
+                        typeof(TJob),
+                        JobType.ParallelFor,
+                        (ExecuteJobFunction)Execute);
+#endif
                 }
 
                 return jobReflectionDataParallel;
