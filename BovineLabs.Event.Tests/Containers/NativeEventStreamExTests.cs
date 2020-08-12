@@ -1,0 +1,50 @@
+// <copyright file="NativeEventStreamExTests.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
+namespace BovineLabs.Event.Tests.Containers
+{
+    using BovineLabs.Event.Containers;
+    using NUnit.Framework;
+    using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
+
+    /// <summary> Tests for <see cref="NativeEventStreamEx"/> . </summary>
+    public class NativeEventStreamExTests
+    {
+        /// <summary> Tests the extensions AllocateLarge and ReadLarge. </summary>
+        [TestCase(512)]
+        [TestCase(4092)]
+        [TestCase(8192)]
+        public unsafe void WriteRead(int size)
+        {
+            var stream = new NativeEventStream(Allocator.Temp);
+
+            var sourceData = new NativeArray<byte>(size, Allocator.Temp);
+            for (var i = 0; i < size; i++)
+            {
+                sourceData[i] = (byte)(i % 255);
+            }
+
+            var writer = stream.AsWriter();
+            writer.AllocateLarge((byte*)sourceData.GetUnsafeReadOnlyPtr(), size);
+
+            var reader = stream.AsReader();
+
+            reader.BeginForEachIndex(0);
+
+            var ptr = reader.ReadLarge(size);
+            var result = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(ptr, size, Allocator.None);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref result, AtomicSafetyHandle.GetTempMemoryHandle());
+#endif
+
+            reader.EndForEachIndex();
+
+            for (var i = 0; i < size; i++)
+            {
+                Assert.AreEqual(sourceData[i], result[i]);
+            }
+        }
+    }
+}
