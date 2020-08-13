@@ -1,4 +1,8 @@
 # Changelog
+## [1.1.6] - 2020-08-13
+### Added
+- Added AllocateLarge and ReadLarge extensions to NativeEventStream
+
 ## [1.1.5] - 2020-08-09
 ### Fixed
 - Added support back for Unity 19.4 and 20.1

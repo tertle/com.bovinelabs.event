@@ -13,9 +13,10 @@ namespace BovineLabs.Event.Tests.Containers
     public class NativeEventStreamExTests
     {
         /// <summary> Tests the extensions AllocateLarge and ReadLarge. </summary>
-        [TestCase(512)]
-        [TestCase(4092)]
-        [TestCase(8192)]
+        /// <param name="size"> The size of the allocation. </param>
+        [TestCase(512)] // less than max size
+        [TestCase(4092)] // max size
+        [TestCase(8192)] // requires just more than 2 blocks
         public unsafe void WriteRead(int size)
         {
             var stream = new NativeEventStream(Allocator.Temp);
