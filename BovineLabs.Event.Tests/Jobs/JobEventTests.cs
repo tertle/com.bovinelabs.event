@@ -2,8 +2,6 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-#if BOVINELABS_TESTING_ENABLED
-
 namespace BovineLabs.Event.Tests.Jobs
 {
     using BovineLabs.Event.Jobs;
@@ -121,5 +119,3 @@ namespace BovineLabs.Event.Tests.Jobs
         }
     }
 }
-
-#endif

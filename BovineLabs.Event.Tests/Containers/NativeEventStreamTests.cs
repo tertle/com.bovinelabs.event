@@ -2,8 +2,6 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-#if BOVINELABS_TESTING_ENABLED
-
 namespace BovineLabs.Event.Tests.Containers
 {
     using System;
@@ -572,5 +570,3 @@ namespace BovineLabs.Event.Tests.Containers
         }
     }
 }
-
-#endif

@@ -1,3 +1,7 @@
+// <copyright file="NativeEventStreamExPerformanceTests.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.PerformanceTests.Containers
 {
     using BovineLabs.Event.Containers;

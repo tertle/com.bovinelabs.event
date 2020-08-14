@@ -6,7 +6,8 @@
   "displayName": "BovineLabs Event",
   "dependencies": {
     "com.unity.entities": "0.14.0-preview.18",
-	"com.unity.test-framework": "1.1.14"
+	"com.unity.test-framework": "1.1.14",
+	"com.bovinelabs.testing": "1.0.4"
   },
   "samples": [
     {

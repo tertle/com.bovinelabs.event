@@ -2,8 +2,6 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
-#if BOVINELABS_TESTING_ENABLED
-
 namespace BovineLabs.Event.Tests.Systems
 {
     using NUnit.Framework;
@@ -147,5 +145,3 @@ namespace BovineLabs.Event.Tests.Systems
         }
     }
 }
-
-#endif
