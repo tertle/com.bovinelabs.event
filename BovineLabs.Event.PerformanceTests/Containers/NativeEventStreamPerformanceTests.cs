@@ -2,6 +2,8 @@
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
+#if BL_TESTING
+
 namespace BovineLabs.Event.PerformanceTests.Containers
 {
     using BovineLabs.Event.Containers;
@@ -344,3 +346,5 @@ namespace BovineLabs.Event.PerformanceTests.Containers
         }
     }
 }
+
+#endif

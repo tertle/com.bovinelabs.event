@@ -22,6 +22,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.bovinelabs.testing",
+            "expression": "1.0.4",
+            "define": "BL_TESTING"
+        }
+    ],
     "noEngineReferences": false
 }
