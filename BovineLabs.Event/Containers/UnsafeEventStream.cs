@@ -253,7 +253,7 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 var size = UnsafeUtility.SizeOf<T>();
-                return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
+                return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
             }
 
             /// <summary> Allocate space for data. </summary>
@@ -387,7 +387,7 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 int size = UnsafeUtility.SizeOf<T>();
-                return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
+                return ref UnsafeUtility.AsRef<T>(this.ReadUnsafePtr(size));
             }
 
             /// <summary> Peek into data. </summary>
@@ -404,7 +404,7 @@ namespace BovineLabs.Event.Containers
                     ptr = this.CurrentBlock->Next->Data;
                 }
 
-                return ref UnsafeUtilityEx.AsRef<T>(ptr);
+                return ref UnsafeUtility.AsRef<T>(ptr);
             }
 
             /// <summary> Compute item count. </summary>

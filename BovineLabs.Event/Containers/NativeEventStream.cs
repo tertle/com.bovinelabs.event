@@ -13,6 +13,7 @@ namespace BovineLabs.Event.Containers
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
     using UnityEngine.Assertions;
+    using Debug = UnityEngine.Debug;
 
     /// <summary>
     /// A thread data stream supporting parallel reading and parallel writing.
@@ -164,17 +165,25 @@ namespace BovineLabs.Event.Containers
 
         private static void Allocate(out NativeEventStream stream, Allocator allocator, bool useThreads)
         {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (allocator <= Allocator.None)
-            {
-                throw new ArgumentException("Allocator must be Temp, TempJob or Persistent", "allocator");
-            }
-#endif
+            ValidateAllocator(allocator);
+
             UnsafeEventStream.AllocateBlock(out stream.stream, allocator);
             stream.useThreads = useThreads;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             DisposeSentinel.Create(out stream.m_Safety, out stream.m_DisposeSentinel, 0, allocator);
+#endif
+        }
+
+        [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+        [SuppressMessage("ReSharper", "ParameterOnlyUsedForPreconditionCheck.Local", Justification = "Point of method")]
+        private static void ValidateAllocator(Allocator allocator)
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (allocator <= Allocator.None)
+            {
+                throw new ArgumentException("Allocator must be Temp, TempJob or Persistent", nameof(allocator));
+            }
 #endif
         }
 
@@ -268,7 +277,7 @@ namespace BovineLabs.Event.Containers
             {
                 CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();
-                return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
+                return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
             }
 
             /// <summary> Allocate space for data. </summary>
@@ -433,12 +442,12 @@ namespace BovineLabs.Event.Containers
 
                     if (this.remainingBlocks < 0)
                     {
-                        throw new System.ArgumentException("Reading out of bounds");
+                        Debug.LogError("Reading out of bounds");
                     }
 
                     if (this.remainingBlocks == 0 && size + sizeof(void*) > this.reader.LastBlockSize)
                     {
-                        throw new System.ArgumentException("Reading out of bounds");
+                        Debug.LogError("Reading out of bounds");
                     }
 
                     if (this.remainingBlocks <= 0)
@@ -466,7 +475,7 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 int size = UnsafeUtility.SizeOf<T>();
-                return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
+                return ref UnsafeUtility.AsRef<T>(this.ReadUnsafePtr(size));
             }
 
             /// <summary> Peek into data. </summary>
