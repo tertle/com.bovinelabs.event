@@ -1,4 +1,12 @@
 # Changelog
+## [1.1.6] - 2020-08-14
+### Changed
+- Updated requirements to Unity 2020.1 and Entities 0.14
+- Tweaked testing
+
+### Fixed
+- Warnings as the result of the new burst 1.4 preview
+
 ## [1.1.6] - 2020-08-13
 ### Added
 - Added AllocateLarge and ReadLarge extensions to NativeEventStream
