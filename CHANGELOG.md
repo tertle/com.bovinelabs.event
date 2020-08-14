@@ -1,5 +1,5 @@
 # Changelog
-## [1.1.6] - 2020-08-14
+## [1.1.7] - 2020-08-14
 ### Changed
 - Updated requirements to Unity 2020.1 and Entities 0.14
 - Tweaked testing
