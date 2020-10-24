@@ -6,6 +6,7 @@
 
 ### Changed
 - ReadLarge now has an optional Allocator if you want to use something other than the Temp allocator
+- StreamBus is now cleaned up after last Unsubscribe
 
 ## [1.1.7] - 2020-08-14
 ### Changed

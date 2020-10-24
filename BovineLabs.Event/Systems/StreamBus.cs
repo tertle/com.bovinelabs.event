@@ -21,12 +21,16 @@ namespace BovineLabs.Event.Systems
     {
         private static readonly Dictionary<string, StreamBus> Instances = new Dictionary<string, StreamBus>();
 
+        private readonly string key;
         private readonly List<EventSystemBase> subscribers = new List<EventSystemBase>();
         private readonly Dictionary<NativeEventStream, StreamHandles> streams = new Dictionary<NativeEventStream, StreamHandles>();
         private readonly ObjectPool<StreamHandles> pool = new ObjectPool<StreamHandles>(() => new StreamHandles());
 
-        private StreamBus()
+        private bool disposed;
+
+        private StreamBus(string key)
         {
+            this.key = key;
         }
 
         /// <summary>
@@ -38,7 +42,7 @@ namespace BovineLabs.Event.Systems
         {
             if (!Instances.TryGetValue(key, out var streamShare))
             {
-                streamShare = Instances[key] = new StreamBus();
+                streamShare = Instances[key] = new StreamBus(key);
             }
 
             return streamShare;
@@ -50,6 +54,8 @@ namespace BovineLabs.Event.Systems
         /// <param name="eventSystem"> The event system. </param>
         internal void Subscribe(EventSystemBase eventSystem)
         {
+            Assert.IsFalse(this.disposed);
+
             Assert.IsFalse(this.subscribers.Contains(eventSystem));
             this.subscribers.Add(eventSystem);
         }
@@ -60,8 +66,16 @@ namespace BovineLabs.Event.Systems
         /// <param name="eventSystem"> The event system. </param>
         internal void Unsubscribe(EventSystemBase eventSystem)
         {
+            Assert.IsFalse(this.disposed);
             Assert.IsTrue(this.subscribers.Contains(eventSystem));
             this.subscribers.Remove(eventSystem);
+
+            // No more subscribers, clean up the bus
+            if (this.subscribers.Count == 0)
+            {
+                Instances.Remove(this.key);
+                this.disposed = true;
+            }
 
             // Must release streams before call unsubscribe.
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -81,6 +95,8 @@ namespace BovineLabs.Event.Systems
         /// <exception cref="ArgumentException"> Thrown  if this owner is not subscribed. </exception>
         internal JobHandle AddStreams(EventSystemBase owner, Type type, IReadOnlyList<NativeEventStream> newStreams, JobHandle consumerHandle)
         {
+            Assert.IsFalse(this.disposed);
+
             if (!this.subscribers.Contains(owner))
             {
                 throw new ArgumentException("Owner not subscribed");
@@ -150,7 +166,9 @@ namespace BovineLabs.Event.Systems
         /// <returns> New dependency handle. </returns>
         internal JobHandle ReleaseStreams(EventSystemBase owner, IReadOnlyList<NativeEventStream> streamsToRelease, JobHandle inputHandle)
         {
-            JobHandle outputHandle = inputHandle;
+            Assert.IsFalse(this.disposed);
+
+            var outputHandle = inputHandle;
 
             for (var index = 0; index < streamsToRelease.Count; index++)
             {
@@ -185,12 +203,15 @@ namespace BovineLabs.Event.Systems
             return outputHandle;
         }
 
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         /// <summary> Clears the instances when entering Play Mode without Domain Reload. </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void CleanupBeforeSceneLoad()
         {
+            Assert.AreEqual(0, Instances.Count);
             Instances.Clear();
         }
+#endif
 
         private class StreamHandles
         {
