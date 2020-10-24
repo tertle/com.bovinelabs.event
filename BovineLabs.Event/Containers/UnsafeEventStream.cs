@@ -253,7 +253,11 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 var size = UnsafeUtility.SizeOf<T>();
+#if COLLECTIONS_11
                 return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
+#else
+                return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
+#endif
             }
 
             /// <summary> Allocate space for data. </summary>
@@ -387,7 +391,11 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 int size = UnsafeUtility.SizeOf<T>();
+#if COLLECTIONS_11
                 return ref UnsafeUtility.AsRef<T>(this.ReadUnsafePtr(size));
+#else
+                return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
+#endif
             }
 
             /// <summary> Peek into data. </summary>
@@ -404,7 +412,11 @@ namespace BovineLabs.Event.Containers
                     ptr = this.CurrentBlock->Next->Data;
                 }
 
+#if COLLECTIONS_11
                 return ref UnsafeUtility.AsRef<T>(ptr);
+#else
+                return ref UnsafeUtilityEx.AsRef<T>(ptr);
+#endif
             }
 
             /// <summary> Compute item count. </summary>

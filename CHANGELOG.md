@@ -1,4 +1,8 @@
 # Changelog
+## [1.1.9] - 2020-10-25
+### Changed
+- Reduced requirements back to Unity 2019.4 and Entities 0.11
+
 ## [1.1.8] - 2020-10-25
 ### Added
 - Added EnsureHashMapCapacity override for NativeMultiHashMaps
