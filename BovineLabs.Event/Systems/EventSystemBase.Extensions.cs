@@ -34,7 +34,10 @@ namespace BovineLabs.Event.Systems
                 this.eventSystem = eventSystem;
             }
 
-            /// <summary> Ensure a <see cref="NativeHashMap{TKey,TValue}" /> has the capacity to be filled with all events of a specific type. </summary>
+            /// <summary>
+            /// Ensure a <see cref="NativeHashMap{TKey,TValue}" /> has the capacity to be filled with all events of a specific type.
+            /// If the hash map already has elements, it will increase the size so that all events and existing elements can fit.
+            /// </summary>
             /// <param name="handle"> Input dependencies. </param>
             /// <param name="hashMap"> The <see cref="NativeHashMap{TKey,TValue}"/> to ensure capacity of. </param>
             /// <typeparam name="TKey"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
@@ -56,6 +59,43 @@ namespace BovineLabs.Event.Systems
                         .ScheduleSimultaneous<CountJob, T>(this.eventSystem, handle);
 
                     handle = new EnsureHashMapCapacityJob<TKey, TValue>
+                        {
+                            Counter = counter,
+                            HashMap = hashMap,
+                        }
+                        .Schedule(handle);
+
+                    handle = counter.Dispose(handle);
+                }
+
+                return handle;
+            }
+
+            /// <summary>
+            /// Ensure a <see cref="NativeMultiHashMap{TKey,TValue}" /> has the capacity to be filled with all events of a specific type.
+            /// If the hash map already has elements, it will increase the size so that all events and existing elements can fit.
+            /// </summary>
+            /// <param name="handle"> Input dependencies. </param>
+            /// <param name="hashMap"> The <see cref="NativeHashMap{TKey,TValue}"/> to ensure capacity of. </param>
+            /// <typeparam name="TKey"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
+            /// <typeparam name="TValue"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
+            /// <returns> The dependency handle. </returns>
+            public JobHandle EnsureHashMapCapacity<TKey, TValue>(
+                JobHandle handle,
+                NativeMultiHashMap<TKey, TValue> hashMap)
+                where TKey : struct, IEquatable<TKey>
+                where TValue : struct
+            {
+                var readerCount = this.eventSystem.GetEventReadersCount<T>();
+
+                if (readerCount != 0)
+                {
+                    var counter = new NativeArray<int>(readerCount, Allocator.TempJob);
+
+                    handle = new CountJob { Counter = counter }
+                        .ScheduleSimultaneous<CountJob, T>(this.eventSystem, handle);
+
+                    handle = new EnsureMultiHashMapCapacityJob<TKey, TValue>
                         {
                             Counter = counter,
                             HashMap = hashMap,
@@ -142,7 +182,7 @@ namespace BovineLabs.Event.Systems
                 }
             }
 
-            [BurstCompile] // does not work
+            [BurstCompile]
             private struct EnsureHashMapCapacityJob<TKey, TValue> : IJob
                 where TKey : struct, IEquatable<TKey>
                 where TValue : struct
@@ -170,7 +210,35 @@ namespace BovineLabs.Event.Systems
                 }
             }
 
-            //[BurstCompile]
+            [BurstCompile]
+            private struct EnsureMultiHashMapCapacityJob<TKey, TValue> : IJob
+                where TKey : struct, IEquatable<TKey>
+                where TValue : struct
+            {
+                [ReadOnly]
+                public NativeArray<int> Counter;
+
+                public NativeMultiHashMap<TKey, TValue> HashMap;
+
+                public void Execute()
+                {
+                    var count = 0;
+
+                    for (var i = 0; i < this.Counter.Length; i++)
+                    {
+                        count += this.Counter[i];
+                    }
+
+                    var requiredSize = this.HashMap.Count() + count;
+
+                    if (this.HashMap.Capacity < requiredSize)
+                    {
+                        this.HashMap.Capacity = requiredSize;
+                    }
+                }
+            }
+
+            [BurstCompile]
             private struct ToNativeListJob : IJobEvent<T>
             {
                 public NativeList<T> List;

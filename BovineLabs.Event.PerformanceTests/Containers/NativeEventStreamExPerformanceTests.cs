@@ -88,8 +88,11 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 {
                     var reader = stream.AsReader();
                     reader.BeginForEachIndex(0);
-                    var ptr = reader.ReadLarge(size);
+                    var ptr = reader.ReadLarge(size, Allocator.TempJob);
+
                     NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(ptr, size, Allocator.None);
+
+                    UnsafeUtility.Free(ptr, Allocator.TempJob);
                 })
                 .SetUp(() =>
                 {

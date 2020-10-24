@@ -15,6 +15,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.PerformanceTesting;
+    using Unity.Transforms;
 
     /// <summary> Performance tests for <see cref="NativeEventStream"/>. </summary>
     /// <remarks><para> Includes comparison tests for <see cref="NativeQueue{T}"/> and <see cref="NativeStream"/>. </para></remarks>
@@ -191,6 +192,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 })
                 .Run();
         }
+
 #endif
 
         [BurstCompile(CompileSynchronously = true)]
@@ -260,8 +262,6 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             private readonly int count;
             private readonly int archetypes;
 
-            private EntityQuery query;
-
             public EntitiesForEachTest(int count, int archetypes)
             {
                 this.count = count;
@@ -276,12 +276,10 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                     .WithAll<TestComponent>()
                     .ForEach((int entityInQueryIndex) => writer.Write(entityInQueryIndex))
                     .WithBurst(synchronousCompilation: true)
-                    .WithStoreEntityQueryInField(ref this.query)
+                    .WithName("NativeEventStreamTest")
                     .ScheduleParallel();
 
                 this.Dependency.Complete();
-
-                Assert.AreEqual(this.query.CalculateEntityCount(), stream.ComputeItemCount());
             }
 
 #if BL_EVENTSYSTEM_BENCHMARK
@@ -298,6 +296,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                         writer.EndForEachIndex();
                     })
                     .WithBurst(synchronousCompilation: true)
+                    .WithName("NativeStreamTest")
                     .ScheduleParallel();
 
                 this.Dependency.Complete();
@@ -311,6 +310,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                     .WithAll<TestComponent>()
                     .ForEach((int entityInQueryIndex) => parallel.Enqueue(entityInQueryIndex))
                     .WithBurst(synchronousCompilation: true)
+                    .WithName("NativeQueueTest")
                     .ScheduleParallel();
 
                 this.Dependency.Complete();

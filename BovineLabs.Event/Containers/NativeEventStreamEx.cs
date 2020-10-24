@@ -44,7 +44,7 @@ namespace BovineLabs.Event.Containers
         /// <param name="reader"> The reader. </param>
         /// <param name="size"> For an array, this is UnsafeUtility.SizeOf{T} * length. </param>
         /// <returns> Pointer to data. </returns>
-        public static byte* ReadLarge(this ref NativeEventStream.Reader reader, int size)
+        public static byte* ReadLarge(this ref NativeEventStream.Reader reader, int size, Allocator allocator = Allocator.Temp)
         {
             if (size == 0)
             {
@@ -58,7 +58,7 @@ namespace BovineLabs.Event.Containers
                 return reader.ReadUnsafePtr(size);
             }
 
-            var output = (byte*)UnsafeUtility.Malloc(size, 4, Allocator.Temp);
+            var output = (byte*)UnsafeUtility.Malloc(size, 4, allocator);
 
             var allocationCount = size / maxSize;
             var allocationRemainder = size % maxSize;

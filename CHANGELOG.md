@@ -1,4 +1,11 @@
 # Changelog
+## [1.1.8] - 2020-10-25
+### Added
+- Added EnsureHashMapCapacity override for NativeMultiHashMaps
+
+### Changed
+- ReadLarge now has an optional Allocator if you want to use something other than the Temp allocator
+
 ## [1.1.7] - 2020-08-14
 ### Changed
 - Updated requirements to Unity 2020.1 and Entities 0.14

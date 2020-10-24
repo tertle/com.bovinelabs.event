@@ -30,21 +30,26 @@ namespace BovineLabs.Event.Tests.Containers
             }
 
             var writer = stream.AsWriter();
+            writer.Write(size);
             writer.AllocateLarge((byte*)sourceData.GetUnsafeReadOnlyPtr(), size);
 
             var reader = stream.AsReader();
 
             reader.BeginForEachIndex(0);
 
-            var ptr = reader.ReadLarge(size);
-            var result = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(ptr, size, Allocator.None);
+            var readSize = reader.Read<int>();
+
+            Assert.AreEqual(size, readSize);
+
+            var ptr = reader.ReadLarge(readSize);
+            var result = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(ptr, readSize, Allocator.None);
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref result, AtomicSafetyHandle.GetTempMemoryHandle());
 #endif
 
             reader.EndForEachIndex();
 
-            for (var i = 0; i < size; i++)
+            for (var i = 0; i < readSize; i++)
             {
                 Assert.AreEqual(sourceData[i], result[i]);
             }
