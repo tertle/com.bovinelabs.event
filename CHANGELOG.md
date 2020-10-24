@@ -2,6 +2,7 @@
 ## [1.1.8] - 2020-10-25
 ### Added
 - Added EnsureHashMapCapacity override for NativeMultiHashMaps
+- Added stacktrace info to the consumer and producer safety to help pinpoint a missing AddHandlerFor
 
 ### Changed
 - ReadLarge now has an optional Allocator if you want to use something other than the Temp allocator

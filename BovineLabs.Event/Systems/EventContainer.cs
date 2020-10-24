@@ -13,14 +13,11 @@ namespace BovineLabs.Event.Systems
     /// <summary> The container that holds the actual events of each type. </summary>
     internal sealed class EventContainer : IDisposable
     {
-        #if ENABLE_UNITY_COLLECTIONS_CHECKS
-        private const string ProducerException =
-            "CreateEventWriter must always be balanced by a AddJobHandleForProducer call";
-
-        private const string ConsumerException =
-            "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
-
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        private const string ProducerException = "CreateEventWriter must always be balanced by a AddJobHandleForProducer call.";
+        private const string ConsumerException = "GetEventReaders must always be balanced by a AddJobHandleForConsumer call";
         private const string ReadModeRequired = "Can only be called in read mode.";
+        private const string PreviousCall = "{0} was previously called from";
 #endif
 
         private readonly bool usePersistentAllocator;
@@ -41,7 +38,10 @@ namespace BovineLabs.Event.Systems
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
         private bool producerSafety;
+        private System.Diagnostics.StackFrame lastProducerStackFrame;
+
         private bool consumerSafety;
+        private System.Diagnostics.StackFrame lastConsumerStackFrame;
 #endif
 
         /// <summary> Initializes a new instance of the <see cref="EventContainer"/> class. </summary>
@@ -83,10 +83,12 @@ namespace BovineLabs.Event.Systems
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (this.producerSafety)
             {
-                throw new InvalidOperationException(ProducerException);
+                var stack = GetStack(this.lastProducerStackFrame);
+                throw new InvalidOperationException($"{ProducerException}\n{string.Format(PreviousCall, nameof(this.CreateEventStream))} {stack}");
             }
 
             this.producerSafety = true;
+            this.lastProducerStackFrame = new System.Diagnostics.StackFrame(2, true);
 #endif
 
             var allocator = this.usePersistentAllocator ? Allocator.Persistent : Allocator.TempJob;
@@ -112,10 +114,12 @@ namespace BovineLabs.Event.Systems
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (!this.producerSafety)
             {
-                throw new InvalidOperationException(ProducerException);
+                var stack = GetStack(this.lastProducerStackFrame);
+                throw new InvalidOperationException($"{ProducerException}\n{string.Format(PreviousCall, nameof(this.AddJobHandleForProducer))} {stack}");
             }
 
             this.producerSafety = false;
+            this.lastProducerStackFrame = new System.Diagnostics.StackFrame(2, true);
 #endif
 
             this.AddJobHandleForProducerUnsafe(handle);
@@ -135,6 +139,26 @@ namespace BovineLabs.Event.Systems
             }
         }
 
+        /// <summary> Gets the collection of readers. </summary>
+        /// <returns> Returns the reader. </returns>
+        public IReadOnlyList<NativeEventStream.Reader> GetReaders()
+        {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (this.consumerSafety)
+            {
+                var stack = GetStack(this.lastConsumerStackFrame);
+                throw new InvalidOperationException($"{ConsumerException}\n{string.Format(PreviousCall, nameof(this.GetReaders))} {stack}");
+            }
+
+            this.consumerSafety = true;
+            this.lastConsumerStackFrame = new System.Diagnostics.StackFrame(2);
+#endif
+
+            this.SetReadMode();
+
+            return this.readers;
+        }
+
         /// <summary> Add a new producer job handle. Can only be called in write mode. </summary>
         /// <param name="handle"> The handle. </param>
         public void AddJobHandleForConsumer(JobHandle handle)
@@ -142,10 +166,12 @@ namespace BovineLabs.Event.Systems
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             if (!this.consumerSafety)
             {
-                throw new InvalidOperationException(ConsumerException);
+                var stack = GetStack(this.lastConsumerStackFrame);
+                throw new InvalidOperationException($"{ConsumerException}\n{string.Format(PreviousCall, nameof(this.AddJobHandleForConsumer))} {stack}");
             }
 
             this.consumerSafety = false;
+            this.lastConsumerStackFrame = new System.Diagnostics.StackFrame(2);
 
             if (!this.isReadMode)
             {
@@ -154,24 +180,6 @@ namespace BovineLabs.Event.Systems
 #endif
 
             this.ConsumerHandle = JobHandle.CombineDependencies(this.ConsumerHandle, handle);
-        }
-
-        /// <summary> Gets the collection of readers. </summary>
-        /// <returns> Returns the reader. </returns>
-        public IReadOnlyList<NativeEventStream.Reader> GetReaders()
-        {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (this.consumerSafety)
-            {
-                throw new InvalidOperationException(ConsumerException);
-            }
-
-            this.consumerSafety = true;
-#endif
-
-            this.SetReadMode();
-
-            return this.readers;
         }
 
         /// <summary> Check if any readers exist. Requires read mode. </summary>
@@ -243,6 +251,24 @@ namespace BovineLabs.Event.Systems
                 this.deferredStreams[index].Dispose();
             }
         }
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        private static string GetStack(System.Diagnostics.StackFrame frame)
+        {
+            var projectFolder = $"{System.IO.Directory.GetCurrentDirectory()}\\";
+
+            var method = frame.GetMethod();
+            var file = frame.GetFileName();
+            file = file?.Replace(projectFolder, string.Empty);
+
+            var lineNumber = frame.GetFileLineNumber();
+            var declaringType = method.DeclaringType;
+            var methodName = method.Name;
+
+            var stack = $"{declaringType}:{methodName} ({string.Join(",", System.Linq.Enumerable.Select(method.GetParameters(), p => p.ParameterType))}) (at {file}:{lineNumber})";
+            return stack;
+        }
+#endif
 
         /// <summary> Set the event to read mode. </summary>
         private void SetReadMode()
