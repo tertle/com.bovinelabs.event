@@ -278,7 +278,7 @@ namespace BovineLabs.Event.Containers
                 CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();
 
-#if COLLECTIONS_11
+#if UNITY_2020_1_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
 #else
                 return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
@@ -480,7 +480,7 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 int size = UnsafeUtility.SizeOf<T>();
-#if COLLECTIONS_11
+#if UNITY_2020_1_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(this.ReadUnsafePtr(size));
 #else
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
