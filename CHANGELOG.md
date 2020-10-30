@@ -1,4 +1,8 @@
 # Changelog
+## [1.1.10] - 2020-10-31
+### Fixed
+- Add support for Collections 0.14
+
 ## [1.1.9] - 2020-10-25
 ### Changed
 - Reduced requirements back to Unity 2019.4 and Entities 0.11

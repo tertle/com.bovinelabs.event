@@ -275,7 +275,6 @@ namespace BovineLabs.Event.Containers
             public ref T Allocate<T>()
                 where T : struct
             {
-                CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();
 
 #if UNITY_2020_1_OR_NEWER
