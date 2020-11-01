@@ -20,7 +20,7 @@ namespace BovineLabs.Event.Containers
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
     [NativeContainer]
-    public unsafe struct NativeEventStream : IDisposable, IEquatable<NativeEventStream>
+    public unsafe partial struct NativeEventStream : IDisposable, IEquatable<NativeEventStream>
     {
         private UnsafeEventStream stream;
 
@@ -227,7 +227,6 @@ namespace BovineLabs.Event.Containers
                 this.m_Safety = stream.m_Safety;
                 this.m_UseThreads = stream.useThreads;
 
-                this.m_Safety = stream.m_Safety;
                 this.m_Length = int.MaxValue;
                 this.m_MinIndex = int.MinValue;
                 this.m_MaxIndex = int.MinValue;

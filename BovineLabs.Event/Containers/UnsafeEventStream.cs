@@ -17,7 +17,7 @@ namespace BovineLabs.Event.Containers
     /// A thread data stream supporting parallel reading and parallel writing.
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
-    public unsafe struct UnsafeEventStream : IDisposable, IEquatable<UnsafeEventStream>
+    public unsafe partial struct UnsafeEventStream : IDisposable, IEquatable<UnsafeEventStream>
     {
         [NativeDisableUnsafePtrRestriction]
         private UnsafeEventStreamBlockData* block;

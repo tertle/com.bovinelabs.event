@@ -19,7 +19,7 @@ namespace BovineLabs.Event.Containers
         internal int BlockCount;
 
         internal UnsafeEventStreamRange* Ranges;
-        internal UnsafeEventThreadRange* ThreadRanges;
+        internal UnsafeEventThreadRange* ThreadRanges; // TODO REMOVE
         internal int RangeCount;
 
         internal UnsafeEventStreamBlock* Allocate(UnsafeEventStreamBlock* oldBlock, int threadIndex)
