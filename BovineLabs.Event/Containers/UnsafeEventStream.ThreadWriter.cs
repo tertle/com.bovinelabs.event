@@ -5,7 +5,7 @@ namespace BovineLabs.Event.Containers
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs.LowLevel.Unsafe;
 
-    public unsafe partial struct UnsafeEventStreamNew
+    public unsafe partial struct UnsafeEventStream
     {
         /// <summary> The writer instance. </summary>
         public struct ThreadWriter
@@ -13,30 +13,12 @@ namespace BovineLabs.Event.Containers
             public const int ForEachCount = JobsUtility.MaxJobThreadCount;
 
             [NativeDisableUnsafePtrRestriction]
-            internal UnsafeEventStreamBlockDataNew* m_BlockStream;
-
-            // [NativeDisableUnsafePtrRestriction]
-            // private UnsafeEventStreamBlockNew* m_CurrentBlock;
-            //
-            // [NativeDisableUnsafePtrRestriction]
-            // private byte* m_CurrentPtr;
-            //
-            // [NativeDisableUnsafePtrRestriction]
-            // private byte* m_CurrentBlockEnd;
-            //
-            // internal int m_ForeachIndex;
-            // private int m_ElementCount;
-            //
-            // [NativeDisableUnsafePtrRestriction]
-            // private UnsafeEventStreamBlockNew* m_FirstBlock;
-            //
-            // private int m_FirstOffset;
-            // private int m_NumberOfBlocks;
+            internal UnsafeEventStreamBlockData* m_BlockStream;
 
             [NativeSetThreadIndex]
             private int m_ThreadIndex;
 
-            internal ThreadWriter(ref UnsafeEventStreamNew stream)
+            internal ThreadWriter(ref UnsafeEventStream stream)
             {
                 this.m_BlockStream = stream.m_Block;
                 this.m_ThreadIndex = 0; // 0 so main thread works
@@ -114,7 +96,7 @@ namespace BovineLabs.Event.Containers
                     }
 
                     this.m_BlockStream->ThreadRanges[this.m_ThreadIndex].CurrentBlockEnd =
-                        (byte*)this.m_BlockStream->ThreadRanges[this.m_ThreadIndex].CurrentBlock + UnsafeEventStreamBlockDataNew.AllocationSize;
+                        (byte*)this.m_BlockStream->ThreadRanges[this.m_ThreadIndex].CurrentBlock + UnsafeEventStreamBlockData.AllocationSize;
 
                     ptr = this.m_BlockStream->ThreadRanges[this.m_ThreadIndex].CurrentPtr;
                     this.m_BlockStream->ThreadRanges[this.m_ThreadIndex].CurrentPtr += size;

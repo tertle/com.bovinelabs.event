@@ -29,7 +29,7 @@ namespace BovineLabs.Event.Tests.Containers
                 sourceData[i] = (byte)(i % 255);
             }
 
-            var writer = stream.AsWriter();
+            var writer = stream.AsThreadWriter();
             writer.Write(size);
             writer.AllocateLarge((byte*)sourceData.GetUnsafeReadOnlyPtr(), size);
 

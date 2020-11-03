@@ -270,7 +270,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
 
             public void NativeEventStreamTest(NativeEventStream stream)
             {
-                var writer = stream.AsWriter();
+                var writer = stream.AsThreadWriter();
 
                 this.Entities
                     .WithAll<TestComponent>()

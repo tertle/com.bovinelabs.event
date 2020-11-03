@@ -1,0 +1,85 @@
+namespace BovineLabs.Event.Containers
+{
+    using System;
+    using System.Diagnostics;
+    using Unity.Collections.LowLevel.Unsafe;
+
+    public unsafe partial struct NativeEventStream
+    {
+        /// <summary>
+        /// </summary>
+        [NativeContainer]
+        [NativeContainerIsAtomicWriteOnly]
+        public struct ThreadWriter : IStreamWriter
+        {
+            private UnsafeEventStream.ThreadWriter m_Writer;
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            AtomicSafetyHandle m_Safety;
+#endif
+
+            internal ThreadWriter(ref NativeEventStream stream)
+            {
+                m_Writer = stream.stream.AsThreadWriter();
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                m_Safety = stream.m_Safety;
+#endif
+            }
+
+            /// <summary>
+            ///
+            /// </summary>
+            public int ForEachCount => UnsafeEventStream.ThreadWriter.ForEachCount;
+
+            /// <summary>
+            /// Write data.
+            /// </summary>
+            /// <typeparam name="T">The type of value.</typeparam>
+            /// <param name="value"></param>
+            public void Write<T>(T value)
+                where T : struct
+            {
+                ref T dst = ref Allocate<T>();
+                dst = value;
+            }
+
+            /// <summary>
+            /// Allocate space for data.
+            /// </summary>
+            /// <typeparam name="T">The type of value.</typeparam>
+            /// <returns></returns>
+            public ref T Allocate<T>()
+                where T : struct
+            {
+                CollectionHelper.CheckIsUnmanaged<T>();
+                int size = UnsafeUtility.SizeOf<T>();
+                return ref UnsafeUtility.AsRef<T>(Allocate(size));
+            }
+
+            /// <summary>
+            /// Allocate space for data.
+            /// </summary>
+            /// <param name="size">Size in bytes.</param>
+            /// <returns></returns>
+            public byte* Allocate(int size)
+            {
+                CheckAllocateSize(size);
+                return m_Writer.Allocate(size);
+            }
+
+            [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+            void CheckAllocateSize(int size)
+            {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                AtomicSafetyHandle.CheckWriteAndThrow(m_Safety);
+
+                if (size > UnsafeEventStreamBlockData.AllocationSize - sizeof(void*))
+                {
+                    throw new ArgumentException("Allocation size is too large");
+                }
+#endif
+            }
+        }
+    }
+}

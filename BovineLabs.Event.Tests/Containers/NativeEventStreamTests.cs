@@ -27,7 +27,7 @@ namespace BovineLabs.Event.Tests.Containers
             var stream = new NativeEventStream(Allocator.Temp);
 
             Assert.IsTrue(stream.IsCreated);
-            Assert.IsTrue(stream.ComputeItemCount() == 0);
+            Assert.IsTrue(stream.Count() == 0);
 
             stream.Dispose();
             Assert.IsFalse(stream.IsCreated);
@@ -44,7 +44,7 @@ namespace BovineLabs.Event.Tests.Containers
                 var stream = new NativeEventStream(Allocator.TempJob);
                 Assert.IsTrue(stream.IsCreated);
 
-                var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
+                var fillInts = new WriteIntsJob { Writer = stream.AsThreadWriter() };
                 var writerJob = fillInts.ScheduleParallel(JobsUtility.MaxJobThreadCount, 16, default);
 
                 var disposeJob = stream.Dispose(writerJob);
@@ -63,10 +63,10 @@ namespace BovineLabs.Event.Tests.Containers
                 [Values(1, 3, 10, 128)] int batchSize)
             {
                 var stream = new NativeEventStream(Allocator.TempJob);
-                var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
+                var fillInts = new WriteIntsJob { Writer = stream.AsThreadWriter() };
                 fillInts.ScheduleParallel(count, batchSize, default).Complete();
 
-                Assert.AreEqual(count * (count - 1) / 2, stream.ComputeItemCount());
+                Assert.AreEqual(count * (count - 1) / 2, stream.Count());
 
                 stream.Dispose();
             }
@@ -81,7 +81,7 @@ namespace BovineLabs.Event.Tests.Containers
                 [Values(1, 3, 10)] int batchSize)
             {
                 var stream = new NativeEventStream(Allocator.TempJob);
-                var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
+                var fillInts = new WriteIntsJob { Writer = stream.AsThreadWriter() };
                 var jobHandle = fillInts.ScheduleParallel(count, batchSize, default);
 
                 var compareInts = new ReadIntsJob { JobReader = stream.AsReader() };
@@ -107,7 +107,7 @@ namespace BovineLabs.Event.Tests.Containers
             [BurstCompile(CompileSynchronously = true)]
             private struct WriteIntsJob : IJobFor
             {
-                public NativeEventStream.Writer Writer;
+                public NativeEventStream.ThreadWriter Writer;
 
 #pragma warning disable 649
                 [NativeSetThreadIndex]
@@ -188,7 +188,7 @@ namespace BovineLabs.Event.Tests.Containers
                 private void EntitiesForEach()
                 {
                     var stream = new NativeEventStream(Allocator.TempJob);
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsThreadWriter();
 
                     this.Entities
                         .ForEach((in TestComponent test) => writer.Write(test.Value))
@@ -216,7 +216,7 @@ namespace BovineLabs.Event.Tests.Containers
                 private void JobWithCode()
                 {
                     var stream = new NativeEventStream(Allocator.TempJob);
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsThreadWriter();
 
                     var c = this.count;
 
@@ -288,7 +288,7 @@ namespace BovineLabs.Event.Tests.Containers
                 var stream = new NativeEventStream(ForEachCount, Allocator.TempJob);
                 Assert.IsTrue(stream.IsCreated);
 
-                var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
+                var fillInts = new WriteIntsJob { Writer = stream.AsIndexWriter() };
                 var writerJob = fillInts.ScheduleParallel(ForEachCount, 16, default);
 
                 var disposeJob = stream.Dispose(writerJob);
@@ -307,10 +307,10 @@ namespace BovineLabs.Event.Tests.Containers
                 [Values(1, 3, 10, 128)] int batchSize)
             {
                 var stream = new NativeEventStream(foreachCount, Allocator.TempJob);
-                var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
+                var fillInts = new WriteIntsJob { Writer = stream.AsIndexWriter() };
                 fillInts.ScheduleParallel(foreachCount, batchSize, default).Complete();
 
-                Assert.AreEqual(foreachCount * (foreachCount - 1) / 2, stream.ComputeItemCount());
+                Assert.AreEqual(foreachCount * (foreachCount - 1) / 2, stream.Count());
 
                 stream.Dispose();
             }
@@ -325,7 +325,7 @@ namespace BovineLabs.Event.Tests.Containers
                 [Values(1, 3, 10)] int batchSize)
             {
                 var stream = new NativeEventStream(foreachCount, Allocator.TempJob);
-                var fillInts = new WriteIntsJob { Writer = stream.AsWriter() };
+                var fillInts = new WriteIntsJob { Writer = stream.AsIndexWriter() };
                 var jobHandle = fillInts.ScheduleParallel(foreachCount, batchSize, default);
 
                 var compareInts = new ReadIntsJob { JobReader = stream.AsReader() };
@@ -351,16 +351,16 @@ namespace BovineLabs.Event.Tests.Containers
             [BurstCompile(CompileSynchronously = true)]
             private struct WriteIntsJob : IJobFor
             {
-                public NativeEventStream.Writer Writer;
+                public NativeEventStream.IndexWriter Writer;
 
                 public void Execute(int index)
                 {
                     this.Writer.BeginForEachIndex(index);
-
                     for (int i = 0; i != index; i++)
                     {
                         this.Writer.Write(index);
                     }
+                    this.Writer.EndForEachIndex();
                 }
             }
 
@@ -430,13 +430,14 @@ namespace BovineLabs.Event.Tests.Containers
                 private void EntitiesForEach()
                 {
                     var stream = new NativeEventStream(this.query.CalculateEntityCount(), Allocator.TempJob);
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsIndexWriter();
 
                     this.Entities
                         .ForEach((int entityInQueryIndex, in TestComponent test) =>
                         {
                             writer.BeginForEachIndex(entityInQueryIndex);
                             writer.Write(test.Value);
+                            writer.EndForEachIndex();
                         })
                         .WithStoreEntityQueryInField(ref this.query)
                         .ScheduleParallel();
@@ -463,7 +464,7 @@ namespace BovineLabs.Event.Tests.Containers
                 private void JobWithCode()
                 {
                     var stream = new NativeEventStream(1, Allocator.TempJob);
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsIndexWriter();
 
                     var c = this.count;
 
@@ -475,6 +476,8 @@ namespace BovineLabs.Event.Tests.Containers
                             {
                                 writer.Write(i);
                             }
+
+                            writer.EndForEachIndex();
                         })
                         .Schedule();
 
@@ -532,7 +535,7 @@ namespace BovineLabs.Event.Tests.Containers
             public void ReadWithoutBeginThrows()
             {
                 var stream = new NativeEventStream(Allocator.Temp);
-                stream.AsWriter().Write(0);
+                stream.AsThreadWriter().Write(0);
 
                 var reader = stream.AsReader();
                 Assert.Throws<ArgumentException>(() => reader.Read<int>());
@@ -559,7 +562,7 @@ namespace BovineLabs.Event.Tests.Containers
             public void TooManyReadsThrows()
             {
                 var stream = new NativeEventStream(Allocator.Temp);
-                stream.AsWriter().Write(0);
+                stream.AsThreadWriter().Write(0);
 
                 var reader = stream.AsReader();
                 reader.BeginForEachIndex(0);

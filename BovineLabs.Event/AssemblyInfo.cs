@@ -5,3 +5,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("BovineLabs.Event.Tests")]
+[assembly: InternalsVisibleTo("BovineLabs.Event.PerformanceTests")]

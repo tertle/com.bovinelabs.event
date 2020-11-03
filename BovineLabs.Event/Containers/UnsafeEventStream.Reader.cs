@@ -3,7 +3,7 @@ namespace BovineLabs.Event.Containers
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
-    public unsafe partial struct UnsafeEventStreamNew
+    public unsafe partial struct UnsafeEventStream
     {
         /// <summary>
         /// </summary>
@@ -11,10 +11,10 @@ namespace BovineLabs.Event.Containers
         public unsafe struct Reader
         {
             [NativeDisableUnsafePtrRestriction]
-            internal UnsafeEventStreamBlockDataNew* m_BlockStream;
+            internal UnsafeEventStreamBlockData* m_BlockStream;
 
             [NativeDisableUnsafePtrRestriction]
-            internal UnsafeEventStreamBlockNew* m_CurrentBlock;
+            internal UnsafeEventStreamBlock* m_CurrentBlock;
 
             [NativeDisableUnsafePtrRestriction]
             internal byte* m_CurrentPtr;
@@ -25,7 +25,7 @@ namespace BovineLabs.Event.Containers
             internal int m_RemainingItemCount;
             internal int m_LastBlockSize;
 
-            internal Reader(ref UnsafeEventStreamNew stream)
+            internal Reader(ref UnsafeEventStream stream)
             {
                 this.m_BlockStream = stream.m_Block;
                 this.m_CurrentBlock = null;
@@ -48,7 +48,7 @@ namespace BovineLabs.Event.Containers
 
                 this.m_CurrentBlock = m_BlockStream->Ranges[foreachIndex].Block;
                 this.m_CurrentPtr = (byte*)this.m_CurrentBlock + m_BlockStream->Ranges[foreachIndex].OffsetInFirstBlock;
-                this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockDataNew.AllocationSize;
+                this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockData.AllocationSize;
 
                 return this.m_RemainingItemCount;
             }
@@ -88,7 +88,7 @@ namespace BovineLabs.Event.Containers
                     this.m_CurrentBlock = m_CurrentBlock->Next;
                     this.m_CurrentPtr = m_CurrentBlock->Data;
 
-                    this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockDataNew.AllocationSize;
+                    this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockData.AllocationSize;
 
                     ptr = this.m_CurrentPtr;
                     this.m_CurrentPtr += size;

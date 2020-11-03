@@ -156,7 +156,7 @@ namespace BovineLabs.Event.Systems
 
                 public void Execute(NativeEventStream.Reader reader, int readerIndex)
                 {
-                    this.Counter[readerIndex] = reader.ComputeItemCount();
+                    this.Counter[readerIndex] = reader.Count();
                 }
             }
 

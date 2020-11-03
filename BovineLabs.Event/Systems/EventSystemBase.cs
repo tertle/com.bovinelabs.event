@@ -51,21 +51,21 @@ namespace BovineLabs.Event.Systems
 
         /// <summary> Create a new NativeEventStream in thread mode for writing events to. </summary>
         /// <typeparam name="T"> The type of event. </typeparam>
-        /// <returns> A <see cref="NativeEventStream.Writer"/> you can write events to. </returns>
+        /// <returns> A <see cref="NativeEventStream.ThreadWriter"/> you can write events to. </returns>
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
-        public NativeEventStream.Writer CreateEventWriter<T>()
+        public NativeEventStream.ThreadWriter CreateEventWriter<T>()
             where T : struct
         {
             var container = this.GetOrCreateEventContainer<T>();
-            return container.CreateEventStream(-1);
+            return container.CreateEventStream();
         }
 
         /// <summary> Create a new NativeEventStream for writing events to . </summary>
         /// <param name="foreachCount"> The foreach count. </param>
         /// <typeparam name="T"> The type of event. </typeparam>
-        /// <returns> A <see cref="NativeEventStream.Writer"/> you can write events to. </returns>
+        /// <returns> A <see cref="NativeEventStream.IndexWriter"/> you can write events to. </returns>
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
-        public NativeEventStream.Writer CreateEventWriter<T>(int foreachCount)
+        public NativeEventStream.IndexWriter CreateEventWriter<T>(int foreachCount)
             where T : struct
         {
             Assert.IsFalse(foreachCount < 0);

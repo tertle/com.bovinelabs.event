@@ -3,16 +3,16 @@ namespace BovineLabs.Event.Containers
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
-    public unsafe partial struct UnsafeEventStreamNew
+    public unsafe partial struct UnsafeEventStream
     {
         /// <summary> The writer instance. </summary>
         public struct IndexWriter
         {
             [NativeDisableUnsafePtrRestriction]
-            internal UnsafeEventStreamBlockDataNew* m_BlockStream;
+            internal UnsafeEventStreamBlockData* m_BlockStream;
 
             [NativeDisableUnsafePtrRestriction]
-            private UnsafeEventStreamBlockNew* m_CurrentBlock;
+            private UnsafeEventStreamBlock* m_CurrentBlock;
 
             [NativeDisableUnsafePtrRestriction]
             private byte* m_CurrentPtr;
@@ -24,7 +24,7 @@ namespace BovineLabs.Event.Containers
             private int m_ElementCount;
 
             [NativeDisableUnsafePtrRestriction]
-            private UnsafeEventStreamBlockNew* m_FirstBlock;
+            private UnsafeEventStreamBlock* m_FirstBlock;
 
             private int m_FirstOffset;
             private int m_NumberOfBlocks;
@@ -32,7 +32,7 @@ namespace BovineLabs.Event.Containers
             [NativeSetThreadIndex]
             private int m_ThreadIndex;
 
-            internal IndexWriter(ref UnsafeEventStreamNew stream)
+            internal IndexWriter(ref UnsafeEventStream stream)
             {
                 this.m_BlockStream = stream.m_Block;
                 this.m_ForeachIndex = int.MinValue;
@@ -131,7 +131,7 @@ namespace BovineLabs.Event.Containers
                         this.m_NumberOfBlocks++;
                     }
 
-                    this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockDataNew.AllocationSize;
+                    this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockData.AllocationSize;
                     ptr = this.m_CurrentPtr;
                     this.m_CurrentPtr += size;
                 }

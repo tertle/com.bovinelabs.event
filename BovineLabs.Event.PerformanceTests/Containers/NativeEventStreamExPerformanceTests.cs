@@ -10,6 +10,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
+    using Unity.Jobs.LowLevel.Unsafe;
     using Unity.PerformanceTesting;
 
     public class NativeEventStreamExPerformanceTests
@@ -30,7 +31,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
 
             Measure.Method(() =>
                 {
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsThreadWriter();
                     writer.AllocateLarge((byte*)sourceData.GetUnsafeReadOnlyPtr(), size);
                 })
                 .SetUp(() => { stream = new NativeEventStream(Allocator.TempJob); })
@@ -56,7 +57,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
 
             Measure.Method(() =>
                 {
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsThreadWriter();
 
                     for (var i = 0; i < size; i++)
                     {
@@ -97,7 +98,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .SetUp(() =>
                 {
                     stream = new NativeEventStream(Allocator.TempJob);
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsThreadWriter();
                     writer.AllocateLarge((byte*)sourceData.GetUnsafeReadOnlyPtr(), size);
                 })
                 .CleanUp(() => stream.Dispose())
@@ -134,7 +135,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .SetUp(() =>
                 {
                     stream = new NativeEventStream(Allocator.TempJob);
-                    var writer = stream.AsWriter();
+                    var writer = stream.AsThreadWriter();
                     for (var i = 0; i < size; i++)
                     {
                         writer.Write(sourceData[i]);
