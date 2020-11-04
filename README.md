@@ -18,7 +18,7 @@ A high performance solution for safely creating events between systems in Unity 
 
 ## Producer (Writing)
 ### Nondetermistic Mode
-Provides convenience and performance at the cost of being nondeterministic 
+Provides convenience at the cost of being nondeterministic.
 
 **Entities.ForEach**
 ```csharp
@@ -35,7 +35,6 @@ this.eventSystem.AddJobHandleForProducer<YourEvent>(this.Dependency);
 
 ### Deterministic Mode
 Provides determinism by manually handling indexing.
-At high entity count this is quite a bit slower using Entities.ForEach and it is recommended you use IJobChunk for performance as it allows you to split by ChunkIndex instead of EntityIndex.
 
 **Entities.ForEach**
 ```csharp
@@ -45,6 +44,7 @@ this.Entities.ForEach((Entity entity, int entityInQueryIndex) =>
 	{
 		writer.BeginForEachIndex(entityInQueryIndex);
 		writer.Write(new YourEvent { Entity = entity });
+		writer.EndForEachIndex();
 	})
 	.WithStoreEntityQueryInField(ref this.query)
 	.ScheduleParallel();
@@ -60,7 +60,7 @@ private struct ProducerJob : IJobChunk
 	[ReadOnly]
 	public ArchetypeChunkEntityType EntityTypes;
 
-	public NativeEventStream.Writer Writer;
+	public NativeEventStream.IndexWriter Writer;
 
 	public void Execute(ArchetypeChunk chunk, int chunkIndex, int firstEntityIndex)
 	{
@@ -72,6 +72,8 @@ private struct ProducerJob : IJobChunk
 			var entity = entities[i];
 			this.Writer.Write(new YourEvent { Entity = entity });
 		}
+		
+		this.Writer.EndForEachIndex();
 	}
 }
 ```

@@ -1,4 +1,8 @@
 # Changelog
+## [1.2.0] - 2020-05-11
+### Changes
+- *Breaking Change* Split the writer into ThreadWriter and IndexWriter for non-determinstic and determinstic modes
+
 ## [1.1.10] - 2020-10-31
 ### Fixed
 - Add support for Collections 0.14
