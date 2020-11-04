@@ -1,5 +1,6 @@
 {
     "name": "BovineLabs.Event.Samples",
+    "rootNamespace": "",
     "references": [
         "GUID:7030b52b6b7c1434bb5b18b08de078bd",
         "GUID:734d92eba21c94caba915361bd5ac177",
@@ -16,6 +17,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.entities",
+            "expression": "0.16.0-preview.21",
+            "define": "UNITY_ENTITIES_0_16_OR_NEWER"
+        }
+    ],
     "noEngineReferences": false
 }

@@ -3,6 +3,10 @@
 ### Changes
 - *Breaking Change* Split the writer into ThreadWriter and IndexWriter for non-determinstic and determinstic modes
 
+### Fix
+- Fix for the PS4 and iOS crash when using a writer outside of burst thanks to @julian-moschuering
+- Sample fixed update to work on entities 0.16+
+
 ## [1.1.10] - 2020-10-31
 ### Fixed
 - Add support for Collections 0.14

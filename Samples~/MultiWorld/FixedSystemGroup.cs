@@ -8,6 +8,9 @@ namespace BovineLabs.Event.Samples.MultiWorld
         [Preserve]
         public FixedSystemGroup()
         {
+#if UNITY_ENTITIES_0_16_OR_NEWER
+            this.FixedRateManager = new UpdateTimeFour();
+#else
             int count = -1;
 
             this.UpdateCallback = group =>
@@ -21,6 +24,31 @@ namespace BovineLabs.Event.Samples.MultiWorld
                 count++;
                 return false;
             };
+#endif
+
         }
+
+#if UNITY_ENTITIES_0_16_OR_NEWER
+        public class UpdateTimeFour : IFixedRateManager
+        {
+            private int count = -1;
+
+            public bool ShouldGroupUpdate(ComponentSystemGroup @group)
+            {
+                if (this.count == 3)
+                {
+                    this.count = -1;
+                    return true;
+                }
+
+                this.Timestep = group.Time.DeltaTime * 4;
+
+                this.count++;
+                return false;
+            }
+
+            public float Timestep { get; set; }
+        }
+#endif
     }
 }
