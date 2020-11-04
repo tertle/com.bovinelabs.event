@@ -55,7 +55,7 @@ namespace BovineLabs.Event.Samples
         [BurstCompile]
         private struct ProduceJob : IJobParallelFor
         {
-            public NativeEventStream.Writer Events;
+            public NativeEventStream.ThreadWriter Events;
 
             public int EventCount;
 

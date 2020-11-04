@@ -53,7 +53,7 @@ namespace BovineLabs.Event.Samples.MultiWorld
         [BurstCompile]
         public struct CountJob : IJobParallelFor
         {
-            public NativeEventStream.Writer EventCount;
+            public NativeEventStream.ThreadWriter EventCount;
             public NativeEventStream.Reader Stream;
 
             public void Execute(int index)
