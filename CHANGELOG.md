@@ -1,7 +1,7 @@
 # Changelog
 ## [1.2.0] - 2020-05-11
 ### Changes
-- *Breaking Change* Split the writer into ThreadWriter and IndexWriter for non-determinstic and determinstic modes
+- *Breaking Change* Split the writer into ThreadWriter and IndexWriter for non-deterministic and deterministic modes
 
 ### Fix
 - Fix for the PS4 and iOS crash when using a writer outside of burst thanks to @julian-moschuering
