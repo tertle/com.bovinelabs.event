@@ -9,7 +9,6 @@ namespace BovineLabs.Event.Systems
     using BovineLabs.Event.Containers;
     using Unity.Collections;
     using Unity.Jobs;
-    using Unity.Jobs.LowLevel.Unsafe;
 
     /// <summary> The container that holds the actual events of each type. </summary>
     internal sealed class EventContainer : IDisposable
@@ -76,20 +75,36 @@ namespace BovineLabs.Event.Systems
         public List<NativeEventStream> DeferredExternalReaders => this.deferredExternalReaders;
 
         /// <summary> Create a new stream for the events. </summary>
-        /// <returns> The <see cref="NativeEventStream.ThreadWriter"/> . </returns>
-        /// <exception cref="InvalidOperationException"> Throw if previous call not closed or if in read mode. </exception>
-        public NativeEventStream.ThreadWriter CreateEventStream()
-        {
-            return this.CreateEventStreamInternal(-1).AsThreadWriter();
-        }
-
-        /// <summary> Create a new stream for the events. </summary>
         /// <param name="foreachCount"> The foreach count. A negative value will make it a thread stream. </param>
-        /// <returns> The <see cref="NativeEventStream.IndexWriter"/> . </returns>
+        /// <returns> The <see cref="NativeEventStream"/> . </returns>
         /// <exception cref="InvalidOperationException"> Throw if previous call not closed or if in read mode. </exception>
-        public NativeEventStream.IndexWriter CreateEventStream(int foreachCount)
+        public NativeEventStream CreateEventStream(int foreachCount)
         {
-            return this.CreateEventStreamInternal(foreachCount).AsIndexWriter();
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (this.producerSafety)
+            {
+                var stack = GetStack(this.lastProducerStackFrame);
+                throw new InvalidOperationException($"{ProducerException}\n{string.Format(PreviousCall, nameof(this.CreateEventStream))} {stack}");
+            }
+
+            this.producerSafety = true;
+            this.lastProducerStackFrame = new System.Diagnostics.StackFrame(2, true);
+#endif
+
+            var allocator = this.usePersistentAllocator ? Allocator.Persistent : Allocator.TempJob;
+
+            var stream = foreachCount < 0 ? new NativeEventStream(allocator) : new NativeEventStream(foreachCount, allocator);
+
+            if (this.isReadMode)
+            {
+                this.deferredStreams.Add(stream);
+            }
+            else
+            {
+                this.Streams.Add(stream);
+            }
+
+            return stream;
         }
 
         /// <summary> Add a new producer job handle. Can only be called in write mode. </summary>
@@ -254,39 +269,6 @@ namespace BovineLabs.Event.Systems
             return stack;
         }
 #endif
-
-        /// <summary> Create a new stream for the events. </summary>
-        /// <param name="foreachCount"> The foreach count. A negative value will make it a thread stream. </param>
-        /// <returns> The <see cref="NativeEventStream"/> . </returns>
-        /// <exception cref="InvalidOperationException"> Throw if previous call not closed or if in read mode. </exception>
-        private NativeEventStream CreateEventStreamInternal(int foreachCount)
-        {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (this.producerSafety)
-            {
-                var stack = GetStack(this.lastProducerStackFrame);
-                throw new InvalidOperationException($"{ProducerException}\n{string.Format(PreviousCall, nameof(this.CreateEventStream))} {stack}");
-            }
-
-            this.producerSafety = true;
-            this.lastProducerStackFrame = new System.Diagnostics.StackFrame(2, true);
-#endif
-
-            var allocator = this.usePersistentAllocator ? Allocator.Persistent : Allocator.TempJob;
-
-            var stream = foreachCount < 0 ? new NativeEventStream(allocator) : new NativeEventStream(foreachCount, allocator);
-
-            if (this.isReadMode)
-            {
-                this.deferredStreams.Add(stream);
-            }
-            else
-            {
-                this.Streams.Add(stream);
-            }
-
-            return stream;
-        }
 
         /// <summary> Set the event to read mode. </summary>
         private void SetReadMode()

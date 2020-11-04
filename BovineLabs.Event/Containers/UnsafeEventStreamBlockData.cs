@@ -33,15 +33,13 @@ namespace BovineLabs.Event.Containers
         internal UnsafeEventStreamBlock** Blocks;
         internal int BlockCount;
 
-        internal UnsafeEventStreamBlock* Free;
-
         internal UnsafeEventStreamRange* Ranges;
         internal UnsafeEventStreamThreadRange* ThreadRanges;
         internal int RangeCount;
 
         internal UnsafeEventStreamBlock* Allocate(UnsafeEventStreamBlock* oldBlock, int threadIndex)
         {
-            Assert.IsTrue(threadIndex < BlockCount && threadIndex >= 0);
+            Assert.IsTrue(threadIndex < this.BlockCount && threadIndex >= 0);
 
             var block = (UnsafeEventStreamBlock*)UnsafeUtility.Malloc(AllocationSize, 16, this.Allocator);
             block->Next = null;

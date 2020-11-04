@@ -34,7 +34,7 @@ namespace BovineLabs.Event.Containers
 
             internal IndexWriter(ref UnsafeEventStream stream)
             {
-                this.m_BlockStream = stream.m_Block;
+                this.m_BlockStream = stream.blockData;
                 this.m_ForeachIndex = int.MinValue;
                 this.m_ElementCount = -1;
                 this.m_CurrentBlock = null;

@@ -12,15 +12,15 @@ namespace BovineLabs.Event.Containers
         [NativeContainerIsAtomicWriteOnly]
         public struct ThreadWriter : IStreamWriter
         {
-            private UnsafeEventStream.ThreadWriter m_Writer;
-
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             AtomicSafetyHandle m_Safety;
 #endif
 
+            private UnsafeEventStream.ThreadWriter writer;
+
             internal ThreadWriter(ref NativeEventStream stream)
             {
-                m_Writer = stream.stream.AsThreadWriter();
+                this.writer = stream.stream.AsThreadWriter();
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
                 m_Safety = stream.m_Safety;
@@ -40,7 +40,7 @@ namespace BovineLabs.Event.Containers
             public void Write<T>(T value)
                 where T : struct
             {
-                ref T dst = ref Allocate<T>();
+                ref T dst = ref this.Allocate<T>();
                 dst = value;
             }
 
@@ -54,7 +54,7 @@ namespace BovineLabs.Event.Containers
             {
                 CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();
-                return ref UnsafeUtility.AsRef<T>(Allocate(size));
+                return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
             }
 
             /// <summary>
@@ -64,15 +64,15 @@ namespace BovineLabs.Event.Containers
             /// <returns></returns>
             public byte* Allocate(int size)
             {
-                CheckAllocateSize(size);
-                return m_Writer.Allocate(size);
+                this.CheckAllocateSize(size);
+                return this.writer.Allocate(size);
             }
 
             [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
             void CheckAllocateSize(int size)
             {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                AtomicSafetyHandle.CheckWriteAndThrow(m_Safety);
+                AtomicSafetyHandle.CheckWriteAndThrow(this.m_Safety);
 
                 if (size > UnsafeEventStreamBlockData.AllocationSize - sizeof(void*))
                 {

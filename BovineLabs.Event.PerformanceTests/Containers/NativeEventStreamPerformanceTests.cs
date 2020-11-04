@@ -15,26 +15,43 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.PerformanceTesting;
-    using Unity.Transforms;
 
     /// <summary> Performance tests for <see cref="NativeEventStream"/>. </summary>
     /// <remarks><para> Includes comparison tests for <see cref="NativeQueue{T}"/> and <see cref="NativeStream"/>. </para></remarks>
     internal class NativeEventStreamPerformanceTests : ECSTestsFixture
     {
-        /// <summary> Tests performance of writing entities in a <see cref="NativeEventStream"/> in an Entities.ForEach. </summary>
+        /// <summary> Tests performance of writing entities in a <see cref="NativeEventStream.ThreadWriter"/> in an Entities.ForEach. </summary>
         /// <param name="entities"> Number of entities to write. </param>
         /// <param name="archetypes"> Number of archetypes to use. </param>
         [Test]
         [Performance]
-        public void WriteEntitiesForEachNativeEventStream(
+        public void WriteEntitiesForEachNativeEventThreadStream(
             [Values(10000, 1000000)] int entities,
             [Values(8, 256)] int archetypes)
         {
             var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
             NativeEventStream stream = default;
 
-            Measure.Method(() => system.NativeEventStreamTest(stream))
+            Measure.Method(() => system.NativeEventThreadStreamTest(stream))
                 .SetUp(() => { stream = new NativeEventStream(Allocator.TempJob); })
+                .CleanUp(() => stream.Dispose())
+                .Run();
+        }
+
+        /// <summary> Tests performance of writing entities in a <see cref="NativeEventStream.IndexWriter"/> in an Entities.ForEach. </summary>
+        /// <param name="entities"> Number of entities to write. </param>
+        /// <param name="archetypes"> Number of archetypes to use. </param>
+        [Test]
+        [Performance]
+        public void WriteEntitiesForEachNativeEventIndexStream(
+            [Values(10000, 1000000)] int entities,
+            [Values(8, 256)] int archetypes)
+        {
+            var system = this.World.AddSystem(new EntitiesForEachTest(entities, archetypes));
+            NativeEventStream stream = default;
+
+            Measure.Method(() => system.NativeEventIndexStreamTest(stream))
+                .SetUp(() => { stream = new NativeEventStream(entities, Allocator.TempJob); })
                 .CleanUp(() => stream.Dispose())
                 .Run();
         }
@@ -66,7 +83,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 .SetUp(() =>
                 {
                     stream = new NativeEventStream(Allocator.Persistent);
-                    system.NativeEventStreamTest(stream);
+                    system.NativeEventThreadStreamTest(stream);
 
                     output = new NativeQueue<int>(Allocator.Persistent);
                 })
@@ -268,7 +285,7 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 this.archetypes = archetypes;
             }
 
-            public void NativeEventStreamTest(NativeEventStream stream)
+            public void NativeEventThreadStreamTest(NativeEventStream stream)
             {
                 var writer = stream.AsThreadWriter();
 
@@ -276,7 +293,26 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                     .WithAll<TestComponent>()
                     .ForEach((int entityInQueryIndex) => writer.Write(entityInQueryIndex))
                     .WithBurst(synchronousCompilation: true)
-                    .WithName("NativeEventStreamTest")
+                    .WithName("NativeEventThreadStreamTest")
+                    .ScheduleParallel();
+
+                this.Dependency.Complete();
+            }
+
+            public void NativeEventIndexStreamTest(NativeEventStream stream)
+            {
+                var writer = stream.AsIndexWriter();
+
+                this.Entities
+                    .WithAll<TestComponent>()
+                    .ForEach((int entityInQueryIndex) =>
+                    {
+                        writer.BeginForEachIndex(entityInQueryIndex);
+                        writer.Write(entityInQueryIndex);
+                        writer.EndForEachIndex();
+                    })
+                    .WithBurst(synchronousCompilation: true)
+                    .WithName("NativeEventIndexStreamTest")
                     .ScheduleParallel();
 
                 this.Dependency.Complete();

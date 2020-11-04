@@ -110,42 +110,38 @@ namespace BovineLabs.Event.Tests.Systems
             const int firstEventCount = 5;
             const int secondEventCount = 3;
 
-            using (var count = new NativeArray<int>(1, Allocator.TempJob))
+            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+
+            var events1 = es.CreateEventWriter<TestEvent>();
+
+            // Write some event data
+            for (var i = 0; i < firstEventCount; i++)
             {
-                var es = this.World.GetOrCreateSystem<TestEventSystem>();
-
-                var events1 = es.CreateEventWriter<TestEvent>();
-
-                // Write some event data
-                for (var i = 0; i < firstEventCount; i++)
-                {
-                    events1.Write(i);
-                }
-
-                es.AddJobHandleForProducer<TestEvent>(default);
-
-                var events2 = es.CreateEventWriter<TestEvent>();
-
-                // Write some event data
-                for (var i = 0; i < secondEventCount; i++)
-                {
-                    events2.Write(i);
-                }
-
-                es.AddJobHandleForProducer<TestEvent>(default);
-
-                var handle = es.Ex<TestEvent>().ToNativeList(default, out var list);
-                handle.Complete();
-
-                Assert.AreEqual(firstEventCount + secondEventCount, list.Length);
-
-                list.Dispose();
-
-                // Make sure it doesn't block getting readers
-                es.GetEventReaders<TestEvent>(default, out _).Complete();
+                events1.Write(i);
             }
+
+            es.AddJobHandleForProducer<TestEvent>(default);
+
+            var events2 = es.CreateEventWriter<TestEvent>();
+
+            // Write some event data
+            for (var i = 0; i < secondEventCount; i++)
+            {
+                events2.Write(i);
+            }
+
+            es.AddJobHandleForProducer<TestEvent>(default);
+
+            var handle = es.Ex<TestEvent>().ToNativeList(default, out var list);
+            handle.Complete();
+
+            Assert.AreEqual(firstEventCount + secondEventCount, list.Length);
+
+            list.Dispose();
+
+            // Make sure it doesn't block getting readers
+            es.GetEventReaders<TestEvent>(default, out _).Complete();
         }
     }
 }
-
 #endif

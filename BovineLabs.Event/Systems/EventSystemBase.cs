@@ -57,7 +57,7 @@ namespace BovineLabs.Event.Systems
             where T : struct
         {
             var container = this.GetOrCreateEventContainer<T>();
-            return container.CreateEventStream();
+            return container.CreateEventStream(-1).AsThreadWriter();
         }
 
         /// <summary> Create a new NativeEventStream for writing events to . </summary>
@@ -71,7 +71,7 @@ namespace BovineLabs.Event.Systems
             Assert.IsFalse(foreachCount < 0);
 
             var container = this.GetOrCreateEventContainer<T>();
-            return container.CreateEventStream(foreachCount);
+            return container.CreateEventStream(foreachCount).AsIndexWriter();
         }
 
         /// <summary> Adds the specified JobHandle to the events list of producer dependency handles. </summary>

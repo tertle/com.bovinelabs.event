@@ -14,6 +14,7 @@ namespace BovineLabs.Event.Containers
         /// <param name="writer"> The writer. </param>
         /// <param name="data"> The data to write. </param>
         /// <param name="size"> The size of the data. For an array, this is UnsafeUtility.SizeOf{T} * length. </param>
+        /// <typeparam name="T"> StreamWriter. </typeparam>
         public static void AllocateLarge<T>(this ref T writer, byte* data, int size)
             where T : struct, IStreamWriter
         {

@@ -336,40 +336,40 @@ namespace BovineLabs.Event.Tests.Systems
             var consumer1 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
             var consumer2 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
 
-            // var writer3 = es.CreateEventWriter<TestEvent>(64);
-            //
-            // var producer3 = new ProducerJob
-            //     {
-            //         EventCount = 10,
-            //         Events = writer3,
-            //     }
-            //     .ScheduleParallel(64, 1, default);
-            //
-            // es.AddJobHandleForProducer<TestEvent>(producer3);
-            //
-            // var consumer3 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
-            //
-            // es.Update();
-            //
-            // var consumer4 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
-            //
-            // var writer4 = es.CreateEventWriter<TestEvent>(64);
-            // var producer4 = new ProducerJob
-            //     {
-            //         EventCount = 10,
-            //         Events = writer4,
-            //     }
-            //     .ScheduleParallel(64, 1, default);
-            //
-            // es.AddJobHandleForProducer<TestEvent>(producer4);
-            //
-            // var consumer5 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
-            //
-            // consumer5.Complete();
-            // consumer4.Complete();
+            var writer3 = es.CreateEventWriter<TestEvent>(64);
+
+            var producer3 = new ProducerJob
+                {
+                    EventCount = 10,
+                    Events = writer3,
+                }
+                .ScheduleParallel(64, 1, default);
+
+            es.AddJobHandleForProducer<TestEvent>(producer3);
+
+            var consumer3 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+
+            es.Update();
+
+            var consumer4 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+
+            var writer4 = es.CreateEventWriter<TestEvent>(64);
+            var producer4 = new ProducerJob
+                {
+                    EventCount = 10,
+                    Events = writer4,
+                }
+                .ScheduleParallel(64, 1, default);
+
+            es.AddJobHandleForProducer<TestEvent>(producer4);
+
+            var consumer5 = default(ConsumerEventJob).ScheduleParallel<ConsumerEventJob, TestEvent>(es);
+
+            consumer5.Complete();
+            consumer4.Complete();
             consumer1.Complete();
             consumer2.Complete();
-            // consumer3.Complete();
+            consumer3.Complete();
         }
 #endif
 

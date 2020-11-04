@@ -27,7 +27,7 @@ namespace BovineLabs.Event.Containers
 
             internal Reader(ref UnsafeEventStream stream)
             {
-                this.m_BlockStream = stream.m_Block;
+                this.m_BlockStream = stream.blockData;
                 this.m_CurrentBlock = null;
                 this.m_CurrentPtr = null;
                 this.m_CurrentBlockEnd = null;
