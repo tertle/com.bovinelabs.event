@@ -54,7 +54,11 @@ namespace BovineLabs.Event.Containers
             {
                 CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();
+#if UNITY_COLLECTIONS_0_14_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
+#else
+                return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
+#endif
             }
 
             /// <summary>

@@ -107,7 +107,11 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 int size = UnsafeUtility.SizeOf<T>();
+#if UNITY_COLLECTIONS_0_14_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(this.ReadUnsafePtr(size));
+#else
+                return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
+#endif
             }
 
             /// <summary>
@@ -127,7 +131,11 @@ namespace BovineLabs.Event.Containers
                     ptr = m_CurrentBlock->Next->Data;
                 }
 
+#if UNITY_COLLECTIONS_0_14_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(ptr);
+#else
+                return ref UnsafeUtilityEx.AsRef<T>(ptr);
+#endif
             }
 
             /// <summary>

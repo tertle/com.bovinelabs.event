@@ -62,7 +62,11 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 int size = UnsafeUtility.SizeOf<T>();
+#if UNITY_COLLECTIONS_0_14_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
+#else
+                return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
+#endif
             }
 
             /// <summary>
