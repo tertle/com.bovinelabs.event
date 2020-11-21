@@ -1,9 +1,9 @@
 # Changelog
-## [1.2.1] - 2020-05-21
+## [1.2.1] - 2020-11-21
 ### Fix
 - A memory leak introduced in 1.2.0
 
-## [1.2.0] - 2020-05-11
+## [1.2.0] - 2020-11-05
 ### Changes
 - *Breaking Change* Split the writer into ThreadWriter and IndexWriter for non-deterministic and deterministic modes
 
