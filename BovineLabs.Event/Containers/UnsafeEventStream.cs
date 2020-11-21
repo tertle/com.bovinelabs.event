@@ -208,6 +208,7 @@ namespace BovineLabs.Event.Containers
             }
 
             UnsafeUtility.Free(this.blockData->Ranges, this.allocator);
+            UnsafeUtility.Free(this.blockData->ThreadRanges, this.allocator);
             UnsafeUtility.Free(this.blockData, this.allocator);
             this.blockData = null;
             this.allocator = Allocator.None;
