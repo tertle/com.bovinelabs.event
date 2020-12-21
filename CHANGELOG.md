@@ -1,4 +1,11 @@
 # Changelog
+## [1.2.2] - 2020-12-21
+### Changed
+- Made ConsumeEventSystemBase always update
+
+### Fix
+- Timing bug when using HasEventReaders to early out could cause first frame events to be missed
+
 ## [1.2.1] - 2020-11-21
 ### Fix
 - A memory leak introduced in 1.2.0
