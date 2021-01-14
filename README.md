@@ -163,12 +163,12 @@ private struct EventStreamJob : IJobEventReader<YourEvent>
 {
 	public void Execute(NativeEventStream.Reader stream, int readerIndex)
 	{
-		for (var foreachIndex = 0; foreachIndex < reader.ForEachCount; foreachIndex++)
+		for (var foreachIndex = 0; foreachIndex < stream.ForEachCount; foreachIndex++)
 		{
-			var count = reader.BeginForEachIndex(foreachIndex);
+			var count = stream.BeginForEachIndex(foreachIndex);
 			for (var i = 0; i < count; i++)
 			{
-				var e = reader.Read<YourEvent>();
+				var e = stream.Read<YourEvent>();
 			}
 		}
 	}
