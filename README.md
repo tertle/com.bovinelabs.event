@@ -234,9 +234,35 @@ public JobHandle GetEventCount(JobHandle handle, NativeArray<int> count)
 ```
 
 ### Other Features
+
+**Checking Event Count**
+
+For performance reasons, you may want to check if any event writers were created this frame, or check how many eventer have been created. This allows exiting out early from an `OnUpdate` without additional processing or scheduling jobs/
+
+
+* HasEventReaders
+
+*Note: this doesn't check event count just that GetEventWriter<T> was called at some point.*
+
+```csharp
+/// <summary> Checks if an event has any readers. </summary>
+/// <typeparam name="T"> The event type to check. </typeparam>
+/// <returns> True if there are readers for the event. </returns>
+World.GetOrCreateSystem<EventSystem>.HasEventReaders<T>()
+```
+
+* GetEventCount
+
+```csharp
+/// <summary> Get the total number of events of a specific type. </summary>
+public JobHandle GetEventCount(JobHandle handle, NativeArray<int> count)
+```
+
+
 // TODO
 - **Custom Event Systems**
 - **Cross world events**
+
 
 ### Benchmarks
 // TODO
