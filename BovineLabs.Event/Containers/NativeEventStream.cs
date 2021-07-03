@@ -26,11 +26,11 @@ namespace BovineLabs.Event.Containers
         [SuppressMessage("ReSharper", "SA1308", Justification = "Required by safety injection.")]
         [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Required by safety injection.")]
         private AtomicSafetyHandle m_Safety;
-
-        [SuppressMessage("ReSharper", "SA1308", Justification = "Required by safety injection.")]
-        [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Required by safety injection.")]
-        [NativeSetClassTypeToNullOnSchedule]
-        private DisposeSentinel m_DisposeSentinel;
+        //
+        // [SuppressMessage("ReSharper", "SA1308", Justification = "Required by safety injection.")]
+        // [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Required by safety injection.")]
+        // [NativeSetClassTypeToNullOnSchedule]
+        // private DisposeSentinel m_DisposeSentinel;
 #endif
 
         private UnsafeEventStream stream;
@@ -127,7 +127,8 @@ namespace BovineLabs.Event.Containers
         public void Dispose()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            DisposeSentinel.Dispose(ref this.m_Safety, ref this.m_DisposeSentinel);
+            //DisposeSentinel.Dispose(ref this.m_Safety, ref this.m_DisposeSentinel);
+            AtomicSafetyHandle.Release(this.m_Safety);
 #endif
             this.stream.Dispose();
         }
@@ -145,14 +146,14 @@ namespace BovineLabs.Event.Containers
         /// the container.</returns>
         public JobHandle Dispose(JobHandle dependency)
         {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            // [DeallocateOnJobCompletion] is not supported, but we want the deallocation
-            // to happen in a thread. DisposeSentinel needs to be cleared on main thread.
-            // AtomicSafetyHandle can be destroyed after the job was scheduled (Job scheduling
-            // will check that no jobs are writing to the container).
-            DisposeSentinel.Clear(ref this.m_DisposeSentinel);
-#endif
-            var jobHandle = stream.Dispose(dependency);
+// #if ENABLE_UNITY_COLLECTIONS_CHECKS
+//             // [DeallocateOnJobCompletion] is not supported, but we want the deallocation
+//             // to happen in a thread. DisposeSentinel needs to be cleared on main thread.
+//             // AtomicSafetyHandle can be destroyed after the job was scheduled (Job scheduling
+//             // will check that no jobs are writing to the container).
+//             DisposeSentinel.Clear(ref this.m_DisposeSentinel);
+// #endif
+            var jobHandle = this.stream.Dispose(dependency);
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             AtomicSafetyHandle.Release(this.m_Safety);
@@ -181,7 +182,8 @@ namespace BovineLabs.Event.Containers
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             stream.useThreads = useThreads;
-            DisposeSentinel.Create(out stream.m_Safety, out stream.m_DisposeSentinel, 0, allocator);
+            //DisposeSentinel.Create(out stream.m_Safety, out stream.m_DisposeSentinel, 0, allocator);
+            stream.m_Safety = allocator == Allocator.Temp ? AtomicSafetyHandle.GetTempMemoryHandle() : AtomicSafetyHandle.Create();
 #endif
         }
 

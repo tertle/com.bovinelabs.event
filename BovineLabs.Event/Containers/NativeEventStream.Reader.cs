@@ -1,3 +1,7 @@
+// <copyright file="NativeEventStream.Reader.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Containers
 {
     using System;
@@ -115,20 +119,6 @@ namespace BovineLabs.Event.Containers
 #else
                 return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
 #endif
-            }
-
-            /// <summary>
-            /// Peek into data.
-            /// </summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// <returns>Reference to data.</returns>
-            public ref T Peek<T>()
-                where T : struct
-            {
-                int size = UnsafeUtility.SizeOf<T>();
-                this.CheckReadSize(size);
-
-                return ref this.reader.Peek<T>();
             }
 
             /// <summary>
