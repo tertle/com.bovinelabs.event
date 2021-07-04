@@ -12,6 +12,11 @@ namespace BovineLabs.Event.Systems
     {
         internal Consumer* consumer;
 
+        public bool HasReaders()
+        {
+            return this.consumer->Readers.Length > 0;
+        }
+
         public JobHandle GetReaders(JobHandle jobHandle, out UnsafeListPtr<NativeEventStream.Reader> readers)
         {
             readers = this.consumer->Readers;

@@ -20,15 +20,15 @@ namespace BovineLabs.Event.Systems
 
         /// <summary> Create a new NativeEventStream in thread mode for writing events to. </summary>
         /// <typeparam name="T"> The type of event. </typeparam>
-        /// <returns> A <see cref="NativeEventStream.ThreadWriter"/> you can write events to. </returns>
+        /// <returns> A <see cref="NativeEventStream.Writer"/> you can write events to. </returns>
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
-        public NativeEventStream.ThreadWriter CreateWriter()
+        public NativeEventStream.Writer CreateWriter()
         {
             Debug.Assert(!this.producer->EventStream.IsCreated, "Creating multiple writers in same frame.");
 
             var eventStream = new NativeEventStream(Allocator.TempJob);
             this.producer->EventStream = eventStream;
-            return eventStream.AsThreadWriter();
+            return eventStream.AsWriter();
         }
 
         /// <summary> Adds the specified JobHandle to the events list of producer dependency handles. </summary>

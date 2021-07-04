@@ -10,27 +10,18 @@ namespace BovineLabs.Event.Containers
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
-    using Unity.Jobs.LowLevel.Unsafe;
-    using Assert = Unity.Assertions.Assert;
 
     /// <summary>
     /// A thread data stream supporting parallel reading and parallel writing.
     /// Allows you to write different types or arrays into a single stream.
     /// </summary>
     [NativeContainer]
-    public unsafe partial struct NativeEventStream : IDisposable, IEquatable<NativeEventStream>
+    public partial struct NativeEventStream : IDisposable, IEquatable<NativeEventStream>
     {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-        private bool useThreads;
-
         [SuppressMessage("ReSharper", "SA1308", Justification = "Required by safety injection.")]
         [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Required by safety injection.")]
         private AtomicSafetyHandle m_Safety;
-        //
-        // [SuppressMessage("ReSharper", "SA1308", Justification = "Required by safety injection.")]
-        // [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Required by safety injection.")]
-        // [NativeSetClassTypeToNullOnSchedule]
-        // private DisposeSentinel m_DisposeSentinel;
 #endif
 
         private UnsafeEventStream stream;
@@ -39,17 +30,8 @@ namespace BovineLabs.Event.Containers
         /// <param name="allocator"> The specified type of memory allocation. </param>
         public NativeEventStream(Allocator allocator)
         {
-            Allocate(out this, allocator, true);
-            this.stream.AllocateForEach(JobsUtility.MaxJobThreadCount);
-        }
-
-        /// <summary> Initializes a new instance of the <see cref="NativeEventStream"/> struct. </summary>
-        /// <param name="foreachCount"> The foreach count. </param>
-        /// <param name="allocator"> The specified type of memory allocation. </param>
-        public NativeEventStream(int foreachCount, Allocator allocator)
-        {
-            Allocate(out this, allocator, false);
-            this.stream.AllocateForEach(foreachCount);
+            Allocate(out this, allocator);
+            this.stream.AllocateForEach();
         }
 
         /// <summary> Gets a value indicating whether memory for the container is allocated. </summary>
@@ -59,9 +41,6 @@ namespace BovineLabs.Event.Containers
         /// You must specify at least an allocation type to construct a usable container. </para>
         /// </remarks>
         public bool IsCreated => this.stream.IsCreated;
-
-        /// <summary> Gets the number of streams the container can use. </summary>
-        public int ForEachCount => this.stream.ForEachCount;
 
         public bool IsEmpty()
         {
@@ -77,22 +56,9 @@ namespace BovineLabs.Event.Containers
 
         /// <summary> Returns writer instance. </summary>
         /// <returns> The writer instance. </returns>
-        public IndexWriter AsIndexWriter()
+        public Writer AsWriter()
         {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            Assert.IsFalse(this.useThreads, "Not in index mode.");
-#endif
-            return new IndexWriter(ref this);
-        }
-
-        /// <summary> Returns writer instance. </summary>
-        /// <returns> The writer instance. </returns>
-        public ThreadWriter AsThreadWriter()
-        {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            Assert.IsTrue(this.useThreads, "Not in thread mode.");
-#endif
-            return new ThreadWriter(ref this);
+            return new Writer(ref this);
         }
 
         /// <summary>
@@ -146,13 +112,6 @@ namespace BovineLabs.Event.Containers
         /// the container.</returns>
         public JobHandle Dispose(JobHandle dependency)
         {
-// #if ENABLE_UNITY_COLLECTIONS_CHECKS
-//             // [DeallocateOnJobCompletion] is not supported, but we want the deallocation
-//             // to happen in a thread. DisposeSentinel needs to be cleared on main thread.
-//             // AtomicSafetyHandle can be destroyed after the job was scheduled (Job scheduling
-//             // will check that no jobs are writing to the container).
-//             DisposeSentinel.Clear(ref this.m_DisposeSentinel);
-// #endif
             var jobHandle = this.stream.Dispose(dependency);
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -174,15 +133,13 @@ namespace BovineLabs.Event.Containers
             return this.stream.GetHashCode();
         }
 
-        private static void Allocate(out NativeEventStream stream, Allocator allocator, bool useThreads)
+        private static void Allocate(out NativeEventStream stream, Allocator allocator)
         {
             ValidateAllocator(allocator);
 
             UnsafeEventStream.AllocateBlock(out stream.stream, allocator);
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            stream.useThreads = useThreads;
-            //DisposeSentinel.Create(out stream.m_Safety, out stream.m_DisposeSentinel, 0, allocator);
             stream.m_Safety = allocator == Allocator.Temp ? AtomicSafetyHandle.GetTempMemoryHandle() : AtomicSafetyHandle.Create();
 #endif
         }

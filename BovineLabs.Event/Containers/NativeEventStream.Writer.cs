@@ -1,3 +1,7 @@
+// <copyright file="NativeEventStream.Writer.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Containers
 {
     using System;
@@ -10,37 +14,30 @@ namespace BovineLabs.Event.Containers
         /// </summary>
         [NativeContainer]
         [NativeContainerIsAtomicWriteOnly]
-        public struct ThreadWriter : IStreamWriter
+        public struct Writer : IStreamWriter
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            AtomicSafetyHandle m_Safety;
+            private AtomicSafetyHandle m_Safety;
 #endif
 
-            private UnsafeEventStream.ThreadWriter writer;
+            private UnsafeEventStream.Writer writer;
 
-            internal ThreadWriter(ref NativeEventStream stream)
+            internal Writer(ref NativeEventStream stream)
             {
-                this.writer = stream.stream.AsThreadWriter();
+                this.writer = stream.stream.AsWriter();
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                m_Safety = stream.m_Safety;
+                this.m_Safety = stream.m_Safety;
 #endif
             }
 
-            /// <summary>
-            ///
-            /// </summary>
-            public int ForEachCount => UnsafeEventStream.ThreadWriter.ForEachCount;
-
-            /// <summary>
-            /// Write data.
-            /// </summary>
+            /// <summary> Write data. </summary>
             /// <typeparam name="T">The type of value.</typeparam>
             /// <param name="value"></param>
             public void Write<T>(T value)
                 where T : struct
             {
-                ref T dst = ref this.Allocate<T>();
+                ref var dst = ref this.Allocate<T>();
                 dst = value;
             }
 
@@ -53,17 +50,11 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 CollectionHelper.CheckIsUnmanaged<T>();
-                int size = UnsafeUtility.SizeOf<T>();
-#if UNITY_COLLECTIONS_0_14_OR_NEWER
+                var size = UnsafeUtility.SizeOf<T>();
                 return ref UnsafeUtility.AsRef<T>(this.Allocate(size));
-#else
-                return ref UnsafeUtilityEx.AsRef<T>(this.Allocate(size));
-#endif
             }
 
-            /// <summary>
-            /// Allocate space for data.
-            /// </summary>
+            /// <summary> Allocate space for data. </summary>
             /// <param name="size">Size in bytes.</param>
             /// <returns></returns>
             public byte* Allocate(int size)

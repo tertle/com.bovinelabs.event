@@ -1,11 +1,12 @@
 {
   "name": "com.bovinelabs.event",
   "description": "Event System.",
-  "version": "1.2.2",
-  "unity": "2019.4",
+  "version": "2.0.0",
+  "unity": "2020.3",
   "displayName": "BovineLabs Event",
   "dependencies": {
-    "com.unity.entities": "0.11.1-preview.4"
+    "com.unity.entities": "0.17.0-preview.41",
+    "com.unity.burst": "1.5.1"
   },
   "samples": [
     {

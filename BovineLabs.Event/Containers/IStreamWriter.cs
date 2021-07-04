@@ -1,3 +1,7 @@
+// <copyright file="IStreamWriter.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Containers
 {
     public unsafe interface IStreamWriter

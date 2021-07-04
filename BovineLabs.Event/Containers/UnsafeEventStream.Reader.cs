@@ -1,3 +1,7 @@
+// <copyright file="UnsafeEventStream.Reader.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Containers
 {
     using Unity.Collections;
@@ -8,7 +12,7 @@ namespace BovineLabs.Event.Containers
         /// <summary>
         /// </summary>
         [BurstCompatible]
-        public unsafe struct Reader
+        public struct Reader
         {
             [NativeDisableUnsafePtrRestriction]
             internal UnsafeEventStreamBlockData* m_BlockStream;
@@ -35,9 +39,7 @@ namespace BovineLabs.Event.Containers
                 this.m_LastBlockSize = 0;
             }
 
-            /// <summary>
-            /// Begin reading data at the iteration index.
-            /// </summary>
+            /// <summary> Begin reading data at the iteration index. </summary>
             /// <param name="foreachIndex"></param>
             /// <remarks>BeginForEachIndex must always be called balanced by a EndForEachIndex.</remarks>
             /// <returns>The number of elements at this index.</returns>
@@ -64,7 +66,7 @@ namespace BovineLabs.Event.Containers
             /// <summary>
             /// Returns for each count.
             /// </summary>
-            public int ForEachCount => m_BlockStream->RangeCount;
+            public int ForEachCount => UnsafeEventStream.ForEachCount;
 
             /// <summary>
             /// Returns remaining item count.
@@ -80,7 +82,7 @@ namespace BovineLabs.Event.Containers
             {
                 this.m_RemainingItemCount--;
 
-                byte* ptr = this.m_CurrentPtr;
+                var ptr = this.m_CurrentPtr;
                 this.m_CurrentPtr += size;
 
                 if (this.m_CurrentPtr > this.m_CurrentBlockEnd)
@@ -106,12 +108,8 @@ namespace BovineLabs.Event.Containers
             public ref T Read<T>()
                 where T : struct
             {
-                int size = UnsafeUtility.SizeOf<T>();
-#if UNITY_COLLECTIONS_0_14_OR_NEWER
+                var size = UnsafeUtility.SizeOf<T>();
                 return ref UnsafeUtility.AsRef<T>(this.ReadUnsafePtr(size));
-#else
-                return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
-#endif
             }
 
             /// <summary>
@@ -123,19 +121,15 @@ namespace BovineLabs.Event.Containers
             public ref T Peek<T>()
                 where T : struct
             {
-                int size = UnsafeUtility.SizeOf<T>();
+                var size = UnsafeUtility.SizeOf<T>();
 
-                byte* ptr = this.m_CurrentPtr;
+                var ptr = this.m_CurrentPtr;
                 if (ptr + size > this.m_CurrentBlockEnd)
                 {
                     ptr = m_CurrentBlock->Next->Data;
                 }
 
-#if UNITY_COLLECTIONS_0_14_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(ptr);
-#else
-                return ref UnsafeUtilityEx.AsRef<T>(ptr);
-#endif
             }
 
             /// <summary>
@@ -144,8 +138,8 @@ namespace BovineLabs.Event.Containers
             /// <returns>The item count.</returns>
             public int Count()
             {
-                int itemCount = 0;
-                for (int i = 0; i != m_BlockStream->RangeCount; i++)
+                var itemCount = 0;
+                for (var i = 0; i != UnsafeEventStream.ForEachCount; i++)
                 {
                     itemCount += m_BlockStream->Ranges[i].ElementCount;
                 }

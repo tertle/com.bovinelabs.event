@@ -17,18 +17,20 @@ namespace BovineLabs.Event.Containers
     /// </summary>
     public unsafe partial struct UnsafeEventStream : INativeDisposable, IEquatable<UnsafeEventStream>
     {
+        /// <summary> Gets the number of streams the list can use. </summary>
+        public const int ForEachCount = JobsUtility.MaxJobThreadCount;
+
         [NativeDisableUnsafePtrRestriction]
         private UnsafeEventStreamBlockData* blockData;
 
         private Allocator allocator;
 
         /// <summary> Initializes a new instance of the <see cref="UnsafeEventStream"/> struct. </summary>
-        /// <param name="foreachCount"> The foreach count of the stream. </param>
         /// <param name="allocator"> The specified type of memory allocation. </param>
-        public UnsafeEventStream(int foreachCount, Allocator allocator)
+        public UnsafeEventStream(Allocator allocator)
         {
             AllocateBlock(out this, allocator);
-            this.AllocateForEach(foreachCount);
+            this.AllocateForEach();
         }
 
         /// <summary> Gets a value indicating whether memory for the container is allocated. </summary>
@@ -39,9 +41,6 @@ namespace BovineLabs.Event.Containers
         /// </remarks>
         public bool IsCreated => this.blockData != null;
 
-        /// <summary> Gets the number of streams the list can use. </summary>
-        public int ForEachCount => blockData->RangeCount;
-
         /// <summary> Reports whether container is empty. </summary>
         /// <returns> True if this container empty. </returns>
         public bool IsEmpty()
@@ -51,7 +50,7 @@ namespace BovineLabs.Event.Containers
                 return true;
             }
 
-            for (int i = 0; i != blockData->RangeCount; i++)
+            for (var i = 0; i != ForEachCount; i++)
             {
                 if (blockData->Ranges[i].ElementCount > 0)
                 {
@@ -69,18 +68,11 @@ namespace BovineLabs.Event.Containers
             return new Reader(ref this);
         }
 
-        /// <summary> Returns an index writer instance. </summary>
+        /// <summary> Returns a writer instance. </summary>
         /// <returns> Writer instance. </returns>
-        public IndexWriter AsIndexWriter()
+        public Writer AsWriter()
         {
-            return new IndexWriter(ref this);
-        }
-
-        /// <summary> Returns a thread writer instance. </summary>
-        /// <returns> Writer instance. </returns>
-        public ThreadWriter AsThreadWriter()
-        {
-            return new ThreadWriter(ref this);
+            return new Writer(ref this);
         }
 
         /// <summary>
@@ -89,9 +81,9 @@ namespace BovineLabs.Event.Containers
         /// <returns>The item count.</returns>
         public int Count()
         {
-            int itemCount = 0;
+            var itemCount = 0;
 
-            for (int i = 0; i != blockData->RangeCount; i++)
+            for (var i = 0; i != ForEachCount; i++)
             {
                 itemCount += blockData->Ranges[i].ElementCount;
             }
@@ -101,22 +93,22 @@ namespace BovineLabs.Event.Containers
 
         /// <summary> Copies stream data into NativeArray. </summary>
         /// <typeparam name="T"> The type of value. </typeparam>
-        /// <param name="allocator"> A member of the <see cref="Allocator"/> enumeration. </param>
+        /// <param name="arrayAllocator"> A member of the <see cref="Allocator"/> enumeration. </param>
         /// <returns> A new NativeArray, allocated with the given strategy and wrapping the stream data. </returns>
         /// <remarks> <para>The array is a copy of stream data.</para> </remarks>
         [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
-        public NativeArray<T> ToNativeArray<T>(Allocator allocator)
+        public NativeArray<T> ToNativeArray<T>(Allocator arrayAllocator)
             where T : struct
         {
-            var array = new NativeArray<T>(this.Count(), allocator, NativeArrayOptions.UninitializedMemory);
+            var array = new NativeArray<T>(this.Count(), arrayAllocator, NativeArrayOptions.UninitializedMemory);
             var reader = this.AsReader();
 
-            int offset = 0;
-            for (int i = 0; i != reader.ForEachCount; i++)
+            var offset = 0;
+            for (var i = 0; i != reader.ForEachCount; i++)
             {
                 reader.BeginForEachIndex(i);
-                int rangeItemCount = reader.RemainingItemCount;
-                for (int j = 0; j < rangeItemCount; ++j)
+                var rangeItemCount = reader.RemainingItemCount;
+                for (var j = 0; j < rangeItemCount; ++j)
                 {
                     array[offset] = reader.Read<T>();
                     offset++;
@@ -159,10 +151,8 @@ namespace BovineLabs.Event.Containers
 
         internal static void AllocateBlock(out UnsafeEventStream stream, Allocator allocator)
         {
-            const int blockCount = JobsUtility.MaxJobThreadCount;
-
-            int allocationSize = sizeof(UnsafeEventStreamBlockData) + (sizeof(UnsafeEventStreamBlock*) * blockCount);
-            byte* buffer = (byte*)UnsafeUtility.Malloc(allocationSize, 16, allocator);
+            var allocationSize = sizeof(UnsafeEventStreamBlockData) + (sizeof(UnsafeEventStreamBlock*) * ForEachCount);
+            var buffer = (byte*)UnsafeUtility.Malloc(allocationSize, 16, allocator);
             UnsafeUtility.MemClear(buffer, allocationSize);
 
             var block = (UnsafeEventStreamBlockData*)buffer;
@@ -171,22 +161,19 @@ namespace BovineLabs.Event.Containers
             stream.allocator = allocator;
 
             block->Allocator = allocator;
-            block->BlockCount = blockCount;
             block->Blocks = (UnsafeEventStreamBlock**)(buffer + sizeof(UnsafeEventStreamBlockData));
 
             block->Ranges = null;
             block->ThreadRanges = null;
-            block->RangeCount = 0;
         }
 
-        internal void AllocateForEach(int forEachCount)
+        internal void AllocateForEach()
         {
-            long allocationSize = sizeof(UnsafeEventStreamRange) * forEachCount;
-            long allocationThreadSize = sizeof(UnsafeEventStreamThreadRange) * forEachCount;
-            blockData->Ranges = (UnsafeEventStreamRange*)UnsafeUtility.Malloc(allocationSize, 16, this.allocator);
-            blockData->ThreadRanges = (UnsafeEventStreamThreadRange*)UnsafeUtility.Malloc(allocationThreadSize, 16, this.allocator); // todo conditional
-            blockData->RangeCount = forEachCount;
-            UnsafeUtility.MemClear(blockData->Ranges, allocationSize);
+            long allocationSize = sizeof(UnsafeEventStreamRange) * ForEachCount;
+            long allocationThreadSize = sizeof(UnsafeEventStreamThreadRange) * ForEachCount;
+            this.blockData->Ranges = (UnsafeEventStreamRange*)UnsafeUtility.Malloc(allocationSize, 16, this.allocator);
+            this.blockData->ThreadRanges = (UnsafeEventStreamThreadRange*)UnsafeUtility.Malloc(allocationThreadSize, 16, this.allocator); // todo conditional
+            UnsafeUtility.MemClear(this.blockData->Ranges, allocationSize);
         }
 
         private void Deallocate()
@@ -196,12 +183,12 @@ namespace BovineLabs.Event.Containers
                 return;
             }
 
-            for (int i = 0; i != blockData->BlockCount; i++)
+            for (var i = 0; i != ForEachCount; i++)
             {
                 var block = this.blockData->Blocks[i];
                 while (block != null)
                 {
-                    UnsafeEventStreamBlock* next = block->Next;
+                    var next = block->Next;
                     UnsafeUtility.Free(block, this.allocator);
                     block = next;
                 }

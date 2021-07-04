@@ -1,9 +1,13 @@
+// <copyright file="UnsafeEventStreamBlockData.cs" company="BovineLabs">
+//     Copyright (c) BovineLabs. All rights reserved.
+// </copyright>
+
 namespace BovineLabs.Event.Containers
 {
     using System.Diagnostics.CodeAnalysis;
-    using Unity.Assertions;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
+    using UnityEngine;
 
     [BurstCompatible]
     internal unsafe struct UnsafeEventStreamBlock
@@ -31,15 +35,13 @@ namespace BovineLabs.Event.Containers
         internal Allocator Allocator;
 
         internal UnsafeEventStreamBlock** Blocks;
-        internal int BlockCount;
 
         internal UnsafeEventStreamRange* Ranges;
         internal UnsafeEventStreamThreadRange* ThreadRanges;
-        internal int RangeCount;
 
         internal UnsafeEventStreamBlock* Allocate(UnsafeEventStreamBlock* oldBlock, int threadIndex)
         {
-            Assert.IsTrue(threadIndex < this.BlockCount && threadIndex >= 0);
+            Debug.Assert(threadIndex < UnsafeEventStream.ForEachCount && threadIndex >= 0);
 
             var block = (UnsafeEventStreamBlock*)UnsafeUtility.Malloc(AllocationSize, 16, this.Allocator);
             block->Next = null;

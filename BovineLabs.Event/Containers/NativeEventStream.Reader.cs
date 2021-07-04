@@ -37,7 +37,7 @@ namespace BovineLabs.Event.Containers
             public int ForEachCount => this.reader.ForEachCount;
 
             /// <summary> Gets the remaining item count. </summary>
-            public int RemainingItemCount => this.reader.RemainingItemCount;
+            public int RemainingItemCount => CollectionHelper.AssumePositive(this.reader.RemainingItemCount);
 
             /// <summary> Begin reading data at the iteration index. </summary>
             /// <param name="foreachIndex"> The index to start reading. </param>
@@ -47,6 +47,7 @@ namespace BovineLabs.Event.Containers
                 this.CheckBeginForEachIndex(foreachIndex);
 
                 var remainingItemCount = this.reader.BeginForEachIndex(foreachIndex);
+                remainingItemCount = CollectionHelper.AssumePositive(remainingItemCount);
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
                 this.remainingBlocks = this.reader.m_BlockStream->Ranges[foreachIndex].NumberOfBlocks;
@@ -114,11 +115,7 @@ namespace BovineLabs.Event.Containers
                 where T : struct
             {
                 var size = UnsafeUtility.SizeOf<T>();
-#if UNITY_COLLECTIONS_0_14_OR_NEWER
                 return ref UnsafeUtility.AsRef<T>(this.ReadUnsafePtr(size));
-#else
-                return ref UnsafeUtilityEx.AsRef<T>(this.ReadUnsafePtr(size));
-#endif
             }
 
             /// <summary>
@@ -175,11 +172,11 @@ namespace BovineLabs.Event.Containers
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
                 AtomicSafetyHandle.CheckReadAndThrow(this.m_Safety);
 
-                if ((uint)forEachIndex >= (uint)this.reader.m_BlockStream->RangeCount)
+                if ((uint)forEachIndex >= (uint)this.ForEachCount)
                 {
                     throw new System.ArgumentOutOfRangeException(
                         nameof(forEachIndex),
-                        $"foreachIndex: {forEachIndex} must be between 0 and ForEachCount: {this.reader.m_BlockStream->RangeCount}");
+                        $"foreachIndex: {forEachIndex} must be between 0 and ForEachCount: {this.ForEachCount}");
                 }
 #endif
             }
