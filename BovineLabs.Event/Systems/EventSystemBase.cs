@@ -8,15 +8,14 @@ namespace BovineLabs.Event.Systems
      using Unity.Entities;
      using UnityEngine.Scripting;
 
+     /// <summary> The base EventSystem class. Implement this to add a new EventSystem for a specific group. </summary>
      public abstract class EventSystemBase : SystemBase
      {
           private NativeHashMap<long, EventContainer> eventContainers;
 
-          /// <summary>
-          /// Initializes a new instance of the <see cref="EventSystemBase"/> class.
-          /// </summary>
+          /// <summary> Initializes a new instance of the <see cref="EventSystemBase"/> class. </summary>
           [Preserve]
-          public EventSystemBase()
+          protected EventSystemBase()
           {
                // Done in constructor so other jobs can register / deregister in OnStart()
                this.eventContainers = new NativeHashMap<long, EventContainer>(16, Allocator.Persistent);

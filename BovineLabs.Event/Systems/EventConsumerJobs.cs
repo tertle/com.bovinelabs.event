@@ -12,6 +12,7 @@ namespace BovineLabs.Event.Systems
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
 
+    /// <summary> Jobs that EventConsumer uses. </summary>
     internal static class EventConsumerJobs
     {
         [BurstCompile]
@@ -29,9 +30,11 @@ namespace BovineLabs.Event.Systems
         [BurstCompile]
         public struct SumJob : IJob
         {
-            [ReadOnly] public NativeArray<int> Counter;
+            [ReadOnly]
+            public NativeArray<int> Counter;
 
-            [WriteOnly] public NativeArray<int> Count;
+            [WriteOnly]
+            public NativeArray<int> Count;
 
             public void Execute()
             {
@@ -51,7 +54,8 @@ namespace BovineLabs.Event.Systems
             where TKey : struct, IEquatable<TKey>
             where TValue : struct
         {
-            [ReadOnly] public NativeArray<int> Counter;
+            [ReadOnly]
+            public NativeArray<int> Counter;
 
             public NativeHashMap<TKey, TValue> HashMap;
 
@@ -78,7 +82,8 @@ namespace BovineLabs.Event.Systems
             where TKey : struct, IEquatable<TKey>
             where TValue : struct
         {
-            [ReadOnly] public NativeArray<int> Counter;
+            [ReadOnly]
+            public NativeArray<int> Counter;
 
             public NativeMultiHashMap<TKey, TValue> HashMap;
 

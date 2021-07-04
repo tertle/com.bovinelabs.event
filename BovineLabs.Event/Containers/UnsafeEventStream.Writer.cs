@@ -6,7 +6,6 @@ namespace BovineLabs.Event.Containers
 {
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Jobs.LowLevel.Unsafe;
 
     public unsafe partial struct UnsafeEventStream
     {
@@ -23,19 +22,6 @@ namespace BovineLabs.Event.Containers
             {
                 this.m_BlockStream = stream.blockData;
                 this.m_ThreadIndex = 0; // 0 so main thread works
-
-                for (var i = 0; i < JobsUtility.MaxJobThreadCount; i++)
-                {
-                    this.m_BlockStream->Ranges[i].ElementCount = 0;
-                    this.m_BlockStream->Ranges[i].NumberOfBlocks = 0;
-                    this.m_BlockStream->Ranges[i].OffsetInFirstBlock = 0;
-                    this.m_BlockStream->Ranges[i].Block = null;
-                    this.m_BlockStream->Ranges[i].LastOffset = 0;
-
-                    this.m_BlockStream->ThreadRanges[i].CurrentBlock = null;
-                    this.m_BlockStream->ThreadRanges[i].CurrentBlockEnd = null;
-                    this.m_BlockStream->ThreadRanges[i].CurrentPtr = null;
-                }
             }
 
             /// <summary> Write data. </summary>

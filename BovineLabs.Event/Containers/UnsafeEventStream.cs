@@ -172,8 +172,9 @@ namespace BovineLabs.Event.Containers
             long allocationSize = sizeof(UnsafeEventStreamRange) * ForEachCount;
             long allocationThreadSize = sizeof(UnsafeEventStreamThreadRange) * ForEachCount;
             this.blockData->Ranges = (UnsafeEventStreamRange*)UnsafeUtility.Malloc(allocationSize, 16, this.allocator);
-            this.blockData->ThreadRanges = (UnsafeEventStreamThreadRange*)UnsafeUtility.Malloc(allocationThreadSize, 16, this.allocator); // todo conditional
+            this.blockData->ThreadRanges = (UnsafeEventStreamThreadRange*)UnsafeUtility.Malloc(allocationThreadSize, 16, this.allocator);
             UnsafeUtility.MemClear(this.blockData->Ranges, allocationSize);
+            UnsafeUtility.MemClear(this.blockData->ThreadRanges, allocationThreadSize);
         }
 
         private void Deallocate()

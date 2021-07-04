@@ -159,6 +159,8 @@ namespace BovineLabs.Event.Systems
                     Debug.LogError("CreateWriter must always be balanced by a AddJobHandle call.");
                     continue;
                 }
+
+                producer->HandleSet = false;
 #endif
 
                 handles.Add(producer->JobHandle);
@@ -181,11 +183,14 @@ namespace BovineLabs.Event.Systems
                 }
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                if (!consumer->HandleSet)
+                if (consumer->ReadersRequested && !consumer->HandleSet)
                 {
                     Debug.LogError("GetReaders must always be balanced by a AddJobHandle call.");
                     continue;
                 }
+
+                consumer->HandleSet = false;
+                consumer->ReadersRequested = false;
 #endif
 
                 handles.Add(consumer->JobHandle);
