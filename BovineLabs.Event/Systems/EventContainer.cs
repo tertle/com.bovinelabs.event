@@ -61,6 +61,8 @@ namespace BovineLabs.Event.Systems
             where T : struct
         {
             var producer = (Producer*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<Producer>(), UnsafeUtility.AlignOf<Producer>(), Allocator.Persistent);
+            UnsafeUtility.MemClear(producer, UnsafeUtility.SizeOf<Producer>());
+
             this.producers.Add((IntPtr)producer);
 
             return new EventProducer<T> { producer = producer };
@@ -70,6 +72,9 @@ namespace BovineLabs.Event.Systems
             where T : struct
         {
             var consumer = (Consumer*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<Consumer>(), UnsafeUtility.AlignOf<Consumer>(), Allocator.Persistent);
+            UnsafeUtility.MemClear(consumer, UnsafeUtility.SizeOf<Consumer>());
+            consumer->Readers = new UnsafeListPtr<NativeEventStream.Reader>(0, Allocator.TempJob);
+
             this.consumers.Add((IntPtr)consumer);
 
             return new EventConsumer<T> { consumer = consumer };
@@ -97,6 +102,7 @@ namespace BovineLabs.Event.Systems
             {
                 this.currentProducers[i].Dispose(consumerHandle);
             }
+
             this.currentProducers.Clear();
 
             // Grab all new producers and reset them
@@ -123,7 +129,14 @@ namespace BovineLabs.Event.Systems
 
                 consumer->InputHandle = producerHandle;
                 consumer->JobHandle = default;
-                consumer->Readers = new UnsafeListPtr<NativeEventStream.Reader>(this.currentProducers.Length, Allocator.TempJob);
+                var readers = new UnsafeListPtr<NativeEventStream.Reader>(this.currentProducers.Length, Allocator.TempJob);
+
+                for (var r = 0; r < this.currentProducers.Length; r++)
+                {
+                    readers.Add(this.currentProducers[r].AsReader());
+                }
+
+                consumer->Readers = readers;
             }
         }
 
@@ -131,7 +144,7 @@ namespace BovineLabs.Event.Systems
         {
             var handles = new NativeList<JobHandle>(this.producers.Length, Allocator.Temp);
 
-            for (var i = 0; i < handles.Length; i++)
+            for (var i = 0; i < this.producers.Length; i++)
             {
                 var producer = (Producer*)this.producers[i];
 
@@ -158,7 +171,7 @@ namespace BovineLabs.Event.Systems
         {
             var handles = new NativeList<JobHandle>(this.consumers.Length, Allocator.Temp);
 
-            for (var i = 0; i < handles.Length; i++)
+            for (var i = 0; i < this.consumers.Length; i++)
             {
                 var consumer = (Consumer*)this.consumers[i];
 

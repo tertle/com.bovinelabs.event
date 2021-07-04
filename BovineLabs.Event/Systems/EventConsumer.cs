@@ -5,8 +5,6 @@
 namespace BovineLabs.Event.Systems
 {
     using BovineLabs.Event.Containers;
-    using Unity.Collections;
-    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
 
     public unsafe struct EventConsumer<T>
@@ -14,16 +12,9 @@ namespace BovineLabs.Event.Systems
     {
         internal Consumer* consumer;
 
-        public JobHandle GetReaders(JobHandle jobHandle, out NativeArray<NativeEventStream.Reader> readers)
+        public JobHandle GetReaders(JobHandle jobHandle, out UnsafeListPtr<NativeEventStream.Reader> readers)
         {
-            readers = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<NativeEventStream.Reader>(
-                this.consumer->Readers.GetUnsafeList()->Ptr,
-                this.consumer->Readers.Length,
-                Allocator.None);
-
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref readers, AtomicSafetyHandle.GetTempMemoryHandle());
-#endif
+            readers = this.consumer->Readers;
 
             return JobHandle.CombineDependencies(jobHandle, this.consumer->InputHandle);
         }

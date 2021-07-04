@@ -5,6 +5,5 @@ namespace BovineLabs.Event.Systems
     [UpdateInGroup(typeof(LateSimulationSystemGroup))]
     public class EventSystem : EventSystemBase
     {
-
     }
 }

@@ -95,6 +95,7 @@ namespace BovineLabs.Event.Systems
                               e.Current.Value.Update();
                          }
                     })
+                    .WithoutBurst() // For now should be fine in 0.18
                     .Run();
           }
 

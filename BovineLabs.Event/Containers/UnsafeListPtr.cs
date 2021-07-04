@@ -13,7 +13,7 @@ namespace BovineLabs.Event.Containers
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
 
-    internal unsafe struct UnsafeListPtr<T> : INativeDisposable, INativeList<T> // Used by collection initializers.
+    public unsafe struct UnsafeListPtr<T> : INativeDisposable, INativeList<T> // Used by collection initializers.
         where T : unmanaged
     {
         [NativeDisableUnsafePtrRestriction]
@@ -399,16 +399,11 @@ namespace BovineLabs.Event.Containers
             }
         }
 
-        [NativeContainer]
         [BurstCompatible]
         internal struct NativeListDispose
         {
             [NativeDisableUnsafePtrRestriction]
             public UnsafeList* m_ListData;
-
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            internal AtomicSafetyHandle m_Safety;
-#endif
 
             public void Dispose()
             {
