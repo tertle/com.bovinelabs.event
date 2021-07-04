@@ -40,6 +40,11 @@ namespace BovineLabs.Event.Jobs
             where TJob : struct, IJobEventReaderForEach
             where T : struct
         {
+            if (!consumer.HasReaders)
+            {
+                return dependsOn;
+            }
+
             dependsOn = consumer.GetReaders(dependsOn, out var events);
 
             for (var i = 0; i < events.Length; i++)

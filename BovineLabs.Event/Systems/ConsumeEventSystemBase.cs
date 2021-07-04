@@ -47,7 +47,7 @@ namespace BovineLabs.Event.Systems
         {
             this.BeforeEvent();
 
-            if (!this.consumer.HasReaders())
+            if (!this.consumer.HasReaders)
             {
                 return;
             }
