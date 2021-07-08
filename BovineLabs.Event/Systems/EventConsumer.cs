@@ -5,10 +5,12 @@
 namespace BovineLabs.Event.Systems
 {
     using System;
+    using System.Diagnostics;
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using Unity.Assertions;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
 
     public unsafe struct EventConsumer<T>
@@ -20,18 +22,23 @@ namespace BovineLabs.Event.Systems
 
         public bool HasReaders => this.consumer->Readers.Length > 0;
 
-        public JobHandle GetReaders(JobHandle jobHandle, out UnsafeListPtr<NativeEventStream.Reader> readers, Allocator allocator = Allocator.Temp)
+        public JobHandle GetReaders(JobHandle jobHandle, out UnsafeReadArray<NativeEventStream.Reader> readers, Allocator allocator = Allocator.Temp)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
+            CheckAllocateArguments(allocator);
             this.consumer->ReadersRequested++;
 #endif
 
             var length = this.consumer->Readers.Length;
-            readers = new UnsafeListPtr<NativeEventStream.Reader>(length, allocator); // TODO USE ARRAYPTR
+            var size = UnsafeUtility.SizeOf<NativeEventStream.Reader>() * length;
+            var buffer = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<NativeEventStream.Reader>(), allocator);
+
             for (var i = 0; i < length; i++)
             {
-                readers.Add(this.consumer->Readers[i].AsReader());
+                UnsafeUtility.WriteArrayElement(buffer, i, this.consumer->Readers[i].AsReader());
             }
+
+            readers = new UnsafeReadArray<NativeEventStream.Reader>(buffer, length, allocator);
 
             return JobHandle.CombineDependencies(jobHandle, this.consumer->InputHandle);
         }
@@ -120,6 +127,15 @@ namespace BovineLabs.Event.Systems
             list = new NativeList<T>(128, allocator);
             handle = new EventConsumerJobs.ToNativeListJob<T> { List = list }.Schedule(this, handle);
             return handle;
+        }
+
+        [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+        private static void CheckAllocateArguments(Allocator allocator)
+        {
+            if (allocator <= Allocator.None)
+            {
+                throw new ArgumentException("Allocator must be Temp, TempJob or Persistent", nameof(allocator));
+            }
         }
     }
 

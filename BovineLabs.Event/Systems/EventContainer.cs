@@ -73,7 +73,7 @@ namespace BovineLabs.Event.Systems
         {
             var consumer = (Consumer*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<Consumer>(), UnsafeUtility.AlignOf<Consumer>(), Allocator.Persistent);
             UnsafeUtility.MemClear(consumer, UnsafeUtility.SizeOf<Consumer>());
-            consumer->Readers = new UnsafeListPtr<NativeEventStream>(0, Allocator.TempJob);
+            consumer->Readers = new UnsafeListPtr<NativeEventStream>(0, Allocator.Persistent);
 
             this.consumers.Add((IntPtr)consumer);
 
@@ -130,8 +130,6 @@ namespace BovineLabs.Event.Systems
                 {
                     consumer->Readers.Add(this.currentProducers[r]);
                 }
-
-                consumer->Readers = consumer->Readers;
             }
         }
 
