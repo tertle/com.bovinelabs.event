@@ -44,11 +44,11 @@ namespace BovineLabs.Event.Jobs
                 return dependsOn;
             }
 
-            dependsOn = consumer.GetReaders(dependsOn, out var events);
+            dependsOn = consumer.GetReaders(dependsOn, out var readers);
 
-            for (var i = 0; i < events.Length; i++)
+            for (var i = 0; i < readers.Length; i++)
             {
-                var fullData = new EventJobReaderStruct<TJob, T> { Reader = events[i], JobData = jobData, Index = i };
+                var fullData = new EventJobReaderStruct<TJob, T> { Reader = readers[i], JobData = jobData, Index = i };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
@@ -59,6 +59,7 @@ namespace BovineLabs.Event.Jobs
                 dependsOn = JobsUtility.Schedule(ref scheduleParams);
             }
 
+            readers.Dispose(dependsOn);
             consumer.AddJobHandle(dependsOn);
 
             return dependsOn;
@@ -81,13 +82,13 @@ namespace BovineLabs.Event.Jobs
                 return dependsOn;
             }
 
-            dependsOn = consumer.GetReaders(dependsOn, out var events);
+            dependsOn = consumer.GetReaders(dependsOn, out var readers);
 
             var input = dependsOn;
 
-            for (var i = 0; i < events.Length; i++)
+            for (var i = 0; i < readers.Length; i++)
             {
-                var fullData = new EventJobReaderStruct<TJob, T> { Reader = events[i], JobData = jobData, Index = i };
+                var fullData = new EventJobReaderStruct<TJob, T> { Reader = readers[i], JobData = jobData, Index = i };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
@@ -99,6 +100,7 @@ namespace BovineLabs.Event.Jobs
                 dependsOn = JobHandle.CombineDependencies(dependsOn, handle);
             }
 
+            readers.Dispose(dependsOn);
             consumer.AddJobHandle(dependsOn);
 
             return dependsOn;

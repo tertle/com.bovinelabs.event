@@ -10,7 +10,6 @@ namespace BovineLabs.Event.Systems
     using Unity.Assertions;
     using Unity.Collections;
     using Unity.Jobs;
-    using UnityEngine;
 
     public unsafe struct EventConsumer<T>
         where T : struct
@@ -21,14 +20,18 @@ namespace BovineLabs.Event.Systems
 
         public bool HasReaders => this.consumer->Readers.Length > 0;
 
-        public JobHandle GetReaders(JobHandle jobHandle, out UnsafeListPtr<NativeEventStream.Reader> readers)
+        public JobHandle GetReaders(JobHandle jobHandle, out UnsafeListPtr<NativeEventStream.Reader> readers, Allocator allocator = Allocator.Temp)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            Debug.Assert(!this.consumer->ReadersRequested, "Getting multiple readers in same frame.");
-            this.consumer->ReadersRequested = true;
-    #endif
+            this.consumer->ReadersRequested++;
+#endif
 
-            readers = this.consumer->Readers;
+            var length = this.consumer->Readers.Length;
+            readers = new UnsafeListPtr<NativeEventStream.Reader>(length, allocator); // TODO USE ARRAYPTR
+            for (var i = 0; i < length; i++)
+            {
+                readers.Add(this.consumer->Readers[i].AsReader());
+            }
 
             return JobHandle.CombineDependencies(jobHandle, this.consumer->InputHandle);
         }
@@ -37,7 +40,7 @@ namespace BovineLabs.Event.Systems
         {
             this.consumer->JobHandle = handle;
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            this.consumer->HandleSet = true;
+            this.consumer->HandleSet++;
 #endif
         }
 
@@ -122,13 +125,13 @@ namespace BovineLabs.Event.Systems
 
     internal struct Consumer
     {
-        public UnsafeListPtr<NativeEventStream.Reader> Readers;
+        public UnsafeListPtr<NativeEventStream> Readers;
         public JobHandle JobHandle;
         public JobHandle InputHandle;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-        public bool ReadersRequested;
-        public bool HandleSet;
+        public int ReadersRequested;
+        public int HandleSet;
 #endif
     }
 }

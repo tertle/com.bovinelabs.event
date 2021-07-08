@@ -42,11 +42,6 @@ namespace BovineLabs.Event.Systems
             this.producer->HandleSet = true;
 #endif
         }
-
-        internal void Dispose()
-        {
-            UnsafeUtility.Free(this.producer, Allocator.Persistent);
-        }
     }
 
     internal struct Producer

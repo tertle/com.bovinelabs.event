@@ -89,6 +89,7 @@ namespace BovineLabs.Event.Jobs
                     : JobsUtility.Schedule(ref scheduleParams);
             }
 
+            readers.Dispose(dependsOn);
             consumer.AddJobHandle(dependsOn);
 
             return dependsOn;

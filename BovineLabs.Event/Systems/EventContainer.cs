@@ -73,7 +73,7 @@ namespace BovineLabs.Event.Systems
         {
             var consumer = (Consumer*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<Consumer>(), UnsafeUtility.AlignOf<Consumer>(), Allocator.Persistent);
             UnsafeUtility.MemClear(consumer, UnsafeUtility.SizeOf<Consumer>());
-            consumer->Readers = new UnsafeListPtr<NativeEventStream.Reader>(0, Allocator.TempJob);
+            consumer->Readers = new UnsafeListPtr<NativeEventStream>(0, Allocator.TempJob);
 
             this.consumers.Add((IntPtr)consumer);
 
@@ -122,21 +122,16 @@ namespace BovineLabs.Event.Systems
             for (var i = 0; i < this.consumers.Length; i++)
             {
                 var consumer = (Consumer*)this.consumers[i];
-                if (consumer->Readers.IsCreated)
-                {
-                    consumer->Readers.Dispose(consumer->JobHandle);
-                }
-
+                consumer->Readers.Clear();
                 consumer->InputHandle = producerHandle;
                 consumer->JobHandle = default;
-                var readers = new UnsafeListPtr<NativeEventStream.Reader>(this.currentProducers.Length, Allocator.TempJob);
 
                 for (var r = 0; r < this.currentProducers.Length; r++)
                 {
-                    readers.Add(this.currentProducers[r].AsReader());
+                    consumer->Readers.Add(this.currentProducers[r]);
                 }
 
-                consumer->Readers = readers;
+                consumer->Readers = consumer->Readers;
             }
         }
 
@@ -183,14 +178,14 @@ namespace BovineLabs.Event.Systems
                 }
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                if (consumer->ReadersRequested && !consumer->HandleSet)
+                if (consumer->ReadersRequested != consumer->HandleSet)
                 {
                     Debug.LogError("GetReaders must always be balanced by a AddJobHandle call.");
                     continue;
                 }
 
-                consumer->HandleSet = false;
-                consumer->ReadersRequested = false;
+                consumer->HandleSet = 0;
+                consumer->ReadersRequested = 0;
 #endif
 
                 handles.Add(consumer->JobHandle);

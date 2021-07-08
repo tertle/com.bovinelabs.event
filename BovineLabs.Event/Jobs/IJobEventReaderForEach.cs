@@ -45,11 +45,11 @@ namespace BovineLabs.Event.Jobs
                 return dependsOn;
             }
 
-            dependsOn = consumer.GetReaders(dependsOn, out var events);
+            dependsOn = consumer.GetReaders(dependsOn, out var readers);
 
-            for (var i = 0; i < events.Length; i++)
+            for (var i = 0; i < readers.Length; i++)
             {
-                var reader = events[i];
+                var reader = readers[i];
 
                 var fullData = new JobEventReaderForEachStructParallel<TJob, T>
                 {
@@ -72,6 +72,7 @@ namespace BovineLabs.Event.Jobs
                     1);
             }
 
+            readers.Dispose(dependsOn);
             consumer.AddJobHandle(dependsOn);
 
             return dependsOn;
