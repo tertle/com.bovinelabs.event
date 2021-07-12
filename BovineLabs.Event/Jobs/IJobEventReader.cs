@@ -14,7 +14,7 @@ namespace BovineLabs.Event.Jobs
     using Unity.Jobs.LowLevel.Unsafe;
 
     /// <summary> Job that visits each event stream. </summary>
-    [JobProducerType(typeof(JobEventReader.EventJobReaderStruct<,>))]
+    [JobProducerType(typeof(JobEventReader.EventJobReaderStruct<>))]
     [SuppressMessage("ReSharper", "TypeParameterCanBeVariant", Justification = "Strict requirements for compiler")]
     [SuppressMessage("ReSharper", "UnusedTypeParameter", Justification = "Required by scheduler")]
     public interface IJobEventReader
@@ -48,11 +48,11 @@ namespace BovineLabs.Event.Jobs
 
             for (var i = 0; i < readers.Length; i++)
             {
-                var fullData = new EventJobReaderStruct<TJob, T> { Reader = readers[i], JobData = jobData, Index = i };
+                var fullData = new EventJobReaderStruct<TJob> { Reader = readers[i], JobData = jobData, Index = i };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
-                    EventJobReaderStruct<TJob, T>.Initialize(),
+                    EventJobReaderStruct<TJob>.Initialize(),
                     dependsOn,
                     ScheduleMode.Parallel);
 
@@ -88,11 +88,11 @@ namespace BovineLabs.Event.Jobs
 
             for (var i = 0; i < readers.Length; i++)
             {
-                var fullData = new EventJobReaderStruct<TJob, T> { Reader = readers[i], JobData = jobData, Index = i };
+                var fullData = new EventJobReaderStruct<TJob> { Reader = readers[i], JobData = jobData, Index = i };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
-                    EventJobReaderStruct<TJob, T>.Initialize(),
+                    EventJobReaderStruct<TJob>.Initialize(),
                     input,
                     ScheduleMode.Parallel);
 
@@ -108,10 +108,8 @@ namespace BovineLabs.Event.Jobs
 
         /// <summary> The job execution struct. </summary>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
-        /// <typeparam name="T"> The type of the event. </typeparam>
-        internal struct EventJobReaderStruct<TJob, T>
+        internal struct EventJobReaderStruct<TJob>
             where TJob : struct, IJobEventReader
-            where T : struct
         {
             /// <summary> The <see cref="NativeEventStream.Reader"/> . </summary>
             [ReadOnly]
@@ -127,7 +125,7 @@ namespace BovineLabs.Event.Jobs
             private static IntPtr jobReflectionData;
 
             private delegate void ExecuteJobFunction(
-                ref EventJobReaderStruct<TJob, T> fullData,
+                ref EventJobReaderStruct<TJob> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
@@ -140,7 +138,7 @@ namespace BovineLabs.Event.Jobs
                 if (jobReflectionData == IntPtr.Zero)
                 {
                     jobReflectionData = JobsUtility.CreateJobReflectionData(
-                        typeof(EventJobReaderStruct<TJob, T>),
+                        typeof(EventJobReaderStruct<TJob>),
                         typeof(TJob),
                         (ExecuteJobFunction)Execute);
                 }
@@ -156,7 +154,7 @@ namespace BovineLabs.Event.Jobs
             /// <param name="jobIndex"> The job index. </param>
             [SuppressMessage("ReSharper", "MemberCanBePrivate.Global", Justification = "Required by burst.")]
             public static void Execute(
-                ref EventJobReaderStruct<TJob, T> fullData,
+                ref EventJobReaderStruct<TJob> fullData,
                 IntPtr additionalPtr,
                 IntPtr bufferRangePatchData,
                 ref JobRanges ranges,
