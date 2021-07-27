@@ -14,6 +14,7 @@ namespace BovineLabs.Event.Systems
     public unsafe struct EventProducer<T>
         where T : struct
     {
+        [NativeDisableUnsafePtrRestriction]
         internal Producer* producer;
 
         public bool IsValid => this.producer != null;
