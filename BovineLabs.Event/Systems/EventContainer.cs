@@ -149,7 +149,7 @@ namespace BovineLabs.Event.Systems
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
                 if (!producer->HandleSet)
                 {
-                    Debug.LogError("CreateWriter must always be balanced by a AddJobHandle call.");
+                    Debug.LogError("CreateWriter must always be balanced by an AddJobHandle call.");
                     continue;
                 }
 
@@ -178,7 +178,7 @@ namespace BovineLabs.Event.Systems
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
                 if (consumer->ReadersRequested != consumer->HandleSet)
                 {
-                    Debug.LogError("GetReaders must always be balanced by a AddJobHandle call.");
+                    Debug.LogError("GetReaders must always be balanced by an AddJobHandle call.");
                     continue;
                 }
 
