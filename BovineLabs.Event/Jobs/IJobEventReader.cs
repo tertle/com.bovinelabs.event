@@ -70,7 +70,6 @@ namespace BovineLabs.Event.Jobs
         /// <param name="readers"> The readers. </param>
         /// <param name="dependsOn"> The job handle dependency. </param>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
-        /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
         public static unsafe JobHandle Schedule<TJob>(this TJob jobData, UnsafeReadArray<NativeEventStream.Reader> readers, JobHandle dependsOn = default)
             where TJob : struct, IJobEventReader
@@ -139,7 +138,6 @@ namespace BovineLabs.Event.Jobs
         /// <param name="readers"> The readers. </param>
         /// <param name="dependsOn"> The job handle dependency. </param>
         /// <typeparam name="TJob"> The type of the job. </typeparam>
-        /// <typeparam name="T"> The type of the key in the hash map. </typeparam>
         /// <returns> The handle to job. </returns>
         public static unsafe JobHandle ScheduleParallel<TJob>(
             this TJob jobData, UnsafeReadArray<NativeEventStream.Reader> readers, JobHandle dependsOn = default)

@@ -45,6 +45,7 @@ namespace BovineLabs.Event.Containers
         /// <summary> Read a chunk of memory that could have been larger than the max allocation size. </summary>
         /// <param name="reader"> The reader. </param>
         /// <param name="size"> For an array, this is UnsafeUtility.SizeOf{T} * length. </param>
+        /// <param name="allocator"> The allocator type to write to. </param>
         /// <returns> Pointer to data. </returns>
         public static byte* ReadLarge(this ref NativeEventStream.Reader reader, int size, Allocator allocator = Allocator.Temp)
         {

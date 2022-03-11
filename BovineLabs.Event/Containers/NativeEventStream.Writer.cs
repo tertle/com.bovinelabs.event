@@ -10,14 +10,14 @@ namespace BovineLabs.Event.Containers
 
     public unsafe partial struct NativeEventStream
     {
-        /// <summary>
-        /// </summary>
         [NativeContainer]
         [NativeContainerIsAtomicWriteOnly]
         public struct Writer : IStreamWriter
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
+#pragma warning disable SA1308
             private AtomicSafetyHandle m_Safety;
+#pragma warning restore SA1308
 #endif
 
             private UnsafeEventStream.Writer writer;
@@ -31,9 +31,9 @@ namespace BovineLabs.Event.Containers
 #endif
             }
 
-            /// <summary> Write data. </summary>
-            /// <typeparam name="T">The type of value.</typeparam>
-            /// <param name="value"></param>
+            /// <summary> Write data to the stream. </summary>
+            /// <typeparam name="T"> The type of value. </typeparam>
+            /// <param name="value"> The value to write. </param>
             public void Write<T>(T value)
                 where T : struct
             {
@@ -41,11 +41,9 @@ namespace BovineLabs.Event.Containers
                 dst = value;
             }
 
-            /// <summary>
-            /// Allocate space for data.
-            /// </summary>
+            /// <summary> Allocate space for data. </summary>
             /// <typeparam name="T">The type of value.</typeparam>
-            /// <returns></returns>
+            /// <returns> Reference to the data. </returns>
             public ref T Allocate<T>()
                 where T : struct
             {
@@ -56,7 +54,7 @@ namespace BovineLabs.Event.Containers
 
             /// <summary> Allocate space for data. </summary>
             /// <param name="size">Size in bytes.</param>
-            /// <returns></returns>
+            /// <returns> Pointer to the data. </returns>
             public byte* Allocate(int size)
             {
                 this.CheckAllocateSize(size);
@@ -64,7 +62,7 @@ namespace BovineLabs.Event.Containers
             }
 
             [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
-            void CheckAllocateSize(int size)
+            private void CheckAllocateSize(int size)
             {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
                 AtomicSafetyHandle.CheckWriteAndThrow(this.m_Safety);

@@ -20,7 +20,9 @@ namespace BovineLabs.Event.Containers
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             private int remainingBlocks;
+#pragma warning disable SA1308
             private AtomicSafetyHandle m_Safety;
+#pragma warning restore SA1308
 #endif
 
             internal Reader(ref NativeEventStream stream)

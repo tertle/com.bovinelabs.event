@@ -4,6 +4,7 @@
 
 namespace BovineLabs.Event.Containers
 {
+    using System.Diagnostics.CodeAnalysis;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
@@ -13,14 +14,17 @@ namespace BovineLabs.Event.Containers
         public struct Writer
         {
             [NativeDisableUnsafePtrRestriction]
-            private UnsafeEventStreamBlockData* m_BlockStream;
+            private UnsafeEventStreamBlockData* blockStream;
 
+#pragma warning disable SA1308
             [NativeSetThreadIndex]
+            [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "Required by unity scheduler")] // TODO is this true?
             private int m_ThreadIndex;
+#pragma warning restore SA1308
 
             internal Writer(ref UnsafeEventStream stream)
             {
-                this.m_BlockStream = stream.blockData;
+                this.blockStream = stream.blockData;
                 this.m_ThreadIndex = 0; // 0 so main thread works
             }
 
@@ -53,37 +57,37 @@ namespace BovineLabs.Event.Containers
             {
                 var threadIndex = CollectionHelper.AssumeThreadRange(this.m_ThreadIndex);
 
-                var ptr = this.m_BlockStream->ThreadRanges[threadIndex].CurrentPtr;
+                var ptr = this.blockStream->ThreadRanges[threadIndex].CurrentPtr;
                 var allocationEnd = ptr + size;
-                this.m_BlockStream->ThreadRanges[threadIndex].CurrentPtr = allocationEnd;
+                this.blockStream->ThreadRanges[threadIndex].CurrentPtr = allocationEnd;
 
-                if (allocationEnd > this.m_BlockStream->ThreadRanges[threadIndex].CurrentBlockEnd)
+                if (allocationEnd > this.blockStream->ThreadRanges[threadIndex].CurrentBlockEnd)
                 {
-                    var oldBlock = this.m_BlockStream->ThreadRanges[threadIndex].CurrentBlock;
-                    var newBlock = this.m_BlockStream->Allocate(oldBlock, threadIndex);
+                    var oldBlock = this.blockStream->ThreadRanges[threadIndex].CurrentBlock;
+                    var newBlock = this.blockStream->Allocate(oldBlock, threadIndex);
 
-                    this.m_BlockStream->ThreadRanges[threadIndex].CurrentBlock = newBlock;
-                    this.m_BlockStream->ThreadRanges[threadIndex].CurrentPtr = newBlock->Data;
+                    this.blockStream->ThreadRanges[threadIndex].CurrentBlock = newBlock;
+                    this.blockStream->ThreadRanges[threadIndex].CurrentPtr = newBlock->Data;
 
-                    if (this.m_BlockStream->Ranges[threadIndex].Block == null)
+                    if (this.blockStream->Ranges[threadIndex].Block == null)
                     {
-                        this.m_BlockStream->Ranges[threadIndex].OffsetInFirstBlock = (int)(newBlock->Data - (byte*)newBlock);
-                        this.m_BlockStream->Ranges[threadIndex].Block = newBlock;
+                        this.blockStream->Ranges[threadIndex].OffsetInFirstBlock = (int)(newBlock->Data - (byte*)newBlock);
+                        this.blockStream->Ranges[threadIndex].Block = newBlock;
                     }
                     else
                     {
-                        this.m_BlockStream->Ranges[threadIndex].NumberOfBlocks++;
+                        this.blockStream->Ranges[threadIndex].NumberOfBlocks++;
                     }
 
-                    this.m_BlockStream->ThreadRanges[threadIndex].CurrentBlockEnd = (byte*)newBlock + UnsafeEventStreamBlockData.AllocationSize;
+                    this.blockStream->ThreadRanges[threadIndex].CurrentBlockEnd = (byte*)newBlock + UnsafeEventStreamBlockData.AllocationSize;
 
                     ptr = newBlock->Data;
-                    this.m_BlockStream->ThreadRanges[threadIndex].CurrentPtr = newBlock->Data + size;
+                    this.blockStream->ThreadRanges[threadIndex].CurrentPtr = newBlock->Data + size;
                 }
 
-                this.m_BlockStream->Ranges[threadIndex].ElementCount++;
-                this.m_BlockStream->Ranges[threadIndex].LastOffset = (int)(this.m_BlockStream->ThreadRanges[threadIndex].CurrentPtr -
-                                                                           (byte*)this.m_BlockStream->ThreadRanges[threadIndex].CurrentBlock);
+                this.blockStream->Ranges[threadIndex].ElementCount++;
+                this.blockStream->Ranges[threadIndex].LastOffset = (int)(this.blockStream->ThreadRanges[threadIndex].CurrentPtr -
+                                                                           (byte*)this.blockStream->ThreadRanges[threadIndex].CurrentBlock);
 
                 return ptr;
             }

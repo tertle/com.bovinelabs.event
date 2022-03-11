@@ -79,7 +79,7 @@ namespace BovineLabs.Event.Containers
         /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
         /// <returns>A new NativeArray, allocated with the given strategy and wrapping the stream data.</returns>
         /// <remarks>The array is a copy of stream data.</remarks>
-        /// <returns></returns>
+        /// <returns> The native array. </returns>
         public NativeArray<T> ToNativeArray<T>(Allocator allocator)
             where T : struct
         {
@@ -93,7 +93,6 @@ namespace BovineLabs.Event.Containers
         public void Dispose()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            //DisposeSentinel.Dispose(ref this.m_Safety, ref this.m_DisposeSentinel);
             AtomicSafetyHandle.Release(this.m_Safety);
 #endif
             this.stream.Dispose();

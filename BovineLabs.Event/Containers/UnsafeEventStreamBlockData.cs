@@ -10,6 +10,7 @@ namespace BovineLabs.Event.Containers
     using UnityEngine;
 
     [BurstCompatible]
+    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "Convenience")]
     internal unsafe struct UnsafeEventStreamBlock
     {
         internal UnsafeEventStreamBlock* Next;

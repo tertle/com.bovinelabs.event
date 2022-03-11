@@ -65,7 +65,7 @@ namespace BovineLabs.Event.Systems
 
             this.producers.Add((IntPtr)producer);
 
-            return new EventProducer<T> { producer = producer };
+            return new EventProducer<T> { Producer = producer };
         }
 
         public EventConsumer<T> CreateConsumer<T>()
@@ -77,19 +77,19 @@ namespace BovineLabs.Event.Systems
 
             this.consumers.Add((IntPtr)consumer);
 
-            return new EventConsumer<T> { consumer = consumer };
+            return new EventConsumer<T> { Consumer = consumer };
         }
 
         public void RemoveProducer<T>(EventProducer<T> producer)
             where T : struct
         {
-            this.RemoveProducerInternal(producer.producer);
+            this.RemoveProducerInternal(producer.Producer);
         }
 
         public void RemoveConsumer<T>(EventConsumer<T> consumer)
             where T : struct
         {
-            this.RemoveConsumerInternal(consumer.consumer);
+            this.RemoveConsumerInternal(consumer.Consumer);
         }
 
         public void Update()

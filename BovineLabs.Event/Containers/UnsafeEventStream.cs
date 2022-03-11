@@ -52,7 +52,7 @@ namespace BovineLabs.Event.Containers
 
             for (var i = 0; i != ForEachCount; i++)
             {
-                if (blockData->Ranges[i].ElementCount > 0)
+                if (this.blockData->Ranges[i].ElementCount > 0)
                 {
                     return false;
                 }
@@ -85,7 +85,7 @@ namespace BovineLabs.Event.Containers
 
             for (var i = 0; i != ForEachCount; i++)
             {
-                itemCount += blockData->Ranges[i].ElementCount;
+                itemCount += this.blockData->Ranges[i].ElementCount;
             }
 
             return itemCount;

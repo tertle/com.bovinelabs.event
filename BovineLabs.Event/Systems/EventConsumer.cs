@@ -16,38 +16,38 @@ namespace BovineLabs.Event.Systems
     public unsafe struct EventConsumer<T>
         where T : struct
     {
-        internal Consumer* consumer;
+        internal Consumer* Consumer;
 
-        public int ReadersCount => this.consumer->Readers.Length;
+        public int ReadersCount => this.Consumer->Readers.Length;
 
-        public bool HasReaders => this.consumer->Readers.Length > 0;
+        public bool HasReaders => this.Consumer->Readers.Length > 0;
 
         public JobHandle GetReaders(JobHandle jobHandle, out UnsafeReadArray<NativeEventStream.Reader> readers, Allocator allocator = Allocator.Temp)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             CheckAllocateArguments(allocator);
-            this.consumer->ReadersRequested++;
+            this.Consumer->ReadersRequested++;
 #endif
 
-            var length = this.consumer->Readers.Length;
+            var length = this.Consumer->Readers.Length;
             var size = UnsafeUtility.SizeOf<NativeEventStream.Reader>() * length;
             var buffer = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<NativeEventStream.Reader>(), allocator);
 
             for (var i = 0; i < length; i++)
             {
-                UnsafeUtility.WriteArrayElement(buffer, i, this.consumer->Readers[i].AsReader());
+                UnsafeUtility.WriteArrayElement(buffer, i, this.Consumer->Readers[i].AsReader());
             }
 
             readers = new UnsafeReadArray<NativeEventStream.Reader>(buffer, length, allocator);
 
-            return JobHandle.CombineDependencies(jobHandle, this.consumer->InputHandle);
+            return JobHandle.CombineDependencies(jobHandle, this.Consumer->InputHandle);
         }
 
         public void AddJobHandle(JobHandle handle)
         {
-            this.consumer->JobHandle = handle;
+            this.Consumer->JobHandle = handle;
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            this.consumer->HandleSet++;
+            this.Consumer->HandleSet++;
 #endif
         }
 

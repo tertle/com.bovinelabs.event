@@ -5,19 +5,21 @@
 namespace BovineLabs.Event.Systems
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using BovineLabs.Event.Containers;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using UnityEngine;
 
+    [SuppressMessage("ReSharper", "UnusedTypeParameter", Justification = "Safety.")]
     public unsafe struct EventProducer<T>
         where T : struct
     {
         [NativeDisableUnsafePtrRestriction]
-        internal Producer* producer;
+        internal Producer* Producer;
 
-        public bool IsValid => this.producer != null;
+        public bool IsValid => this.Producer != null;
 
         /// <summary> Create a new NativeEventStream to write events to. </summary>
         /// <typeparam name="T"> The type of event. </typeparam>
@@ -25,10 +27,10 @@ namespace BovineLabs.Event.Systems
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public NativeEventStream.Writer CreateWriter()
         {
-            Debug.Assert(!this.producer->EventStream.IsCreated, "Creating multiple writers in same frame.");
+            Debug.Assert(!this.Producer->EventStream.IsCreated, "Creating multiple writers in same frame.");
 
             var eventStream = new NativeEventStream(Allocator.TempJob);
-            this.producer->EventStream = eventStream;
+            this.Producer->EventStream = eventStream;
             return eventStream.AsWriter();
         }
 
@@ -43,22 +45,22 @@ namespace BovineLabs.Event.Systems
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public JobHandle CreateWriter(JobHandle dependency, out NativeEventStream.Writer writer)
         {
-            this.producer->JobHandle = JobHandle.CombineDependencies(this.producer->JobHandle, dependency);
+            this.Producer->JobHandle = JobHandle.CombineDependencies(this.Producer->JobHandle, dependency);
 
-            if (this.producer->EventStream.IsCreated)
+            if (this.Producer->EventStream.IsCreated)
             {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                Debug.Assert(this.producer->HandleSet, "CreateWriter must always be balanced by an AddJobHandle call.");
-                this.producer->HandleSet = false;
+                Debug.Assert(this.Producer->HandleSet, "CreateWriter must always be balanced by an AddJobHandle call.");
+                this.Producer->HandleSet = false;
 #endif
-                writer = this.producer->EventStream.AsWriter();
-                return this.producer->JobHandle;
+                writer = this.Producer->EventStream.AsWriter();
+                return this.Producer->JobHandle;
             }
 
             var eventStream = new NativeEventStream(Allocator.TempJob);
-            this.producer->EventStream = eventStream;
-            writer = this.producer->EventStream.AsWriter();
-            return this.producer->JobHandle;
+            this.Producer->EventStream = eventStream;
+            writer = this.Producer->EventStream.AsWriter();
+            return this.Producer->JobHandle;
         }
 
         /// <summary> Adds the specified JobHandle to the events list of producer dependency handles. </summary>
@@ -67,9 +69,9 @@ namespace BovineLabs.Event.Systems
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public void AddJobHandle(JobHandle handle)
         {
-            this.producer->JobHandle = handle;
+            this.Producer->JobHandle = handle;
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            this.producer->HandleSet = true;
+            this.Producer->HandleSet = true;
 #endif
         }
     }

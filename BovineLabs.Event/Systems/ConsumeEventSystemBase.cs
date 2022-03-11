@@ -5,7 +5,6 @@
 namespace BovineLabs.Event.Systems
 {
     using BovineLabs.Event.Containers;
-    using Unity.Collections;
     using Unity.Entities;
 
     /// <summary> A base system for working with jobs on the main thread. </summary>

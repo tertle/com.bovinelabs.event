@@ -45,11 +45,11 @@ namespace BovineLabs.Event.Containers
             /// <returns>The number of elements at this index.</returns>
             public int BeginForEachIndex(int foreachIndex)
             {
-                this.m_RemainingItemCount = m_BlockStream->Ranges[foreachIndex].ElementCount;
-                this.m_LastBlockSize = m_BlockStream->Ranges[foreachIndex].LastOffset;
+                this.m_RemainingItemCount = this.m_BlockStream->Ranges[foreachIndex].ElementCount;
+                this.m_LastBlockSize = this.m_BlockStream->Ranges[foreachIndex].LastOffset;
 
-                this.m_CurrentBlock = m_BlockStream->Ranges[foreachIndex].Block;
-                this.m_CurrentPtr = (byte*)this.m_CurrentBlock + m_BlockStream->Ranges[foreachIndex].OffsetInFirstBlock;
+                this.m_CurrentBlock = this.m_BlockStream->Ranges[foreachIndex].Block;
+                this.m_CurrentPtr = (byte*)this.m_CurrentBlock + this.m_BlockStream->Ranges[foreachIndex].OffsetInFirstBlock;
                 this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockData.AllocationSize;
 
                 return this.m_RemainingItemCount;
@@ -71,7 +71,7 @@ namespace BovineLabs.Event.Containers
             /// <summary>
             /// Returns remaining item count.
             /// </summary>
-            public int RemainingItemCount => m_RemainingItemCount;
+            public int RemainingItemCount => this.m_RemainingItemCount;
 
             /// <summary>
             /// Returns pointer to data.
@@ -87,8 +87,8 @@ namespace BovineLabs.Event.Containers
 
                 if (this.m_CurrentPtr > this.m_CurrentBlockEnd)
                 {
-                    this.m_CurrentBlock = m_CurrentBlock->Next;
-                    this.m_CurrentPtr = m_CurrentBlock->Data;
+                    this.m_CurrentBlock = this.m_CurrentBlock->Next;
+                    this.m_CurrentPtr = this.m_CurrentBlock->Data;
 
                     this.m_CurrentBlockEnd = (byte*)this.m_CurrentBlock + UnsafeEventStreamBlockData.AllocationSize;
 
@@ -126,7 +126,7 @@ namespace BovineLabs.Event.Containers
                 var ptr = this.m_CurrentPtr;
                 if (ptr + size > this.m_CurrentBlockEnd)
                 {
-                    ptr = m_CurrentBlock->Next->Data;
+                    ptr = this.m_CurrentBlock->Next->Data;
                 }
 
                 return ref UnsafeUtility.AsRef<T>(ptr);
@@ -141,7 +141,7 @@ namespace BovineLabs.Event.Containers
                 var itemCount = 0;
                 for (var i = 0; i != UnsafeEventStream.ForEachCount; i++)
                 {
-                    itemCount += m_BlockStream->Ranges[i].ElementCount;
+                    itemCount += this.m_BlockStream->Ranges[i].ElementCount;
                 }
 
                 return itemCount;
