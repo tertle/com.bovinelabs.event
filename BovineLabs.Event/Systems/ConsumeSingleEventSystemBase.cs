@@ -9,7 +9,7 @@ namespace BovineLabs.Event.Systems
     /// <summary> A base system for working with jobs that have no extra data. </summary>
     /// <typeparam name="T"> The job type. </typeparam>
     public abstract class ConsumeSingleEventSystemBase<T> : ConsumeEventSystemBase<T>
-        where T : struct
+        where T : unmanaged
     {
         /// <summary> Called when an event is read. </summary>
         /// <param name="e"> The event. </param>

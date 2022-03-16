@@ -9,7 +9,7 @@ namespace BovineLabs.Event.Systems
      using UnityEngine.Scripting;
 
      /// <summary> The base EventSystem class. Implement this to add a new EventSystem for a specific group. </summary>
-     public abstract class EventSystemBase : SystemBase
+     public abstract partial class EventSystemBase : SystemBase
      {
           private NativeHashMap<long, EventContainer> eventContainers;
 
@@ -25,7 +25,7 @@ namespace BovineLabs.Event.Systems
           /// <typeparam name="T"> The event type. </typeparam>
           /// <returns> The new allocated producer. </returns>
           public EventProducer<T> RegisterProducer<T>()
-               where T : struct
+               where T : unmanaged
           {
                var container = this.GetOrCreateEventContainer<T>();
                return container.CreateProducer<T>();
@@ -35,7 +35,7 @@ namespace BovineLabs.Event.Systems
           /// <param name="producer"> The producer to deregister. </param>
           /// <typeparam name="T"> The event type. </typeparam>
           public void DeregisterProducer<T>(EventProducer<T> producer)
-               where T : struct
+               where T : unmanaged
           {
                // If container doesn't exist it's because the EventSystem has already disposed it
                var container = this.GetEventContainer<T>();
@@ -49,7 +49,7 @@ namespace BovineLabs.Event.Systems
           /// <typeparam name="T"> The event type. </typeparam>
           /// <returns> The new allocated consumer. </returns>
           public EventConsumer<T> RegisterConsumer<T>()
-               where T : struct
+               where T : unmanaged
           {
                var container = this.GetOrCreateEventContainer<T>();
                return container.CreateConsumer<T>();
@@ -59,7 +59,7 @@ namespace BovineLabs.Event.Systems
           /// <param name="consumer"> The consumer to deregister. </param>
           /// <typeparam name="T"> The event type. </typeparam>
           public void DeregisterConsumer<T>(EventConsumer<T> consumer)
-               where T : struct
+               where T : unmanaged
           {
                // If container doesn't exist it's because the EventSystem has already disposed it
                var container = this.GetEventContainer<T>();

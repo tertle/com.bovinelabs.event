@@ -14,7 +14,7 @@ namespace BovineLabs.Event.Systems
     using Unity.Jobs;
 
     public unsafe struct EventConsumer<T>
-        where T : struct
+        where T : unmanaged
     {
         internal Consumer* Consumer;
 

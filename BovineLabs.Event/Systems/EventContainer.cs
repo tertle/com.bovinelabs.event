@@ -58,7 +58,7 @@ namespace BovineLabs.Event.Systems
         }
 
         public EventProducer<T> CreateProducer<T>()
-            where T : struct
+            where T : unmanaged
         {
             var producer = (Producer*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<Producer>(), UnsafeUtility.AlignOf<Producer>(), Allocator.Persistent);
             UnsafeUtility.MemClear(producer, UnsafeUtility.SizeOf<Producer>());
@@ -69,7 +69,7 @@ namespace BovineLabs.Event.Systems
         }
 
         public EventConsumer<T> CreateConsumer<T>()
-            where T : struct
+            where T : unmanaged
         {
             var consumer = (Consumer*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<Consumer>(), UnsafeUtility.AlignOf<Consumer>(), Allocator.Persistent);
             UnsafeUtility.MemClear(consumer, UnsafeUtility.SizeOf<Consumer>());
@@ -81,13 +81,13 @@ namespace BovineLabs.Event.Systems
         }
 
         public void RemoveProducer<T>(EventProducer<T> producer)
-            where T : struct
+            where T : unmanaged
         {
             this.RemoveProducerInternal(producer.Producer);
         }
 
         public void RemoveConsumer<T>(EventConsumer<T> consumer)
-            where T : struct
+            where T : unmanaged
         {
             this.RemoveConsumerInternal(consumer.Consumer);
         }

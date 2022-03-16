@@ -107,7 +107,7 @@ namespace BovineLabs.Event.Systems
 
         [BurstCompile]
         public struct ToNativeListJob<T> : IJobEvent<T>
-            where T : struct
+            where T : unmanaged
         {
             public NativeList<T> List;
 

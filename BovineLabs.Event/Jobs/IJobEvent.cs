@@ -18,7 +18,7 @@ namespace BovineLabs.Event.Jobs
     [JobProducerType(typeof(JobEvent.JobEventProducer<,>))]
     [SuppressMessage("ReSharper", "TypeParameterCanBeVariant", Justification = "Strict requirements for compiler")]
     public interface IJobEvent<T>
-        where T : struct
+        where T : unmanaged
     {
         /// <summary> Executes the next event. </summary>
         /// <param name="e"> The event. </param>
@@ -37,7 +37,7 @@ namespace BovineLabs.Event.Jobs
         /// <returns> The handle to job. </returns>
         public static JobHandle Schedule<TJob, T>(this TJob jobData, EventConsumer<T> consumer, JobHandle dependsOn = default)
             where TJob : struct, IJobEvent<T>
-            where T : struct
+            where T : unmanaged
         {
             return ScheduleInternal(jobData, consumer, dependsOn, false);
         }
@@ -51,14 +51,14 @@ namespace BovineLabs.Event.Jobs
         /// <returns> The handle to job. </returns>
         public static JobHandle ScheduleParallel<TJob, T>(this TJob jobData, EventConsumer<T> consumer, JobHandle dependsOn = default)
             where TJob : struct, IJobEvent<T>
-            where T : struct
+            where T : unmanaged
         {
             return ScheduleInternal(jobData, consumer, dependsOn, true);
         }
 
         private static unsafe JobHandle ScheduleInternal<TJob, T>(this TJob jobData, EventConsumer<T> consumer, JobHandle dependsOn, bool isParallel)
             where TJob : struct, IJobEvent<T>
-            where T : struct
+            where T : unmanaged
         {
             if (!consumer.HasReaders)
             {
@@ -100,7 +100,7 @@ namespace BovineLabs.Event.Jobs
         /// <typeparam name="T"> The type of the event. </typeparam>
         internal struct JobEventProducer<TJob, T>
             where TJob : struct, IJobEvent<T>
-            where T : struct
+            where T : unmanaged
         {
             /// <summary> The <see cref="NativeEventStream.Reader"/> . </summary>
             [ReadOnly]

@@ -38,7 +38,7 @@ namespace BovineLabs.Event.Jobs
         public static unsafe JobHandle ScheduleParallel<TJob, T>(
             this TJob jobData, EventConsumer<T> consumer, JobHandle dependsOn = default)
             where TJob : struct, IJobEventReaderForEach
-            where T : struct
+            where T : unmanaged
         {
             if (!consumer.HasReaders)
             {

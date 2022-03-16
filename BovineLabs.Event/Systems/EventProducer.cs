@@ -14,7 +14,7 @@ namespace BovineLabs.Event.Systems
 
     [SuppressMessage("ReSharper", "UnusedTypeParameter", Justification = "Safety.")]
     public unsafe struct EventProducer<T>
-        where T : struct
+        where T : unmanaged
     {
         [NativeDisableUnsafePtrRestriction]
         internal Producer* Producer;
