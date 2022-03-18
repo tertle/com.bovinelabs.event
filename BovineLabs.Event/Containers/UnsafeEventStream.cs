@@ -106,7 +106,7 @@ namespace BovineLabs.Event.Containers
         /// <remarks> <para>The array is a copy of stream data.</para> </remarks>
         [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
         public NativeArray<T> ToNativeArray<T>(Allocator allocator)
-            where T : struct
+            where T : unmanaged
         {
             var array = new NativeArray<T>(this.Count(), allocator, NativeArrayOptions.UninitializedMemory);
             var reader = this.AsReader();

@@ -1,4 +1,4 @@
-﻿// <copyright file="NativeEventStreamPerformanceTests.cs" company="BovineLabs">
+// <copyright file="NativeEventStreamPerformanceTests.cs" company="BovineLabs">
 //     Copyright (c) BovineLabs. All rights reserved.
 // </copyright>
 
@@ -7,12 +7,12 @@
 namespace BovineLabs.Event.PerformanceTests.Containers
 {
     using BovineLabs.Event.Containers;
+    using BovineLabs.Testing;
     using JetBrains.Annotations;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Entities;
-    using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.PerformanceTesting;
 
@@ -273,8 +273,9 @@ namespace BovineLabs.Event.PerformanceTests.Containers
             }
         }
 #endif
+    }
 
-        private class EntitiesForEachTest : SystemBase
+    public partial class EntitiesForEachTest : SystemBase
         {
             private readonly int count;
             private readonly int archetypes;
@@ -380,7 +381,6 @@ namespace BovineLabs.Event.PerformanceTests.Containers
                 public int Chunk;
             }
         }
-    }
 }
 
 #endif

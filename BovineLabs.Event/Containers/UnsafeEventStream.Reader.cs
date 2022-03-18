@@ -104,7 +104,7 @@ namespace BovineLabs.Event.Containers
             /// <returns>Reference to data.</returns>
             [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
             public ref T Read<T>()
-                where T : struct
+                where T : unmanaged
             {
                 int size = UnsafeUtility.SizeOf<T>();
 #if UNITY_COLLECTIONS_0_14_OR_NEWER
@@ -121,7 +121,7 @@ namespace BovineLabs.Event.Containers
             /// <returns>Reference to data.</returns>
             [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
             public ref T Peek<T>()
-                where T : struct
+                where T : unmanaged
             {
                 int size = UnsafeUtility.SizeOf<T>();
 

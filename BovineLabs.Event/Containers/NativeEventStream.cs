@@ -115,7 +115,7 @@ namespace BovineLabs.Event.Containers
         /// <remarks>The array is a copy of stream data.</remarks>
         /// <returns></returns>
         public NativeArray<T> ToNativeArray<T>(Allocator allocator)
-            where T : struct
+            where T : unmanaged
         {
             this.CheckReadAccess();
             return this.stream.ToNativeArray<T>(allocator);

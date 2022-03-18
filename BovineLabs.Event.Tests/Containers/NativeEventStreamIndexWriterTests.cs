@@ -7,17 +7,14 @@
 namespace BovineLabs.Event.Tests.Containers
 {
     using BovineLabs.Event.Containers;
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Entities;
-    using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
 
-    internal partial class NativeEventStreamTests
-    {
-        /// <summary> Tests for index based implementation. </summary>
         internal class IndexWriter : ECSTestsFixture
         {
             private const int ForEachCount = 16;
@@ -86,7 +83,7 @@ namespace BovineLabs.Event.Tests.Containers
             public void SystemBaseEntitiesForeach([Values(1, JobsUtility.MaxJobThreadCount + 1, 100000)]
                 int count)
             {
-                var system = this.World.AddSystem(new CodeGenTestSystem(count));
+                var system = this.World.AddSystem(new IndexWriterCodeGenTestSystem(count));
                 system.Update();
             }
 
@@ -127,15 +124,17 @@ namespace BovineLabs.Event.Tests.Containers
                     }
                 }
             }
+        }
+
 
             [DisableAutoCreation]
-            private class CodeGenTestSystem : SystemBase
+            internal partial class IndexWriterCodeGenTestSystem : SystemBase
             {
                 private readonly int count;
                 private NativeHashMap<int, byte> hashmap;
                 private EntityQuery query;
 
-                public CodeGenTestSystem(int count)
+                public IndexWriterCodeGenTestSystem(int count)
                 {
                     this.count = count;
                 }
@@ -182,7 +181,7 @@ namespace BovineLabs.Event.Tests.Containers
                             writer.Write(test.Value);
                             writer.EndForEachIndex();
                         })
-                        .WithStoreEntityQueryInField(ref this.query)
+                        .WithStoreEntityQueryInField(ref query)
                         .ScheduleParallel();
 
                     this.Dependency = new ReadJob
@@ -268,8 +267,6 @@ namespace BovineLabs.Event.Tests.Containers
                     public int Value;
                 }
             }
-        }
-    }
 }
 
 #endif

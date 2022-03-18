@@ -85,7 +85,7 @@ namespace BovineLabs.Event.Containers
             /// <param name="value">Value to write.</param>
             [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
             public void Write<T>(T value)
-                where T : struct
+                where T : unmanaged
             {
                 ref T dst = ref this.Allocate<T>();
                 dst = value;
@@ -98,7 +98,7 @@ namespace BovineLabs.Event.Containers
             /// <returns>Reference to allocated space for data.</returns>
             [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
             public ref T Allocate<T>()
-                where T : struct
+                where T : unmanaged
             {
                 int size = UnsafeUtility.SizeOf<T>();
 #if UNITY_COLLECTIONS_0_14_OR_NEWER

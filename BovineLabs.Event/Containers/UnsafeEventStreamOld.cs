@@ -240,7 +240,7 @@
 //             /// <param name="value"> The data to write. </param>
 //             /// <typeparam name="T"> The type of value. </typeparam>
 //             public void Write<T>(T value)
-//                 where T : struct
+//                 where T : unmanaged
 //             {
 //                 ref var dst = ref this.Allocate<T>();
 //                 dst = value;
@@ -250,7 +250,7 @@
 //             /// <typeparam name="T"> The type of value. </typeparam>
 //             /// <returns> Reference for the allocated space. </returns>
 //             public ref T Allocate<T>()
-//                 where T : struct
+//                 where T : unmanaged
 //             {
 //                 var size = UnsafeUtility.SizeOf<T>();
 // #if UNITY_2020_1_OR_NEWER
@@ -388,7 +388,7 @@
 //             /// <typeparam name="T"> The type of value. </typeparam>
 //             /// <returns> The returned data. </returns>
 //             public ref T Read<T>()
-//                 where T : struct
+//                 where T : unmanaged
 //             {
 //                 int size = UnsafeUtility.SizeOf<T>();
 // #if UNITY_2020_1_OR_NEWER
@@ -402,7 +402,7 @@
 //             /// <typeparam name="T"> The type of value. </typeparam>
 //             /// /// <returns> The returned data. </returns>
 //             public ref T Peek<T>()
-//                 where T : struct
+//                 where T : unmanaged
 //             {
 //                 int size = UnsafeUtility.SizeOf<T>();
 //

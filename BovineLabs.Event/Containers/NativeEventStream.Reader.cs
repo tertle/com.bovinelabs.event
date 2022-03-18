@@ -107,7 +107,7 @@ namespace BovineLabs.Event.Containers
             /// <typeparam name="T"> The type of value. </typeparam>
             /// <returns> The returned data. </returns>
             public ref T Read<T>()
-                where T : struct
+                where T : unmanaged
             {
                 var size = UnsafeUtility.SizeOf<T>();
 #if UNITY_COLLECTIONS_0_14_OR_NEWER
@@ -123,7 +123,7 @@ namespace BovineLabs.Event.Containers
             /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>Reference to data.</returns>
             public ref T Peek<T>()
-                where T : struct
+                where T : unmanaged
             {
                 int size = UnsafeUtility.SizeOf<T>();
                 this.CheckReadSize(size);

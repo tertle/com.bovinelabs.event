@@ -9,7 +9,7 @@ namespace BovineLabs.Event.Samples.MultiWorld
         public FixedSystemGroup()
         {
 #if UNITY_ENTITIES_0_16_OR_NEWER
-            this.FixedRateManager = new UpdateTimeFour();
+            this.RateManager = new UpdateTimeFour();
 #else
             int count = -1;
 
@@ -29,7 +29,7 @@ namespace BovineLabs.Event.Samples.MultiWorld
         }
 
 #if UNITY_ENTITIES_0_16_OR_NEWER
-        public class UpdateTimeFour : IFixedRateManager
+        public class UpdateTimeFour : IRateManager
         {
             private int count = -1;
 

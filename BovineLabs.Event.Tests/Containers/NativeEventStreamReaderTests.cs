@@ -8,9 +8,9 @@ namespace BovineLabs.Event.Tests.Containers
 {
     using System;
     using BovineLabs.Event.Containers;
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Collections;
-    using Unity.Entities.Tests;
     using Unity.Jobs.LowLevel.Unsafe;
 
     internal partial class NativeEventStreamTests

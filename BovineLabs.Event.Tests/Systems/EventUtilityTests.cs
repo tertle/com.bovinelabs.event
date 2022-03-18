@@ -6,9 +6,9 @@
 
 namespace BovineLabs.Event.Tests.Systems
 {
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Collections;
-    using Unity.Entities.Tests;
     using Assert = UnityEngine.Assertions.Assert;
 
     /// <summary>

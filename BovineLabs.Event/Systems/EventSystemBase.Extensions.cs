@@ -23,7 +23,7 @@ namespace BovineLabs.Event.Systems
         /// </remarks>
         /// <typeparam name="T"> The event type. </typeparam>
         public readonly struct Extensions<T>
-            where T : struct
+            where T : unmanaged
         {
             private readonly EventSystemBase eventSystem;
 

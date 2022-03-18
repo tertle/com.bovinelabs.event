@@ -12,8 +12,8 @@ namespace BovineLabs.Event.Tests.Systems
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
+    using BovineLabs.Testing;
     using NUnit.Framework;
-    using Unity.Entities.Tests;
     using Unity.Jobs;
 
     /// <summary> Tests for <see cref="EventSystemBase"/> . </summary>

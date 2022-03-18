@@ -7,18 +7,16 @@
 namespace BovineLabs.Event.Tests.Containers
 {
     using BovineLabs.Event.Containers;
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Entities;
-    using Unity.Entities.Tests;
     using Unity.Jobs;
     using Unity.Jobs.LowLevel.Unsafe;
 
-    internal partial class NativeEventStreamTests
-    {
-        /// <summary> Tests for thread based implementation. </summary>
+/// <summary> Tests for thread based implementation. </summary>
         internal class ThreadWriter : ECSTestsFixture
         {
             /// <summary> Tests that the dispose job works. </summary>
@@ -85,7 +83,7 @@ namespace BovineLabs.Event.Tests.Containers
             public void SystemBaseEntitiesForeach([Values(1, JobsUtility.MaxJobThreadCount + 1, 100000)]
                 int count)
             {
-                var system = this.World.AddSystem(new CodeGenTestSystem(count));
+                var system = this.World.AddSystem(new ThreadWriterCodeGenTestSystem(count));
                 system.Update();
             }
 
@@ -128,14 +126,17 @@ namespace BovineLabs.Event.Tests.Containers
                     }
                 }
             }
+        }
+
+
 
             [DisableAutoCreation]
-            private class CodeGenTestSystem : SystemBase
+            internal partial class ThreadWriterCodeGenTestSystem : SystemBase
             {
                 private readonly int count;
                 private NativeHashMap<int, byte> hashmap;
 
-                public CodeGenTestSystem(int count)
+                public ThreadWriterCodeGenTestSystem(int count)
                 {
                     this.count = count;
                 }
@@ -258,8 +259,6 @@ namespace BovineLabs.Event.Tests.Containers
                     public int Value;
                 }
             }
-        }
-    }
 }
 
 #endif

@@ -1,8 +1,9 @@
 {
     "name": "BovineLabs.Event.PerformanceTests",
+    "rootNamespace": "",
     "references": [
         "GUID:7030b52b6b7c1434bb5b18b08de078bd",
-        "GUID:f11234f7d4b62414589f755b35d38838",
+        "GUID:11d478a8d126ee740870fb20e69aeb83",
         "GUID:2665a8d13d1b3f18800f46e256720795",
         "GUID:e0cd26848372d4e5c891c569017e11f1",
         "GUID:734d92eba21c94caba915361bd5ac177",

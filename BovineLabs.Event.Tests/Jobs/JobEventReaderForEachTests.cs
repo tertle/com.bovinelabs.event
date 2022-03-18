@@ -10,11 +10,11 @@ namespace BovineLabs.Event.Tests.Jobs
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Entities.Tests;
     using Unity.Jobs;
 
     /// <summary> Tests for <see cref="JobEventReader"/> . </summary>

@@ -15,7 +15,7 @@ namespace BovineLabs.Event.Samples.MultiWorld
     /// The FixedEventCounterSystem.
     /// </summary>
     [DisableAutoCreation]
-    public class FixedEventCounterSystem : SystemBase
+    public partial class FixedEventCounterSystem : SystemBase
     {
         private EventSystem eventSystem;
 

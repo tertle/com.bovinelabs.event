@@ -67,7 +67,7 @@ namespace BovineLabs.Event.Containers
             /// <typeparam name="T">The type of value.</typeparam>
             /// <param name="value"> The data to write. </param>
             public void Write<T>(T value)
-                where T : struct
+                where T : unmanaged
             {
                 ref T dst = ref this.Allocate<T>();
                 dst = value;
@@ -77,7 +77,7 @@ namespace BovineLabs.Event.Containers
             /// <typeparam name="T">The type of value.</typeparam>
             /// <returns> Reference for the allocated space. </returns>
             public ref T Allocate<T>()
-                where T : struct
+                where T : unmanaged
             {
                 CollectionHelper.CheckIsUnmanaged<T>();
                 int size = UnsafeUtility.SizeOf<T>();

@@ -7,10 +7,10 @@
 namespace BovineLabs.Event.Tests.Jobs
 {
     using BovineLabs.Event.Jobs;
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Burst;
     using Unity.Collections;
-    using Unity.Entities.Tests;
     using Unity.Jobs;
 
     /// <summary> Tests for <see cref="JobEvent"/> . </summary>

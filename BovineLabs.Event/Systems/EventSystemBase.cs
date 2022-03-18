@@ -54,7 +54,7 @@ namespace BovineLabs.Event.Systems
         /// <returns> A <see cref="NativeEventStream.ThreadWriter"/> you can write events to. </returns>
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public NativeEventStream.ThreadWriter CreateEventWriter<T>()
-            where T : struct
+            where T : unmanaged
         {
             var container = this.GetOrCreateEventContainer<T>();
             return container.CreateEventStream(-1).AsThreadWriter();
@@ -66,7 +66,7 @@ namespace BovineLabs.Event.Systems
         /// <returns> A <see cref="NativeEventStream.IndexWriter"/> you can write events to. </returns>
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public NativeEventStream.IndexWriter CreateEventWriter<T>(int foreachCount)
-            where T : struct
+            where T : unmanaged
         {
             Assert.IsFalse(foreachCount < 0);
 
@@ -79,7 +79,7 @@ namespace BovineLabs.Event.Systems
         /// <typeparam name="T"> The type of event to associate the handle to. </typeparam>
         /// <exception cref="InvalidOperationException"> Throw if unbalanced CreateEventWriter and AddJobHandleForProducer calls. </exception>
         public void AddJobHandleForProducer<T>(JobHandle handle)
-            where T : struct
+            where T : unmanaged
         {
             this.GetOrCreateEventContainer<T>().AddJobHandleForProducer(handle);
         }
@@ -88,7 +88,7 @@ namespace BovineLabs.Event.Systems
         /// <typeparam name="T"> The event type to check. </typeparam>
         /// <returns> True if there are readers for the event. </returns>
         public bool HasEventReaders<T>()
-            where T : struct
+            where T : unmanaged
         {
             return this.GetEventReadersCount<T>() != 0;
         }
@@ -97,7 +97,7 @@ namespace BovineLabs.Event.Systems
         /// <typeparam name="T"> The event type to check. </typeparam>
         /// <returns> True if there are readers for the event. </returns>
         public int GetEventReadersCount<T>()
-            where T : struct
+            where T : unmanaged
         {
             var container = this.GetOrCreateEventContainer<T>();
             return container.GetReadersCount();
@@ -109,7 +109,7 @@ namespace BovineLabs.Event.Systems
         /// <typeparam name="T"> The type of event. </typeparam>
         /// <returns> The updated dependency handle. </returns>
         public JobHandle GetEventReaders<T>(JobHandle handle, out IReadOnlyList<NativeEventStream.Reader> readers)
-            where T : struct
+            where T : unmanaged
         {
             var container = this.GetOrCreateEventContainer<T>();
             readers = container.GetReaders();
@@ -120,7 +120,7 @@ namespace BovineLabs.Event.Systems
         /// <param name="handle"> The job handle to add. </param>
         /// <typeparam name="T"> The type of event to associate the handle to. </typeparam>
         public void AddJobHandleForConsumer<T>(JobHandle handle)
-            where T : struct
+            where T : unmanaged
         {
             this.GetOrCreateEventContainer<T>().AddJobHandleForConsumer(handle);
         }
@@ -129,7 +129,7 @@ namespace BovineLabs.Event.Systems
         /// <typeparam name="T"> The event type. </typeparam>
         /// <returns> The extensions container. </returns>
         public Extensions<T> Ex<T>()
-            where T : struct
+            where T : unmanaged
         {
             return new Extensions<T>(this);
         }
@@ -228,7 +228,7 @@ namespace BovineLabs.Event.Systems
         }
 
         private EventContainer GetOrCreateEventContainer<T>()
-            where T : struct
+            where T : unmanaged
         {
             return this.GetOrCreateEventContainer(typeof(T));
         }

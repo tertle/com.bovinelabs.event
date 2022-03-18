@@ -12,7 +12,7 @@ namespace BovineLabs.Event.Samples
     using Unity.Jobs;
 
     [DisableAutoCreation]
-    public class ParallelForProducerSystem : SystemBase
+    public partial class ParallelForProducerSystem : SystemBase
     {
         private EventSystem eventSystem;
 

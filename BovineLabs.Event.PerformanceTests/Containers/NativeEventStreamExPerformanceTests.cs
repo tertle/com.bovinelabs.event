@@ -10,7 +10,6 @@ namespace BovineLabs.Event.PerformanceTests.Containers
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Jobs.LowLevel.Unsafe;
     using Unity.PerformanceTesting;
 
     public class NativeEventStreamExPerformanceTests
