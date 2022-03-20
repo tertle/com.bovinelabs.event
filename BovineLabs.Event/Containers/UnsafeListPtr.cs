@@ -15,7 +15,7 @@ namespace BovineLabs.Event.Containers
         where T : unmanaged
     {
         [NativeDisableUnsafePtrRestriction]
-        private UnsafeList* listData;
+        private UnsafeList<T>* listData;
 
         /// <summary>
         /// Constructs a new list using the specified type of memory allocation.
@@ -36,7 +36,7 @@ namespace BovineLabs.Event.Containers
         /// [Unity.Collections.Allocator](https://docs.unity3d.com/ScriptReference/Unity.Collections.Allocator.html) enumeration.</param>
         public UnsafeListPtr(int initialCapacity, Allocator allocator)
         {
-            this.listData = UnsafeList.Create(UnsafeUtility.SizeOf<T>(), UnsafeUtility.AlignOf<T>(), initialCapacity, allocator);
+            this.listData = UnsafeList<T>.Create(initialCapacity, allocator);
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace BovineLabs.Event.Containers
         public int Length
         {
             get => AssumePositive(this.listData->Length);
-            set => this.listData->Resize<T>(value, NativeArrayOptions.ClearMemory);
+            set => this.listData->Resize(value, NativeArrayOptions.ClearMemory);
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace BovineLabs.Event.Containers
         public int Capacity
         {
             get => AssumePositive(this.listData->Capacity);
-            set => this.listData->SetCapacity<T>(value);
+            set => this.listData->SetCapacity(value);
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace BovineLabs.Event.Containers
         /// <exception cref="ArgumentOutOfRangeException">If index is negative or >= <see cref="Length"/>.</exception>
         public void RemoveAtSwapBack(int index)
         {
-            this.listData->RemoveAtSwapBack<T>(AssumePositive(index));
+            this.listData->RemoveAtSwapBack(AssumePositive(index));
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace BovineLabs.Event.Containers
         /// </summary>
         public void Dispose()
         {
-            UnsafeList.Destroy(this.listData);
+            UnsafeList<T>.Destroy(this.listData);
             this.listData = null;
         }
 
@@ -157,11 +157,11 @@ namespace BovineLabs.Event.Containers
         internal struct NativeListDispose
         {
             [NativeDisableUnsafePtrRestriction]
-            public UnsafeList* m_ListData;
+            public UnsafeList<T>* m_ListData;
 
             public void Dispose()
             {
-                UnsafeList.Destroy(this.m_ListData);
+                UnsafeList<T>.Destroy(this.m_ListData);
             }
         }
 
