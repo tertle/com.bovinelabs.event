@@ -1,12 +1,13 @@
 {
   "name": "com.bovinelabs.event",
   "description": "Event System.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "unity": "2020.3",
+  "unityRelease": "30f1",
   "displayName": "BovineLabs Event",
   "dependencies": {
-    "com.unity.entities": "0.17.0-preview.41",
-    "com.unity.burst": "1.5.1"
+    "com.unity.entities": "0.50.0-preview.24",
+    "com.unity.burst": "1.6.4"
   },
   "samples": [
     {
@@ -15,6 +16,5 @@
       "path": "Samples~"
     }
   ],
-  "type": "library",
-  "unityRelease": "1f1"
+  "type": "library"
 }
