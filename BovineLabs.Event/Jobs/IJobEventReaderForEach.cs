@@ -53,18 +53,16 @@ namespace BovineLabs.Event.Jobs
 
                 var fullData = new JobEventReaderForEachStructParallel<TJob>
                 {
-                    Reader = reader,
+                    Reader = readers[i],
                     JobData = jobData,
                     Index = i,
                 };
-
-                const ScheduleMode scheduleMode = ScheduleMode.Parallel;
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
                     JobEventReaderForEachStructParallel<TJob>.Initialize(),
                     dependsOn,
-                    scheduleMode);
+                    ScheduleMode.Parallel);
 
                 dependsOn = JobsUtility.ScheduleParallelFor(
                     ref scheduleParams,
@@ -74,6 +72,44 @@ namespace BovineLabs.Event.Jobs
 
             readers.Dispose(dependsOn);
             consumer.AddJobHandle(dependsOn);
+
+            return dependsOn;
+        }
+
+        /// <summary> Schedule a <see cref="IJobEventReaderForEach"/> job. </summary>
+        /// <param name="jobData"> The job. </param>
+        /// <param name="readers"> The readers. </param>
+        /// <param name="dependsOn"> The job handle dependency. </param>
+        /// <typeparam name="TJob"> The type of the job. </typeparam>
+        /// <returns> The handle to job. </returns>
+        public static unsafe JobHandle ScheduleParallel<TJob>(
+            this TJob jobData, UnsafeReadArray<NativeEventStream.Reader> readers, JobHandle dependsOn = default)
+            where TJob : struct, IJobEventReaderForEach
+        {
+            for (var i = 0; i < readers.Length; i++)
+            {
+                var reader = readers[i];
+
+                var fullData = new JobEventReaderForEachStructParallel<TJob>
+                {
+                    Reader = readers[i],
+                    JobData = jobData,
+                    Index = i,
+                };
+
+                var scheduleParams = new JobsUtility.JobScheduleParameters(
+                    UnsafeUtility.AddressOf(ref fullData),
+                    JobEventReaderForEachStructParallel<TJob>.Initialize(),
+                    dependsOn,
+                    ScheduleMode.Parallel);
+
+                dependsOn = JobsUtility.ScheduleParallelFor(
+                    ref scheduleParams,
+                    reader.ForEachCount,
+                    1);
+            }
+
+            readers.Dispose(dependsOn);
 
             return dependsOn;
         }

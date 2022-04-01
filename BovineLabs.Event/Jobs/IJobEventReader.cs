@@ -48,7 +48,9 @@ namespace BovineLabs.Event.Jobs
 
             for (var i = 0; i < readers.Length; i++)
             {
-                var fullData = new EventJobReaderStruct<TJob> { Reader = readers[i], JobData = jobData, Index = i };
+                var reader = readers[i];
+
+                var fullData = new EventJobReaderStruct<TJob> { Reader = reader, JobData = jobData, Index = i };
 
                 var scheduleParams = new JobsUtility.JobScheduleParameters(
                     UnsafeUtility.AddressOf(ref fullData),
