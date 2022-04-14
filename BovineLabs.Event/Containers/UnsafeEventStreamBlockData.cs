@@ -27,6 +27,10 @@ namespace BovineLabs.Event.Containers
         // One byte past the end of the last byte written
         internal int LastOffset;
         internal int NumberOfBlocks;
+
+        internal UnsafeEventStreamBlock* CurrentBlock;
+        internal byte* CurrentPtr;
+        internal byte* CurrentBlockEnd;
     }
 
     [BurstCompatible]
@@ -38,7 +42,6 @@ namespace BovineLabs.Event.Containers
         internal UnsafeEventStreamBlock** Blocks;
 
         internal UnsafeEventStreamRange* Ranges;
-        internal UnsafeEventStreamThreadRange* ThreadRanges;
 
         internal UnsafeEventStreamBlock* Allocate(UnsafeEventStreamBlock* oldBlock, int threadIndex)
         {
@@ -60,13 +63,5 @@ namespace BovineLabs.Event.Containers
 
             return block;
         }
-    }
-
-    [SuppressMessage("ReSharper", "SA1600", Justification = "Private based off UnsafeNativeStreamRange.")]
-    internal unsafe struct UnsafeEventStreamThreadRange
-    {
-        internal UnsafeEventStreamBlock* CurrentBlock;
-        internal byte* CurrentPtr;
-        internal byte* CurrentBlockEnd;
     }
 }

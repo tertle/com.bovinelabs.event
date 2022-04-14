@@ -164,17 +164,13 @@ namespace BovineLabs.Event.Containers
             block->Blocks = (UnsafeEventStreamBlock**)(buffer + sizeof(UnsafeEventStreamBlockData));
 
             block->Ranges = null;
-            block->ThreadRanges = null;
         }
 
         internal void AllocateForEach()
         {
             long allocationSize = sizeof(UnsafeEventStreamRange) * ForEachCount;
-            long allocationThreadSize = sizeof(UnsafeEventStreamThreadRange) * ForEachCount;
             this.blockData->Ranges = (UnsafeEventStreamRange*)UnsafeUtility.Malloc(allocationSize, 16, this.allocator);
-            this.blockData->ThreadRanges = (UnsafeEventStreamThreadRange*)UnsafeUtility.Malloc(allocationThreadSize, 16, this.allocator);
             UnsafeUtility.MemClear(this.blockData->Ranges, allocationSize);
-            UnsafeUtility.MemClear(this.blockData->ThreadRanges, allocationThreadSize);
         }
 
         private void Deallocate()
@@ -196,7 +192,6 @@ namespace BovineLabs.Event.Containers
             }
 
             UnsafeUtility.Free(this.blockData->Ranges, this.allocator);
-            UnsafeUtility.Free(this.blockData->ThreadRanges, this.allocator);
             UnsafeUtility.Free(this.blockData, this.allocator);
             this.blockData = null;
             this.allocator = Allocator.None;

@@ -57,37 +57,39 @@ namespace BovineLabs.Event.Containers
             {
                 var threadIndex = CollectionHelper.AssumeThreadRange(this.m_ThreadIndex);
 
-                var ptr = this.blockStream->ThreadRanges[threadIndex].CurrentPtr;
-                var allocationEnd = ptr + size;
-                this.blockStream->ThreadRanges[threadIndex].CurrentPtr = allocationEnd;
+                var ranges = this.blockStream->Ranges + threadIndex;
 
-                if (allocationEnd > this.blockStream->ThreadRanges[threadIndex].CurrentBlockEnd)
+                var ptr = ranges->CurrentPtr;
+                var allocationEnd = ptr + size;
+
+                ranges->CurrentPtr = allocationEnd;
+
+                if (allocationEnd > ranges->CurrentBlockEnd)
                 {
-                    var oldBlock = this.blockStream->ThreadRanges[threadIndex].CurrentBlock;
+                    var oldBlock = ranges->CurrentBlock;
                     var newBlock = this.blockStream->Allocate(oldBlock, threadIndex);
 
-                    this.blockStream->ThreadRanges[threadIndex].CurrentBlock = newBlock;
-                    this.blockStream->ThreadRanges[threadIndex].CurrentPtr = newBlock->Data;
+                    ranges->CurrentBlock = newBlock;
+                    ranges->CurrentPtr = newBlock->Data;
 
-                    if (this.blockStream->Ranges[threadIndex].Block == null)
+                    if (ranges->Block == null)
                     {
-                        this.blockStream->Ranges[threadIndex].OffsetInFirstBlock = (int)(newBlock->Data - (byte*)newBlock);
-                        this.blockStream->Ranges[threadIndex].Block = newBlock;
+                        ranges->OffsetInFirstBlock = (int)(newBlock->Data - (byte*)newBlock);
+                        ranges->Block = newBlock;
                     }
                     else
                     {
-                        this.blockStream->Ranges[threadIndex].NumberOfBlocks++;
+                        ranges->NumberOfBlocks++;
                     }
 
-                    this.blockStream->ThreadRanges[threadIndex].CurrentBlockEnd = (byte*)newBlock + UnsafeEventStreamBlockData.AllocationSize;
+                    ranges->CurrentBlockEnd = (byte*)newBlock + UnsafeEventStreamBlockData.AllocationSize;
 
                     ptr = newBlock->Data;
-                    this.blockStream->ThreadRanges[threadIndex].CurrentPtr = newBlock->Data + size;
+                    ranges->CurrentPtr = newBlock->Data + size;
                 }
 
-                this.blockStream->Ranges[threadIndex].ElementCount++;
-                this.blockStream->Ranges[threadIndex].LastOffset = (int)(this.blockStream->ThreadRanges[threadIndex].CurrentPtr -
-                                                                           (byte*)this.blockStream->ThreadRanges[threadIndex].CurrentBlock);
+                ranges->ElementCount++;
+                ranges->LastOffset = (int)(ranges->CurrentPtr - (byte*)ranges->CurrentBlock);
 
                 return ptr;
             }
