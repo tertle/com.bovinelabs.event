@@ -10,77 +10,97 @@ namespace BovineLabs.Event.Containers
     /// <summary> Extensions for NativeEventStream. </summary>
     public static unsafe class NativeEventStreamEx
     {
+        private static readonly int MaxSize = UnsafeEventStreamBlockData.AllocationSize - sizeof(void*);
+
+        /// <summary> Allocate a chunk of memory that can be larger than the max allocation size. </summary>
+        /// <param name="writer"> The writer. </param>
+        /// <param name="array"> The array to write. </param>
+        /// <typeparam name="T"> The type of the array. </typeparam>
+        public static void WriteLarge<T>(this ref NativeEventStream.Writer writer, NativeArray<T> array)
+            where T : unmanaged
+        {
+            var byteArray = array.Reinterpret<byte>(UnsafeUtility.SizeOf<T>());
+            WriteLarge(ref writer, (byte*)byteArray.GetUnsafeReadOnlyPtr(), byteArray.Length);
+        }
+
+        /// <summary> Allocate a chunk of memory that can be larger than the max allocation size. </summary>
+        /// <param name="writer"> The writer. </param>
+        /// <param name="data"> The data to write. </param>
+        /// <typeparam name="T"> The type of the slice. </typeparam>
+        public static void WriteLarge<T>(this ref NativeEventStream.Writer writer, NativeSlice<T> data)
+            where T : unmanaged
+        {
+            var num = UnsafeUtility.SizeOf<T>();
+            var countPerAllocate = MaxSize / num;
+
+            var allocationCount = data.Length / countPerAllocate;
+            var allocationRemainder = data.Length % countPerAllocate;
+
+            var maxSize = countPerAllocate * num;
+            var maxOffset = data.Stride * countPerAllocate;
+
+            var src = (byte*)data.GetUnsafeReadOnlyPtr();
+
+            // Write the remainder first as this helps avoid an extra allocation most of the time
+            // as you'd usually write at minimum the length beforehand
+            if (allocationRemainder > 0)
+            {
+                var dst = writer.Allocate(allocationRemainder * num);
+                UnsafeUtility.MemCpyStride(dst, num, src + (allocationCount * maxOffset), data.Stride, num, allocationRemainder);
+            }
+
+            for (var i = 0; i < allocationCount; i++)
+            {
+                var dst = writer.Allocate(maxSize);
+                UnsafeUtility.MemCpyStride(dst, num, src + (i * maxOffset), data.Stride, num, countPerAllocate);
+            }
+        }
+
         /// <summary> Allocate a chunk of memory that can be larger than the max allocation size. </summary>
         /// <param name="writer"> The writer. </param>
         /// <param name="data"> The data to write. </param>
         /// <param name="size"> The size of the data. For an array, this is UnsafeUtility.SizeOf{T} * length. </param>
-        /// <typeparam name="T"> StreamWriter. </typeparam>
-        public static void AllocateLarge<T>(this ref T writer, byte* data, int size)
-            where T : struct, IStreamWriter
+        public static void WriteLarge(this ref NativeEventStream.Writer writer, byte* data, int size)
         {
-            if (size == 0)
-            {
-                return;
-            }
+            var allocationCount = size / MaxSize;
+            var allocationRemainder = size % MaxSize;
 
-            var maxSize = MaxSize();
-
-            var allocationCount = size / maxSize;
-            var allocationRemainder = size % maxSize;
-
-            for (var i = 0; i < allocationCount; i++)
-            {
-                var ptr = writer.Allocate(maxSize);
-
-                UnsafeUtility.MemCpy(ptr, data + (i * maxSize), maxSize);
-            }
-
+            // Write the remainder first as this helps avoid an extra allocation most of the time
+            // as you'd usually write at minimum the length beforehand
             if (allocationRemainder > 0)
             {
                 var ptr = writer.Allocate(allocationRemainder);
-                UnsafeUtility.MemCpy(ptr, data + (allocationCount * maxSize), allocationRemainder);
+                UnsafeUtility.MemCpy(ptr, data + (allocationCount * MaxSize), allocationRemainder);
+            }
+
+            for (var i = 0; i < allocationCount; i++)
+            {
+                var ptr = writer.Allocate(MaxSize);
+                UnsafeUtility.MemCpy(ptr, data + (i * MaxSize), MaxSize);
             }
         }
 
         /// <summary> Read a chunk of memory that could have been larger than the max allocation size. </summary>
         /// <param name="reader"> The reader. </param>
+        /// <param name="buffer"> A buffer to write back to. </param>
         /// <param name="size"> For an array, this is UnsafeUtility.SizeOf{T} * length. </param>
-        /// <param name="allocator"> The allocator type to write to. </param>
-        /// <returns> Pointer to data. </returns>
-        public static byte* ReadLarge(this ref NativeEventStream.Reader reader, int size, Allocator allocator = Allocator.Temp)
+        public static void ReadLarge(this ref NativeEventStream.Reader reader, byte* buffer, int size)
         {
-            if (size == 0)
-            {
-                return default;
-            }
+            var allocationCount = size / MaxSize;
+            var allocationRemainder = size % MaxSize;
 
-            var maxSize = MaxSize();
-
-            if (size < maxSize)
-            {
-                return reader.ReadUnsafePtr(size);
-            }
-
-            var output = (byte*)UnsafeUtility.Malloc(size, 4, allocator);
-
-            var allocationCount = size / maxSize;
-            var allocationRemainder = size % maxSize;
-
-            for (var i = 0; i < allocationCount; i++)
-            {
-                var ptr = reader.ReadUnsafePtr(maxSize);
-                UnsafeUtility.MemCpy(output + (i * maxSize), ptr, maxSize);
-            }
-
+            // Write the remainder first as this helps avoid an extra chunk allocation most times
             if (allocationRemainder > 0)
             {
                 var ptr = reader.ReadUnsafePtr(allocationRemainder);
-                UnsafeUtility.MemCpy(output + (allocationCount * maxSize), ptr, allocationRemainder);
+                UnsafeUtility.MemCpy(buffer + (allocationCount * MaxSize), ptr, allocationRemainder);
             }
 
-            return output;
+            for (var i = 0; i < allocationCount; i++)
+            {
+                var ptr = reader.ReadUnsafePtr(MaxSize);
+                UnsafeUtility.MemCpy(buffer + (i * MaxSize), ptr, MaxSize);
+            }
         }
-
-        private static int MaxSize() => UnsafeEventStreamBlockData.AllocationSize - sizeof(void*);
     }
 }
