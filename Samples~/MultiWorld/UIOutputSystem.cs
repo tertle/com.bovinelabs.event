@@ -21,7 +21,7 @@ namespace BovineLabs.Event.Samples
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
+            this.eventSystem = this.World.GetExistingSystem<EventSystem>();
             this.uiSample = Object.FindObjectOfType<UISample>();
 
             if (this.uiSample == null)

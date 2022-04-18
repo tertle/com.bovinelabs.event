@@ -19,7 +19,7 @@ namespace BovineLabs.Event.Systems
         /// <inheritdoc />
         protected sealed override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
+            this.eventSystem = this.World.GetExistingSystem<EventSystem>();
             this.consumer = this.eventSystem.RegisterConsumer<T>();
 
             this.Create();
