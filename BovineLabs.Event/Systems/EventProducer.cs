@@ -36,7 +36,7 @@ namespace BovineLabs.Event.Systems
 
         /// <summary>
         /// Create a new NativeEventStream to write events to returning the previous dependency.
-        /// You can use ths to write events in a fixed update.
+        /// You can use this to write events in a fixed update.
         /// </summary>
         /// <param name="dependency"> The job handle to add. </param>
         /// <param name="writer"> The event writer. </param>
