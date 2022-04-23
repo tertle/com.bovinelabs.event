@@ -7,12 +7,13 @@
 namespace BovineLabs.Event.Tests.Containers
 {
     using BovineLabs.Event.Containers;
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
     /// <summary> Tests for <see cref="NativeEventStreamEx"/> . </summary>
-    public class NativeEventStreamExTests
+    public class NativeEventStreamExTests : ECSTestsFixture
     {
         /// <summary> Tests the extensions AllocateLarge and ReadLarge. </summary>
         /// <param name="size"> The size of the allocation. </param>
@@ -21,7 +22,7 @@ namespace BovineLabs.Event.Tests.Containers
         [TestCase(8192)] // requires just more than 2 blocks
         public unsafe void WriteRead(int size)
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.TempJob);
 
             var sourceData = new NativeArray<byte>(size, Allocator.Temp);
             for (var i = 0; i < size; i++)
@@ -29,9 +30,9 @@ namespace BovineLabs.Event.Tests.Containers
                 sourceData[i] = (byte)(i % 255);
             }
 
-            var writer = stream.AsThreadWriter();
+            var writer = stream.AsWriter();
             writer.Write(size);
-            writer.AllocateLarge((byte*)sourceData.GetUnsafeReadOnlyPtr(), size);
+            NativeEventStreamEx.WriteLarge(ref writer, (byte*)sourceData.GetUnsafeReadOnlyPtr(), size);
 
             var reader = stream.AsReader();
 
@@ -41,11 +42,9 @@ namespace BovineLabs.Event.Tests.Containers
 
             Assert.AreEqual(size, readSize);
 
-            var ptr = reader.ReadLarge(readSize);
-            var result = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(ptr, readSize, Allocator.None);
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref result, AtomicSafetyHandle.GetTempMemoryHandle());
-#endif
+            var result = new NativeArray<byte>(readSize, Allocator.Temp);
+
+            NativeEventStreamEx.ReadLarge(ref reader, (byte*)result.GetUnsafePtr(), readSize);
 
             reader.EndForEachIndex();
 

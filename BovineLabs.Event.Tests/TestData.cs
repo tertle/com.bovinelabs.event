@@ -17,7 +17,7 @@ namespace BovineLabs.Event.Tests
     public struct ProducerJob : IJobFor
     {
         /// <summary> The event stream writer. </summary>
-        public NativeEventStream.IndexWriter Events;
+        public NativeEventStream.Writer Events;
 
         /// <summary> Number of events to write. </summary>
         public int EventCount;
@@ -25,13 +25,10 @@ namespace BovineLabs.Event.Tests
         /// <inheritdoc/>
         public void Execute(int index)
         {
-            this.Events.BeginForEachIndex(index);
             for (var i = 0; i != this.EventCount; i++)
             {
                 this.Events.Write(new TestEvent { Value = i });
             }
-
-            this.Events.EndForEachIndex();
         }
     }
 

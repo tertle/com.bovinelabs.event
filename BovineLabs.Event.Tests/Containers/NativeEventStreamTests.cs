@@ -6,16 +6,10 @@
 
 namespace BovineLabs.Event.Tests.Containers
 {
-    using System;
     using BovineLabs.Event.Containers;
+    using BovineLabs.Testing;
     using NUnit.Framework;
-    using Unity.Burst;
     using Unity.Collections;
-    using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Entities;
-    using Unity.Entities.Tests;
-    using Unity.Jobs;
-    using Unity.Jobs.LowLevel.Unsafe;
 
     /// <summary> Tests for <see cref="NativeEventStream"/> . </summary>
     internal partial class NativeEventStreamTests : ECSTestsFixture
@@ -24,7 +18,7 @@ namespace BovineLabs.Event.Tests.Containers
         [Test]
         public void CreateAndDestroy()
         {
-            var stream = new NativeEventStream(Allocator.Temp);
+            var stream = new NativeEventStream(Allocator.TempJob);
 
             Assert.IsTrue(stream.IsCreated);
             Assert.IsTrue(stream.Count() == 0);

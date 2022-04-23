@@ -8,9 +8,9 @@ namespace BovineLabs.Event.Tests.Containers
 {
     using System;
     using BovineLabs.Event.Containers;
+    using BovineLabs.Testing;
     using NUnit.Framework;
     using Unity.Collections;
-    using Unity.Entities.Tests;
     using Unity.Jobs.LowLevel.Unsafe;
 
     internal partial class NativeEventStreamTests
@@ -22,8 +22,8 @@ namespace BovineLabs.Event.Tests.Containers
             [Test]
             public void ReadWithoutBeginThrows()
             {
-                var stream = new NativeEventStream(Allocator.Temp);
-                stream.AsThreadWriter().Write(0);
+                var stream = new NativeEventStream(Allocator.TempJob);
+                stream.AsWriter().Write(0);
 
                 var reader = stream.AsReader();
                 Assert.Throws<ArgumentException>(() => reader.Read<int>());
@@ -35,7 +35,7 @@ namespace BovineLabs.Event.Tests.Containers
             [Test]
             public void BeginOutOfRangeThrows()
             {
-                var stream = new NativeEventStream(Allocator.Temp);
+                var stream = new NativeEventStream(Allocator.TempJob);
 
                 var reader = stream.AsReader();
                 Assert.Throws<ArgumentOutOfRangeException>(() => reader.BeginForEachIndex(-1));
@@ -49,8 +49,8 @@ namespace BovineLabs.Event.Tests.Containers
             [Test]
             public void TooManyReadsThrows()
             {
-                var stream = new NativeEventStream(Allocator.Temp);
-                stream.AsThreadWriter().Write(0);
+                var stream = new NativeEventStream(Allocator.TempJob);
+                stream.AsWriter().Write(0);
 
                 var reader = stream.AsReader();
                 reader.BeginForEachIndex(0);
