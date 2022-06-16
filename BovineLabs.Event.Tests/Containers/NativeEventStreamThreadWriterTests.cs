@@ -128,7 +128,7 @@ namespace BovineLabs.Event.Tests.Containers
         private partial class CodeGenTestSystem : SystemBase
         {
             private readonly int count;
-            private NativeHashMap<int, byte> hashmap;
+            private NativeParallelHashMap<int, byte> hashmap;
 
             public CodeGenTestSystem(int count)
             {
@@ -151,7 +151,7 @@ namespace BovineLabs.Event.Tests.Containers
                     }
                 }
 
-                this.hashmap = new NativeHashMap<int, byte>(this.count, Allocator.Persistent);
+                this.hashmap = new NativeParallelHashMap<int, byte>(this.count, Allocator.Persistent);
             }
 
             protected override void OnDestroy()
@@ -234,7 +234,7 @@ namespace BovineLabs.Event.Tests.Containers
                 [ReadOnly]
                 public NativeEventStream.Reader JobReader;
 
-                public NativeHashMap<int, byte>.ParallelWriter HashMap;
+                public NativeParallelHashMap<int, byte>.ParallelWriter HashMap;
 
                 public void Execute(int index)
                 {

@@ -60,7 +60,7 @@ namespace BovineLabs.Event.Systems
         /// <typeparam name="TKey"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
         /// <typeparam name="TValue"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
         /// <returns> The dependency handle. </returns>
-        public JobHandle EnsureHashMapCapacity<TKey, TValue>(JobHandle handle, NativeHashMap<TKey, TValue> hashMap)
+        public JobHandle EnsureHashMapCapacity<TKey, TValue>(JobHandle handle, NativeParallelHashMap<TKey, TValue> hashMap)
             where TKey : struct, IEquatable<TKey>
             where TValue : struct
         {
@@ -84,7 +84,7 @@ namespace BovineLabs.Event.Systems
         /// <typeparam name="TKey"> The key type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
         /// <typeparam name="TValue"> The value type of the <see cref="NativeHashMap{TKey,TValue}"/> . </typeparam>
         /// <returns> The dependency handle. </returns>
-        public JobHandle EnsureHashMapCapacity<TKey, TValue>(JobHandle handle, NativeMultiHashMap<TKey, TValue> hashMap)
+        public JobHandle EnsureHashMapCapacity<TKey, TValue>(JobHandle handle, NativeParallelMultiHashMap<TKey, TValue> hashMap)
             where TKey : struct, IEquatable<TKey>
             where TValue : struct
         {

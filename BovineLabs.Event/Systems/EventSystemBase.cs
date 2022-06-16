@@ -11,14 +11,14 @@ namespace BovineLabs.Event.Systems
      /// <summary> The base EventSystem class. Implement this to add a new EventSystem for a specific group. </summary>
      public abstract partial class EventSystemBase : SystemBase
      {
-          private NativeHashMap<long, EventContainer> eventContainers;
+          private NativeParallelHashMap<long, EventContainer> eventContainers;
 
           /// <summary> Initializes a new instance of the <see cref="EventSystemBase"/> class. </summary>
           [Preserve]
           protected EventSystemBase()
           {
                // Done in constructor so other jobs can register / deregister in OnStart()
-               this.eventContainers = new NativeHashMap<long, EventContainer>(16, Allocator.Persistent);
+               this.eventContainers = new NativeParallelHashMap<long, EventContainer>(16, Allocator.Persistent);
           }
 
           /// <summary> Registers and allocates new event producer. </summary>
