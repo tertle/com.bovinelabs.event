@@ -24,7 +24,7 @@ namespace BovineLabs.Event.Tests.Systems
             const int firstEventCount = 5;
             const int secondEventCount = 3;
 
-            using (var hashmap = new NativeHashMap<int, int>(startCount, Allocator.TempJob))
+            using (var hashmap = new NativeParallelHashMap<int, int>(startCount, Allocator.TempJob))
             {
                 for (var i = 0; i < startCount; i++)
                 {
