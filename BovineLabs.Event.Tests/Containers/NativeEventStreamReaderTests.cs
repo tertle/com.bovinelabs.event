@@ -22,42 +22,36 @@ namespace BovineLabs.Event.Tests.Containers
             [Test]
             public void ReadWithoutBeginThrows()
             {
-                var stream = new NativeEventStream(Allocator.TempJob);
+                var stream = new NativeEventStream(Allocator.Temp);
                 stream.AsWriter().Write(0);
 
                 var reader = stream.AsReader();
                 Assert.Throws<ArgumentException>(() => reader.Read<int>());
-
-                stream.Dispose();
             }
 
             /// <summary> Ensures that begin reading out of range throws an exception. </summary>
             [Test]
             public void BeginOutOfRangeThrows()
             {
-                var stream = new NativeEventStream(Allocator.TempJob);
+                var stream = new NativeEventStream(Allocator.Temp);
 
                 var reader = stream.AsReader();
                 Assert.Throws<ArgumentOutOfRangeException>(() => reader.BeginForEachIndex(-1));
                 Assert.Throws<ArgumentOutOfRangeException>(() =>
                     reader.BeginForEachIndex(JobsUtility.MaxJobThreadCount + 1));
-
-                stream.Dispose();
             }
 
             /// <summary> Ensures reading past the end throws an exception. </summary>
             [Test]
             public void TooManyReadsThrows()
             {
-                var stream = new NativeEventStream(Allocator.TempJob);
+                var stream = new NativeEventStream(Allocator.Temp);
                 stream.AsWriter().Write(0);
 
                 var reader = stream.AsReader();
                 reader.BeginForEachIndex(0);
                 reader.Read<int>();
                 Assert.Throws<ArgumentException>(() => reader.Read<int>());
-
-                stream.Dispose();
             }
 #endif
         }
