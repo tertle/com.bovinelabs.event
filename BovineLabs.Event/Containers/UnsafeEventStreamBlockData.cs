@@ -58,6 +58,7 @@ namespace BovineLabs.Event.Containers
             }
             else
             {
+                block->Next = oldBlock->Next;
                 oldBlock->Next = block;
             }
 
