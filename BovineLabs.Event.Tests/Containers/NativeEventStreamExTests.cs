@@ -22,7 +22,7 @@ namespace BovineLabs.Event.Tests.Containers
         [TestCase(8192)] // requires just more than 2 blocks
         public unsafe void WriteRead(int size)
         {
-            var stream = new NativeEventStream(Allocator.TempJob);
+            var stream = new NativeEventStream(Allocator.Temp);
 
             var sourceData = new NativeArray<byte>(size, Allocator.Temp);
             for (var i = 0; i < size; i++)

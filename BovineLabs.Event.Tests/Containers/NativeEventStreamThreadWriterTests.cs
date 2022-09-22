@@ -191,6 +191,7 @@ namespace BovineLabs.Event.Tests.Containers
                 }
 
                 this.hashmap.Clear();
+                stream.Dispose();
             }
 
             private void JobWithCode()
@@ -226,6 +227,7 @@ namespace BovineLabs.Event.Tests.Containers
                 }
 
                 this.hashmap.Clear();
+                stream.Dispose();
             }
 
             [BurstCompile(CompileSynchronously = true)]
