@@ -9,7 +9,7 @@ namespace BovineLabs.Event.Containers
     using Unity.Collections.LowLevel.Unsafe;
     using UnityEngine;
 
-    [BurstCompatible]
+    [GenerateTestsForBurstCompatibility]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "Convenience")]
     internal unsafe struct UnsafeEventStreamBlock
     {
@@ -17,7 +17,7 @@ namespace BovineLabs.Event.Containers
         internal fixed byte Data[1];
     }
 
-    [BurstCompatible]
+    [GenerateTestsForBurstCompatibility]
     internal unsafe struct UnsafeEventStreamRange
     {
         internal UnsafeEventStreamBlock* Block;
@@ -33,7 +33,7 @@ namespace BovineLabs.Event.Containers
         internal byte* CurrentBlockEnd;
     }
 
-    [BurstCompatible]
+    [GenerateTestsForBurstCompatibility]
     internal unsafe struct UnsafeEventStreamBlockData
     {
         internal const int AllocationSize = 4 * 1024;

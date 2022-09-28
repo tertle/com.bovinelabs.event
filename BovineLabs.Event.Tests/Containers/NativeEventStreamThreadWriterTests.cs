@@ -82,7 +82,7 @@ namespace BovineLabs.Event.Tests.Containers
         [Test]
         public void SystemBaseEntitiesForeach([Values(1, JobsUtility.MaxJobThreadCount + 1, 100000)] int count)
         {
-            var system = this.World.AddSystem(new CodeGenTestSystem(count));
+            var system = this.World.AddSystemManaged(new CodeGenTestSystem(count));
             system.Update();
         }
 

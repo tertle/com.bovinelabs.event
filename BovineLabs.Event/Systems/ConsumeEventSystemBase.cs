@@ -9,7 +9,6 @@ namespace BovineLabs.Event.Systems
 
     /// <summary> A base system for working with jobs on the main thread. </summary>
     /// <typeparam name="T"> The job type. </typeparam>
-    [AlwaysUpdateSystem]
     public abstract partial class ConsumeEventSystemBase<T> : SystemBase
         where T : unmanaged
     {
@@ -19,7 +18,7 @@ namespace BovineLabs.Event.Systems
         /// <inheritdoc />
         protected sealed override void OnCreate()
         {
-            this.eventSystem = this.World.GetExistingSystem<EventSystem>();
+            this.eventSystem = this.World.GetExistingSystemManaged<EventSystem>();
             this.consumer = this.eventSystem.RegisterConsumer<T>();
 
             this.Create();

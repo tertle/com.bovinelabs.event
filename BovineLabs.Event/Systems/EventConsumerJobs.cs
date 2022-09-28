@@ -51,8 +51,8 @@ namespace BovineLabs.Event.Systems
 
         [BurstCompile]
         public struct EnsureHashMapCapacityJob<TKey, TValue> : IJob
-            where TKey : struct, IEquatable<TKey>
-            where TValue : struct
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
         {
             [ReadOnly]
             public NativeArray<int> Counter;
@@ -79,13 +79,13 @@ namespace BovineLabs.Event.Systems
 
         [BurstCompile]
         public struct EnsureMultiHashMapCapacityJob<TKey, TValue> : IJob
-            where TKey : struct, IEquatable<TKey>
-            where TValue : struct
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
         {
             [ReadOnly]
             public NativeArray<int> Counter;
 
-            public NativeParallelMultiHashMap<TKey, TValue> HashMap;
+            public NativeMultiHashMap<TKey, TValue> HashMap;
 
             public void Execute()
             {

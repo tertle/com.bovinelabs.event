@@ -31,7 +31,7 @@ namespace BovineLabs.Event.Containers
             /// <summary> Write data. </summary>
             /// <typeparam name="T">The type of value.</typeparam>
             /// <param name="value">Value to write.</param>
-            [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
+            [GenerateTestsForBurstCompatibility]
             public void Write<T>(T value)
                 where T : struct
             {
@@ -42,7 +42,7 @@ namespace BovineLabs.Event.Containers
             /// <summary> Allocate space for data. </summary>
             /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>Reference to allocated space for data.</returns>
-            [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
+            [GenerateTestsForBurstCompatibility]
             public ref T Allocate<T>()
                 where T : struct
             {

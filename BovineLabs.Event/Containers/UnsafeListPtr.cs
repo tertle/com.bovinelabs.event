@@ -135,7 +135,7 @@ namespace BovineLabs.Event.Containers
         /// <param name="inputDeps">The job handle or handles for any scheduled jobs that use this container.</param>
         /// <returns>A new job handle containing the prior handles as well as the handle for the job that deletes
         /// the container.</returns>
-        [BurstCompatible(RequiredUnityDefine = "UNITY_2020_2_OR_NEWER") /* Due to job scheduling on 2020.1 using statics */]
+        [GenerateTestsForBurstCompatibility /* Due to job scheduling on 2020.1 using statics */]
         public JobHandle Dispose(JobHandle inputDeps)
         {
             var jobHandle = new NativeListDisposeJob { Data = new NativeListDispose { m_ListData = this.listData } }.Schedule(inputDeps);
@@ -153,7 +153,7 @@ namespace BovineLabs.Event.Containers
             this.listData->Clear();
         }
 
-        [BurstCompatible]
+        [GenerateTestsForBurstCompatibility]
         internal struct NativeListDispose
         {
             [NativeDisableUnsafePtrRestriction]
@@ -166,7 +166,7 @@ namespace BovineLabs.Event.Containers
         }
 
         [BurstCompile]
-        [BurstCompatible]
+        [GenerateTestsForBurstCompatibility]
         internal struct NativeListDisposeJob : IJob
         {
             internal NativeListDispose Data;
