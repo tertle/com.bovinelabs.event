@@ -7,7 +7,7 @@ namespace BovineLabs.Event.Containers
     {
         /// <summary>
         /// </summary>
-        [BurstCompatible]
+        [GenerateTestsForBurstCompatibility]
         public unsafe struct Reader
         {
             [NativeDisableUnsafePtrRestriction]
@@ -102,7 +102,7 @@ namespace BovineLabs.Event.Containers
             /// </summary>
             /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>Reference to data.</returns>
-            [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
+            [GenerateTestsForBurstCompatibility]
             public ref T Read<T>()
                 where T : unmanaged
             {
@@ -119,7 +119,7 @@ namespace BovineLabs.Event.Containers
             /// </summary>
             /// <typeparam name="T">The type of value.</typeparam>
             /// <returns>Reference to data.</returns>
-            [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
+            [GenerateTestsForBurstCompatibility]
             public ref T Peek<T>()
                 where T : unmanaged
             {

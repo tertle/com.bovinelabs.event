@@ -5,14 +5,14 @@ namespace BovineLabs.Event.Containers
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
 
-    [BurstCompatible]
+    [GenerateTestsForBurstCompatibility]
     internal unsafe struct UnsafeEventStreamBlock
     {
         internal UnsafeEventStreamBlock* Next;
         internal fixed byte Data[1];
     }
 
-    [BurstCompatible]
+    [GenerateTestsForBurstCompatibility]
     internal unsafe struct UnsafeEventStreamRange
     {
         internal UnsafeEventStreamBlock* Block;
@@ -24,7 +24,7 @@ namespace BovineLabs.Event.Containers
         internal int NumberOfBlocks;
     }
 
-    [BurstCompatible]
+    [GenerateTestsForBurstCompatibility]
     internal unsafe struct UnsafeEventStreamBlockData
     {
         internal const int AllocationSize = 4 * 1024;

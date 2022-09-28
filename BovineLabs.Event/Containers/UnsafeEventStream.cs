@@ -104,7 +104,7 @@ namespace BovineLabs.Event.Containers
         /// <param name="allocator"> A member of the <see cref="Allocator"/> enumeration. </param>
         /// <returns> A new NativeArray, allocated with the given strategy and wrapping the stream data. </returns>
         /// <remarks> <para>The array is a copy of stream data.</para> </remarks>
-        [BurstCompatible(GenericTypeArguments = new[] { typeof(int) })]
+        [GenerateTestsForBurstCompatibility]
         public NativeArray<T> ToNativeArray<T>(Allocator allocator)
             where T : unmanaged
         {
@@ -149,7 +149,7 @@ namespace BovineLabs.Event.Containers
         /// <param name="inputDeps">All jobs spawned will depend on this JobHandle.</param>
         /// <returns>A new job handle containing the prior handles as well as the handle for the job that deletes
         /// the container.</returns>
-        [BurstCompatible(RequiredUnityDefine = "UNITY_2020_2_OR_NEWER") /* Due to job scheduling on 2020.1 using statics */]
+        [GenerateTestsForBurstCompatibility /* Due to job scheduling on 2020.1 using statics */]
         public JobHandle Dispose(JobHandle inputDeps)
         {
             var jobHandle = new DisposeJob { Container = this }.Schedule(inputDeps);

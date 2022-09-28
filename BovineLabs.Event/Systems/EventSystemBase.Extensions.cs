@@ -81,8 +81,8 @@ namespace BovineLabs.Event.Systems
             public JobHandle EnsureHashMapCapacity<TKey, TValue>(
                 JobHandle handle,
                 NativeParallelHashMap<TKey, TValue> hashMap)
-                where TKey : struct, IEquatable<TKey>
-                where TValue : struct
+                where TKey : unmanaged, IEquatable<TKey>
+                where TValue : unmanaged
             {
                 var readerCount = this.eventSystem.GetEventReadersCount<T>();
 
@@ -117,9 +117,9 @@ namespace BovineLabs.Event.Systems
             /// <returns> The dependency handle. </returns>
             public JobHandle EnsureHashMapCapacity<TKey, TValue>(
                 JobHandle handle,
-                NativeParallelMultiHashMap<TKey, TValue> hashMap)
-                where TKey : struct, IEquatable<TKey>
-                where TValue : struct
+                NativeMultiHashMap<TKey, TValue> hashMap)
+                where TKey : unmanaged, IEquatable<TKey>
+                where TValue : unmanaged
             {
                 var readerCount = this.eventSystem.GetEventReadersCount<T>();
 
@@ -173,7 +173,7 @@ namespace BovineLabs.Event.Systems
             /// <returns> The dependency handle. </returns>
             public JobHandle ToNativeList(JobHandle handle, out NativeList<T> list, Allocator allocator = Allocator.TempJob)
             {
-                Assert.AreNotEqual(Allocator.Temp, allocator, $"Use {Allocator.TempJob} or {Allocator.Persistent}");
+                Assert.IsFalse(Allocator.Temp == allocator, $"Use {Allocator.TempJob} or {Allocator.Persistent}");
 
                 list = new NativeList<T>(128, allocator);
 
@@ -244,8 +244,8 @@ namespace BovineLabs.Event.Systems
             }
 
             private struct EnsureHashMapCapacityJob<TKey, TValue> : IJob
-                where TKey : struct, IEquatable<TKey>
-                where TValue : struct
+                where TKey : unmanaged, IEquatable<TKey>
+                where TValue : unmanaged
             {
                 [ReadOnly]
                 public NativeArray<int> Counter;
@@ -271,13 +271,13 @@ namespace BovineLabs.Event.Systems
             }
 
             private struct EnsureMultiHashMapCapacityJob<TKey, TValue> : IJob
-                where TKey : struct, IEquatable<TKey>
-                where TValue : struct
+                where TKey : unmanaged, IEquatable<TKey>
+                where TValue : unmanaged
             {
                 [ReadOnly]
                 public NativeArray<int> Counter;
 
-                public NativeParallelMultiHashMap<TKey, TValue> HashMap;
+                public NativeMultiHashMap<TKey, TValue> HashMap;
 
                 public void Execute()
                 {
