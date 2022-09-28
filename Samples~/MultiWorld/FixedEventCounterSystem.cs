@@ -22,7 +22,7 @@ namespace BovineLabs.Event.Samples.MultiWorld
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.eventSystem = this.World.GetExistingSystem<FixedUpdateEventSystem>();
+            this.eventSystem = this.World.GetExistingSystemManaged<FixedUpdateEventSystem>();
         }
 
         /// <inheritdoc/>

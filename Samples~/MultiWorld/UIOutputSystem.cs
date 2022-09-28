@@ -13,7 +13,7 @@ namespace BovineLabs.Event.Samples
     /// The UIOutputSystem.
     /// </summary>
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public class UIOutputSystem : ComponentSystem
+    public partial class UIOutputSystem : SystemBase
     {
         private UISample uiSample;
         private EventSystem eventSystem;
@@ -21,7 +21,7 @@ namespace BovineLabs.Event.Samples
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
+            this.eventSystem = this.World.GetExistingSystemManaged<EventSystem>();
             this.uiSample = Object.FindObjectOfType<UISample>();
 
             if (this.uiSample == null)

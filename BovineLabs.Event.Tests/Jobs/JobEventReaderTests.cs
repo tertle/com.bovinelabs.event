@@ -48,7 +48,7 @@ namespace BovineLabs.Event.Tests.Jobs
             const int eventCount = 100;
             const int producers = 2;
 
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             for (var i = 0; i < producers; i++)
             {

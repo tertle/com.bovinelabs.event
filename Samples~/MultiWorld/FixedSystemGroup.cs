@@ -3,7 +3,7 @@ namespace BovineLabs.Event.Samples.MultiWorld
     using Unity.Entities;
     using UnityEngine.Scripting;
 
-    public class FixedSystemGroup : ComponentSystemGroup
+    public partial class FixedSystemGroup : ComponentSystemGroup
     {
         [Preserve]
         public FixedSystemGroup()
@@ -41,7 +41,7 @@ namespace BovineLabs.Event.Samples.MultiWorld
                     return true;
                 }
 
-                this.Timestep = group.Time.DeltaTime * 4;
+                this.Timestep = group.World.Time.DeltaTime * 4;
 
                 this.count++;
                 return false;

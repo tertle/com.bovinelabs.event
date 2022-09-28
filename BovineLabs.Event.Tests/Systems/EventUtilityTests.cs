@@ -31,7 +31,7 @@ namespace BovineLabs.Event.Tests.Systems
                     hashmap.Add(i, i);
                 }
 
-                var es = this.World.GetOrCreateSystem<TestEventSystem>();
+                var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
                 var events1 = es.CreateEventWriter<TestEvent>();
 
@@ -72,7 +72,7 @@ namespace BovineLabs.Event.Tests.Systems
 
             using (var count = new NativeArray<int>(1, Allocator.TempJob))
             {
-                var es = this.World.GetOrCreateSystem<TestEventSystem>();
+                var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
                 var events1 = es.CreateEventWriter<TestEvent>();
 
@@ -110,7 +110,7 @@ namespace BovineLabs.Event.Tests.Systems
             const int firstEventCount = 5;
             const int secondEventCount = 3;
 
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             var events1 = es.CreateEventWriter<TestEvent>();
 

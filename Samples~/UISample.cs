@@ -72,18 +72,18 @@ namespace BovineLabs.Event.Samples
         private void Start()
         {
             var world = new World("Standard");
-            var standardGroup = World.DefaultGameObjectInjectionWorld.GetOrCreateSystem<SimulationSystemGroup>();
-            standardGroup.AddSystemToUpdateList(world.GetOrCreateSystem<UpdateEventSystem>());
-            standardGroup.AddSystemToUpdateList(world.GetOrCreateSystem<UpdateEventCounterSystem>());
-            standardGroup.AddSystemToUpdateList(world.GetOrCreateSystem<ParallelForProducerSystem>());
+            var standardGroup = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SimulationSystemGroup>();
+            standardGroup.AddSystemToUpdateList(world.GetOrCreateSystemManaged<UpdateEventSystem>());
+            standardGroup.AddSystemToUpdateList(world.GetOrCreateSystemManaged<UpdateEventCounterSystem>());
+            standardGroup.AddSystemToUpdateList(world.GetOrCreateSystemManaged<ParallelForProducerSystem>());
 
             var fixedWorld = new World("Fixed");
-            var fixedGroup = World.DefaultGameObjectInjectionWorld.GetOrCreateSystem<FixedSystemGroup>();
-            World.DefaultGameObjectInjectionWorld.GetOrCreateSystem<SimulationSystemGroup>().AddSystemToUpdateList(fixedGroup);
-            fixedGroup.AddSystemToUpdateList(fixedWorld.GetOrCreateSystem<FixedUpdateEventSystem>());
-            fixedGroup.AddSystemToUpdateList(fixedWorld.GetOrCreateSystem<FixedEventCounterSystem>());
+            var fixedGroup = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<FixedSystemGroup>();
+            World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SimulationSystemGroup>().AddSystemToUpdateList(fixedGroup);
+            fixedGroup.AddSystemToUpdateList(fixedWorld.GetOrCreateSystemManaged<FixedUpdateEventSystem>());
+            fixedGroup.AddSystemToUpdateList(fixedWorld.GetOrCreateSystemManaged<FixedEventCounterSystem>());
 
-            World.DefaultGameObjectInjectionWorld.GetOrCreateSystem<EventSystem>().UsePersistentAllocator = true;
+            World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<EventSystem>().UsePersistentAllocator = true;
         }
 
         private void Update()

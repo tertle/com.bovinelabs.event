@@ -25,7 +25,7 @@ namespace BovineLabs.Event.Samples
         /// <inheritdoc/>
         protected override void OnCreate()
         {
-            this.eventSystem = this.World.GetOrCreateSystem<EventSystem>();
+            this.eventSystem = this.World.GetExistingSystemManaged<EventSystem>();
         }
 
         /// <inheritdoc/>

@@ -23,7 +23,7 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void CreateEventWriterAddJobHandleForProducerMustBePaired()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             es.CreateEventWriter<TestEvent>();
             Assert.Throws<InvalidOperationException>(() => es.CreateEventWriter<TestEvent>());
@@ -39,7 +39,7 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void GetEventReadersAddJobHandleForConsumerMustBePaired()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             es.GetEventReaders<TestEvent>(default, out _);
             Assert.Throws<InvalidOperationException>(() => es.GetEventReaders<TestEvent>(default, out _));
@@ -80,7 +80,7 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void ProduceConsume()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
             var writer = es.CreateEventWriter<TestEvent>();
 
             writer.Write(new TestEvent { Value = 3 });
@@ -104,7 +104,7 @@ namespace BovineLabs.Event.Tests.Systems
         {
             int[] counts = { 2, 1, 3 };
 
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             foreach (var count in counts)
             {
@@ -142,7 +142,7 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void MultipleConsumers()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             var writer = es.CreateEventWriter<TestEvent>();
 
@@ -177,7 +177,7 @@ namespace BovineLabs.Event.Tests.Systems
             const int producers = 2;
             const int consumers = 3;
 
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             for (var i = 0; i < producers; i++)
             {
@@ -223,8 +223,8 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void DifferentUpdateRate()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
-            var es2 = this.World.GetOrCreateSystem<TestEventSystem2>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
+            var es2 = this.World.GetOrCreateSystemManaged<TestEventSystem2>();
 
             var writer = es.CreateEventWriter<TestEvent>();
 
@@ -267,7 +267,7 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void WriteInReadModeAddsToDeferred()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             // GetEventReadersCount won't create the container so just do it with a dummy GetEventReaders
             es.GetEventReaders<TestEvent>(default, out _);
@@ -290,7 +290,7 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void HasEventReaders()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             // No writer should return false
             Assert.IsFalse(es.HasEventReaders<TestEvent>());
@@ -310,7 +310,7 @@ namespace BovineLabs.Event.Tests.Systems
         [Test]
         public void OrderSafetyTest()
         {
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             var writer1 = es.CreateEventWriter<TestEvent>(64);
 

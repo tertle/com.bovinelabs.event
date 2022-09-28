@@ -24,7 +24,7 @@ namespace BovineLabs.Event.Tests.Jobs
             const int eventCount = 100;
             const int producers = 2;
 
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             JobHandle handle = default;
 
@@ -65,7 +65,7 @@ namespace BovineLabs.Event.Tests.Jobs
             const int eventCount = 100;
             const int producers = 2;
 
-            var es = this.World.GetOrCreateSystem<TestEventSystem>();
+            var es = this.World.GetOrCreateSystemManaged<TestEventSystem>();
 
             JobHandle handle = default;
 
