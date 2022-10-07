@@ -159,7 +159,7 @@ namespace BovineLabs.Event.Systems
                 handles.Add(producer->JobHandle);
             }
 
-            return JobHandle.CombineDependencies(handles);
+            return JobHandle.CombineDependencies(handles.AsArray());
         }
 
         private JobHandle GetConsumerHandle()
@@ -189,7 +189,7 @@ namespace BovineLabs.Event.Systems
                 handles.Add(consumer->JobHandle);
             }
 
-            return JobHandle.CombineDependencies(handles);
+            return JobHandle.CombineDependencies(handles.AsArray());
         }
 
         private void RemoveProducerInternal(Producer* producer)
