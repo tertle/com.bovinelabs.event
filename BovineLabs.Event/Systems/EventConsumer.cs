@@ -6,6 +6,7 @@ namespace BovineLabs.Event.Systems
 {
     using System;
     using System.Diagnostics;
+    using BovineLabs.Core.Collections;
     using BovineLabs.Event.Containers;
     using BovineLabs.Event.Jobs;
     using Unity.Collections;

@@ -5,6 +5,7 @@
 namespace BovineLabs.Event.Systems
 {
     using System;
+    using BovineLabs.Core.Collections;
     using BovineLabs.Event.Containers;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
