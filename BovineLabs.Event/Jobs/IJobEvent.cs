@@ -6,7 +6,7 @@ namespace BovineLabs.Event.Jobs
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
-    using BovineLabs.Event.Containers;
+    using BovineLabs.Core.Collections;
     using BovineLabs.Event.Systems;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;

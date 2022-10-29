@@ -4,7 +4,7 @@
 
 namespace BovineLabs.Event.Systems
 {
-    using BovineLabs.Event.Containers;
+    using BovineLabs.Core.Collections;
 
     /// <summary> A base system for working with jobs that have no extra data. </summary>
     /// <typeparam name="T"> The job type. </typeparam>

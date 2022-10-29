@@ -6,7 +6,6 @@ namespace BovineLabs.Event.Systems
 {
     using System;
     using BovineLabs.Core.Collections;
-    using BovineLabs.Event.Containers;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
@@ -14,17 +13,17 @@ namespace BovineLabs.Event.Systems
 
     internal unsafe struct EventContainer : IDisposable
     {
-        private UnsafeListPtr<IntPtr> producers;
-        private UnsafeListPtr<IntPtr> consumers;
+        private NativeList<IntPtr> producers;
+        private NativeList<IntPtr> consumers;
 
-        private UnsafeListPtr<NativeEventStream> currentProducers;
+        private NativeList<NativeEventStream> currentProducers;
 
         public EventContainer(long hash)
         {
             this.Hash = hash;
-            this.producers = new UnsafeListPtr<IntPtr>(1, Allocator.Persistent);
-            this.consumers = new UnsafeListPtr<IntPtr>(1, Allocator.Persistent);
-            this.currentProducers = new UnsafeListPtr<NativeEventStream>(1, Allocator.Persistent);
+            this.producers = new NativeList<IntPtr>(1, Allocator.Persistent);
+            this.consumers = new NativeList<IntPtr>(1, Allocator.Persistent);
+            this.currentProducers = new NativeList<NativeEventStream>(1, Allocator.Persistent);
             this.IsValid = true;
         }
 
@@ -74,7 +73,7 @@ namespace BovineLabs.Event.Systems
         {
             var consumer = (Consumer*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<Consumer>(), UnsafeUtility.AlignOf<Consumer>(), Allocator.Persistent);
             UnsafeUtility.MemClear(consumer, UnsafeUtility.SizeOf<Consumer>());
-            consumer->Readers = new UnsafeListPtr<NativeEventStream>(0, Allocator.Persistent);
+            consumer->Readers = new NativeList<NativeEventStream>(0, Allocator.Persistent);
 
             this.consumers.Add((IntPtr)consumer);
 

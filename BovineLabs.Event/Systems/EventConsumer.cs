@@ -141,7 +141,7 @@ namespace BovineLabs.Event.Systems
 
     internal struct Consumer
     {
-        public UnsafeListPtr<NativeEventStream> Readers;
+        public NativeList<NativeEventStream> Readers;
         public JobHandle JobHandle;
         public JobHandle InputHandle;
 

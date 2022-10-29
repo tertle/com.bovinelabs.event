@@ -7,7 +7,7 @@
 
 namespace BovineLabs.Event.Tests
 {
-    using BovineLabs.Event.Containers;
+    using BovineLabs.Core.Collections;
     using BovineLabs.Event.Jobs;
     using BovineLabs.Event.Systems;
     using Unity.Entities;

@@ -5,7 +5,7 @@
 namespace BovineLabs.Event.Systems
 {
     using System;
-    using BovineLabs.Event.Containers;
+    using BovineLabs.Core.Collections;
     using BovineLabs.Event.Jobs;
     using Unity.Burst;
     using Unity.Collections;
