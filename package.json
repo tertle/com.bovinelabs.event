@@ -1,9 +1,9 @@
 {
   "name": "com.bovinelabs.event",
   "description": "Event System.",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "unity": "2022.2",
-  "unityRelease": "20",
+  "unityRelease": "20f1",
   "displayName": "BovineLabs Event",
   "dependencies": {
     "com.unity.entities": "1.0.10"
