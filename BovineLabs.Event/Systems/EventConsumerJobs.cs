@@ -85,7 +85,7 @@ namespace BovineLabs.Event.Systems
             [ReadOnly]
             public NativeArray<int> Counter;
 
-            public NativeMultiHashMap<TKey, TValue> HashMap;
+            public NativeParallelMultiHashMap<TKey, TValue> HashMap;
 
             public void Execute()
             {

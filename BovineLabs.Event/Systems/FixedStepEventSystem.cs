@@ -8,7 +8,7 @@ namespace BovineLabs.Event.Systems
 
     /// <summary> EventSystem that updates in the <see cref="FixedStepSimulationSystemGroup"/>. </summary>
     [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
-    public class FixedStepEventSystem : EventSystemBase
+    public partial class FixedStepEventSystem : EventSystemBase
     {
     }
 }

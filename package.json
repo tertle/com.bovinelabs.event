@@ -3,10 +3,10 @@
   "description": "Event System.",
   "version": "2.2.0",
   "unity": "2022.2",
-  "unityRelease": "0b8",
+  "unityRelease": "20",
   "displayName": "BovineLabs Event",
   "dependencies": {
-    "com.unity.entities": "1.0.0-exp.8"
+    "com.unity.entities": "1.0.10"
   },
   "type": "library"
 }
